@@ -39,11 +39,21 @@ that live in this repo linked into it.
 The colours are taken from the wallpaper, so the desktop and the image behind it
 agree with each other.
 
-`config/hypr/theme.lua` is the palette: nine named roles, plus the sixteen ANSI
+`config/hypr/theme.lua` is the palette: nine named roles plus the sixteen ANSI
 colours a terminal needs. Hyprland reads it directly — `hyprland.lua` requires it
-for the window borders and the background colour. kitty cannot read Lua, so its
-colours are those same values copied into `config/kitty/kitty.conf`, with a
-comment pointing back at the palette. Change the palette first, then the copy.
+for the window borders and the background colour.
+
+Nothing else reads Lua, so the other copies are generated instead of hand-written:
+
+```bash
+scripts/gen-theme.py           # rewrite config/kitty/theme.conf and config/zsh/theme.zsh
+scripts/gen-theme.py --check   # fail if those copies are stale
+```
+
+One palette, not four: edit `theme.lua`, run the script, and both the terminal
+colours and the shell prompt follow. The prompt is ours as well —
+`config/zsh/prompt.zsh`, with `ZSH_THEME=""` in `.zshrc` so oh-my-zsh contributes
+its plugins and completion but not its looks.
 
 Wallpapers live in `images/wallpapers/`, each one with its source and licence in
 the `CREDITS.md` beside it: everything committed there is CC0 or public domain,

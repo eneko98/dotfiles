@@ -1,10 +1,13 @@
 -- The palette, in one place.
 --
 -- Hyprland requires this file (config/hypr/hyprland.lua, `require("theme")`) and
--- paints its borders and its background from it. Programs that cannot read Lua
--- copy the same hex values with a pointer back here -- kitty is the first. If a
--- third one needs them, that is the moment to write a generator instead of
--- copying a third time.
+-- paints its borders and its background from it. Nothing else reads Lua, so
+-- scripts/gen-theme.py *generates* the copies the other programs need, rather
+-- than having them guess:
+--     config/kitty/theme.conf   included by kitty.conf
+--     config/zsh/theme.zsh      sourced by the prompt
+-- Edit the values here, then run the script. The copies cannot drift, and
+-- `scripts/gen-theme.py --check` would say so if they did.
 --
 -- Where the colours come from: the wallpaper, images/wallpapers/hong-kong-night.png.
 --   * bg0 is the photograph's own shadow mass, so the desktop reads as an
