@@ -34,3 +34,13 @@ kitty
 # Not cosmetic: the system had no cursor theme whatsoever, so no pointer would
 # have been drawn. Replaceable when the theme pass happens.
 adwaita-cursors
+
+# 03 - zsh and oh-my-zsh
+# oh-my-zsh itself is not a package; it is cloned into XDG_DATA_HOME. See the
+# README, which also covers the /etc/zsh/zshenv line that makes ZDOTDIR work.
+# Only the archlinux plugin ships with oh-my-zsh; the other three come from the
+# repos and are sourced by hand from config/zsh/.zshrc.
+zsh
+zsh-autosuggestions
+zsh-syntax-highlighting
+zsh-completions

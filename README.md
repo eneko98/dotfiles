@@ -34,4 +34,33 @@ The script only ever creates symlinks. It does not install packages, and it neve
 overwrites a real file — `~/.config` stays a normal directory, with only the files
 that live in this repo linked into it.
 
+## Setup that lives outside the repo
+
+A few things cannot be symlinked out of `config/`, because they have to exist
+before the program reads its config, or because they are not configs at all.
+
+**zsh has to be told where its config is.** zsh looks for `~/.zshrc` before
+anything in this repo can get a word in, so `ZDOTDIR` is set one file earlier,
+in `/etc/zsh/zshenv`:
+
+```bash
+export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+```
+
+That single line is the only reason `config/zsh/.zshrc` is read at all. Without
+it, zsh quietly falls back to `$HOME`.
+
+**oh-my-zsh is cloned, not installed.** It defaults to `~/.oh-my-zsh`, so it is
+cloned into `XDG_DATA_HOME` instead:
+
+```bash
+git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.local/share/oh-my-zsh
+```
+
+**The login shell** is changed with `usermod`:
+
+```bash
+sudo usermod -s /usr/bin/zsh "$USER"
+```
+
 Work in progress.
