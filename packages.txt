@@ -1,0 +1,28 @@
+# Packages this desktop adds, in the order they were added.
+#
+# A fresh Arch install only provides the baseline: base, base-devel, linux,
+# linux-firmware, amd-ucode, mesa, git, neovim, pipewire, sudo. Everything
+# listed below is what sits on top of that, one section per component.
+#
+# Install everything with:
+#   grep -vE '^\s*(#|$)' packages.txt | sudo pacman -S --needed -
+#
+# The comment/blank-line filtering is needed because pacman treats every line
+# it reads from stdin as a package name, comments included.
+
+# 01 - graphics stack and fonts
+# vulkan-radeon is the RADV driver; nothing GPU-accelerated starts without it.
+vulkan-radeon
+vulkan-icd-loader
+fontconfig
+noto-fonts
+noto-fonts-emoji
+noto-fonts-cjk
+ttf-jetbrains-mono-nerd
+
+# 01 - fallback kernel
+# Installed as insurance: systemd-boot gets a second, known-good entry to boot
+# from if a graphics or kernel change breaks the main one. This one is NOT
+# enough on its own -- systemd-boot here only reads Type #1 entries, so
+# /boot/loader/entries/arch-linux-lts.conf also had to be created by hand.
+linux-lts

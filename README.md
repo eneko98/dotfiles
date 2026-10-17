@@ -11,8 +11,17 @@ Hyprland (Wayland) · kitty · zsh + oh-my-zsh · yazi
 | `config/` | 1:1 mirror of `~/.config` — one folder per program |
 | `scripts/` | installer, and later automation / animations |
 | `images/` | wallpapers and other assets |
+| `packages.txt` | every package this setup adds, in install order |
 
 ## Install
+
+Packages first:
+
+```bash
+grep -vE '^\s*(#|$)' packages.txt | sudo pacman -S --needed -
+```
+
+Then the configs:
 
 ```bash
 git clone https://github.com/eneko98/dotfiles ~/repos/dotfiles
