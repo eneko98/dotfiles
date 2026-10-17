@@ -1,3 +1,6 @@
 # Working docs stay local: only the public README is tracked.
 *.md
 !README.md
+# ...but where a committed image came from is public information, so credits travel
+# with the images they describe.
+!images/**/*.md

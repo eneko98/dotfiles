@@ -87,4 +87,22 @@ sudo rm -r /etc/systemd/system/getty@tty1.service.d
 sudo systemctl daemon-reload
 ```
 
+**The wallpaper is a systemd user service.** `hyprpaper` ships a unit, and a unit
+restarts if it crashes and shuts down with the session — a bare child process of
+the compositor would do neither:
+
+```bash
+systemctl --user enable --now hyprpaper.service
+```
+
+Changing the wallpaper does not need a restart:
+
+```bash
+hyprctl hyprpaper wallpaper ', ~/pictures/whatever.png'
+hyprctl hyprpaper listactive
+```
+
+The images themselves live in `images/wallpapers/`, each one with its source and
+licence recorded in `CREDITS.md` beside it.
+
 Work in progress.

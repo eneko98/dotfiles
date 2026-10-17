@@ -51,3 +51,12 @@ zsh-completions
 # gives SUPER+M a clean "uwsm stop" path out. Started by config/zsh/.zprofile; the tty1
 # autologin drop-in around it is in the README.
 uwsm
+
+# 05 - wallpaper
+# hyprpaper paints the wall behind the windows. Chosen over swaybg because it has
+# IPC -- `hyprctl hyprpaper wallpaper ...` changes it live -- and over swww/mpvpaper
+# because those are AUR-only and there is no AUR helper yet.
+# It is started by the systemd user unit the package ships, not from hyprland.lua:
+# the uwsm wiki recommends the unit, and a unit restarts on crash and stops with the
+# session. One-time setup: systemctl --user enable hyprpaper.service
+hyprpaper
