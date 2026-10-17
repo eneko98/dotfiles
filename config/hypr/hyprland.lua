@@ -13,7 +13,14 @@ local terminal = "kitty"
 -----------------
 -- Empty output means "whatever monitor is connected". Preferred mode and
 -- automatic positioning are fine for a single built-in laptop panel.
-hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+--
+-- Scale is pinned to 1 deliberately. The stock config uses "auto", which lets
+-- Hyprland derive a scale from the panel's PPI; this 1080p panel reports
+-- 310x170 mm (~158 PPI), so auto picked 1.5. That does not add detail -- there
+-- are no more physical pixels to show -- it just draws everything 1.5x larger
+-- and shrinks the usable desktop to 1280x720. At scale 1 the panel is driven
+-- natively at its full 1920x1080.
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 
 ----------------
 ---- CURSOR -----
@@ -38,6 +45,19 @@ hl.config({
         -- A real wallpaper arrives later.
         force_default_wallpaper = -1,
         disable_hyprland_logo = true,
+    },
+})
+
+----------------
+---- LAYOUT ----
+----------------
+-- New windows open to the right of (or below) the focused one. The default,
+-- force_split = 0, places them relative to the mouse instead: a new terminal
+-- lands on the left whenever the cursor happens to sit in the left half of the
+-- window. 1 forces left/top, 2 forces right/bottom.
+hl.config({
+    dwindle = {
+        force_split = 2,
     },
 })
 
