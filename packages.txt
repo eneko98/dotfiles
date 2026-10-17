@@ -44,3 +44,10 @@ zsh
 zsh-autosuggestions
 zsh-syntax-highlighting
 zsh-completions
+
+# 04 - session manager
+# uwsm wraps the compositor in systemd user units -- wayland-wm@hyprland.desktop.service
+# pulled in by graphical-session.target -- instead of leaving it as a bare process, and
+# gives SUPER+M a clean "uwsm stop" path out. Started by config/zsh/.zprofile; the tty1
+# autologin drop-in around it is in the README.
+uwsm
