@@ -2,7 +2,7 @@
 
 My Arch Linux desktop, built from a bare install — one component per commit.
 
-Hyprland (Wayland) · kitty · zsh + oh-my-zsh · yazi
+Hyprland (Wayland) under uwsm · kitty · zsh + oh-my-zsh · yazi
 
 ## Layout
 
@@ -61,6 +61,30 @@ git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.local/share/oh-my-
 
 ```bash
 sudo usermod -s /usr/bin/zsh "$USER"
+```
+
+**tty1 logs in automatically**, so a boot lands in the desktop instead of at a
+login prompt. `getty`'s `ExecStart` is replaced by a drop-in, because the unit
+itself belongs to systemd:
+
+```ini
+# /etc/systemd/system/getty@tty1.service.d/autologin.conf
+[Service]
+ExecStart=
+ExecStart=-/usr/bin/agetty --noreset --noclear --autologin eneko98 - ${TERM}
+```
+
+The bare `ExecStart=` is required — it clears the inherited command before the
+new one is added. From there the login shell starts the session: zsh reads
+`config/zsh/.zprofile`, which runs `uwsm check may-start` and execs the
+compositor as a systemd user session (`wayland-wm@hyprland.desktop.service`,
+pulled in with `graphical-session.target`). tty2 and above keep an ordinary
+login prompt on purpose: that is the way back in if a config ever breaks the
+session. To get the prompt back, remove the drop-in and reload:
+
+```bash
+sudo rm -r /etc/systemd/system/getty@tty1.service.d
+sudo systemctl daemon-reload
 ```
 
 Work in progress.

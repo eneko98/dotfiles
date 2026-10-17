@@ -68,6 +68,8 @@ local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
--- Escape hatch. The session is started by hand from a TTY for now, so there
--- has to be a clean way back to it.
-hl.bind(mainMod .. " + M", hl.dsp.exit())
+-- Escape hatch back to the TTY. This goes through uwsm on purpose: the session
+-- is no longer just a compositor, it is a set of systemd units, and killing the
+-- compositor directly would yank it out from under its clients and skip the
+-- ordered shutdown. See the uwsm wiki page, "Session termination".
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("uwsm stop"))
