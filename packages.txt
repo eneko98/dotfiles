@@ -11,18 +11,26 @@
 # it reads from stdin as a package name, comments included.
 
 # 01 - graphics stack and fonts
-# vulkan-radeon is the RADV driver; nothing GPU-accelerated starts without it.
+# vulkan-radeon is *not* required by Hyprland (aquamarine only needs mesa/EGL),
+# but it is the recommended driver for AMD on Wayland and any future Vulkan
+# application needs it, so it is installed up front.
 vulkan-radeon
 vulkan-icd-loader
 fontconfig
-noto-fonts
-noto-fonts-emoji
-noto-fonts-cjk
 ttf-jetbrains-mono-nerd
 
 # 01 - fallback kernel
-# Installed as insurance: systemd-boot gets a second, known-good entry to boot
-# from if a graphics or kernel change breaks the main one. This one is NOT
-# enough on its own -- systemd-boot here only reads Type #1 entries, so
-# /boot/loader/entries/arch-linux-lts.conf also had to be created by hand.
+# Insurance: systemd-boot gets a second, known-good entry to boot from if a
+# graphics or kernel change breaks the main one. This package alone is NOT
+# enough -- systemd-boot here reads only Type #1 entries, so
+# /boot/loader/entries/arch-linux-lts.conf had to be written by hand too.
 linux-lts
+
+# 02 - compositor and terminal
+hyprland
+kitty
+
+# 02 - cursor theme
+# Not cosmetic: the system had no cursor theme whatsoever, so no pointer would
+# have been drawn. Replaceable when the theme pass happens.
+adwaita-cursors
