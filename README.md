@@ -34,6 +34,21 @@ The script only ever creates symlinks. It does not install packages, and it neve
 overwrites a real file — `~/.config` stays a normal directory, with only the files
 that live in this repo linked into it.
 
+## The theme
+
+The colours are taken from the wallpaper, so the desktop and the image behind it
+agree with each other.
+
+`config/hypr/theme.lua` is the palette: nine named roles, plus the sixteen ANSI
+colours a terminal needs. Hyprland reads it directly — `hyprland.lua` requires it
+for the window borders and the background colour. kitty cannot read Lua, so its
+colours are those same values copied into `config/kitty/kitty.conf`, with a
+comment pointing back at the palette. Change the palette first, then the copy.
+
+Wallpapers live in `images/wallpapers/`, each one with its source and licence in
+the `CREDITS.md` beside it: everything committed there is CC0 or public domain,
+because this repository is public.
+
 ## Setup that lives outside the repo
 
 A few things cannot be symlinked out of `config/`, because they have to exist

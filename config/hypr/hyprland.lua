@@ -8,6 +8,19 @@
 
 local terminal = "kitty"
 
+-- Every colour below comes from theme.lua, which is the palette the wallpaper
+-- was reduced to. require() finds it because Hyprland puts the config directory
+-- first in package.path, so plain require("theme") resolves
+-- ~/.config/hypr/theme.lua -- no path juggling needed.
+local theme = require("theme")
+
+-- theme.lua stores plain #rrggbb, because that is what kitty and everything else
+-- wants. Hyprland's own syntax is rgba(RRGGBBAA), so the conversion happens here,
+-- once, instead of in the palette.
+local function rgba(hex, alpha)
+    return "rgba(" .. hex:gsub("#", "") .. (alpha or "ff") .. ")"
+end
+
 -----------------
 ---- MONITOR -----
 -----------------
@@ -45,6 +58,30 @@ hl.config({
         -- A real wallpaper arrives later.
         force_default_wallpaper = -1,
         disable_hyprland_logo = true,
+        -- What Hyprland paints before the wallpaper is up, and what shows through
+        -- if the wallpaper is ever missing. The photograph's shadow colour, so
+        -- there is no flash of grey at login.
+        background_color = rgba(theme.bg0),
+    },
+})
+
+--------------------------------
+---- COLOURS (from theme) ------
+--------------------------------
+-- The active border is where the accent colour is always visible, so it is gold,
+-- drifting to the brighter gold the photograph actually produced (#f3c562) --
+-- one hue, so it reads as a shine rather than two colours arguing.
+--
+-- Inactive windows get a dim warm grey at 60 % opacity instead of a second hue:
+-- focus should be readable at a glance, and the dimmer the unfocused windows the
+-- more the wallpaper shows through. Teal is deliberately not used here -- see
+-- the palette notes in theme.lua.
+hl.config({
+    general = {
+        col = {
+            active_border = { colors = { rgba(theme.gold), rgba(theme.ansi.bright_yellow) }, angle = 45 },
+            inactive_border = rgba(theme.fg2, "99"),
+        },
     },
 })
 
