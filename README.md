@@ -74,6 +74,7 @@ component.
 | volume keys | up / down in 5% steps, mute |
 | brightness keys | up / down in 5% steps |
 | `SUPER + N` | toggle Wi-Fi (the laptop's own Wi-Fi key also works) |
+| `SUPER + V` | clipboard history (fuzzel over cliphist) |
 | `SUPER + 1..0` | switch to workspace 1-10 |
 | `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
 | `SUPER + scroll` | previous / next existing workspace |

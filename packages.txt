@@ -123,6 +123,13 @@ xdg-desktop-portal-gtk
 xdg-desktop-portal-hyprland
 polkit-gnome
 
+# 08 - desktop essentials: clipboard history
+# cliphist keeps what you copied, so the second copy no longer destroys the
+# first. `wl-paste --watch cliphist store` does the collecting and is a unit the
+# package does not ship, so this repo carries one. The picker is fuzzel in dmenu
+# mode, on SUPER + V.
+cliphist
+
 # 09 - file manager
 # yazi is the file manager, with image, video, PDF and archive previews inside
 # the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,

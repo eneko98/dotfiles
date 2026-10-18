@@ -144,6 +144,10 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -q set 5%-"))
 -- See config/hypr/scripts/wifi-toggle.
 hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wifi-toggle"))
 
+-- Clipboard history: fuzzel over `cliphist list`. The watcher that stores
+-- copies is config/systemd/user/cliphist.service.
+hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/clipboard"))
+
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains
 -- what "the focused window" actually captures. Hyprland runs these through a

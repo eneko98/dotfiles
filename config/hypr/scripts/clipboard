@@ -1,0 +1,13 @@
+#!/bin/sh
+# Pick an entry from the clipboard history and put it back on the clipboard.
+#
+# `cliphist list` prints "id<TAB>preview" lines; fuzzel hands the chosen line
+# back, and `cliphist decode` turns that id back into the original bytes. Bound
+# to SUPER + V in hyprland.lua; the storing side is the cliphist systemd unit.
+#
+# Esc makes fuzzel exit non-zero, and an empty choice short-circuits, so backing
+# out of the picker leaves the current clipboard untouched.
+
+selection="$(cliphist list | fuzzel --dmenu --prompt 'clipboard: ')" || exit 0
+[ -n "$selection" ] || exit 0
+printf '%s' "$selection" | cliphist decode | wl-copy
