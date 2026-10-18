@@ -46,14 +46,19 @@ for the window borders and the background colour.
 Nothing else reads Lua, so the other copies are generated instead of hand-written:
 
 ```bash
-scripts/gen-theme.py           # rewrite the copies for kitty, zsh and fuzzel
+scripts/gen-theme.py           # rewrite the generated copies
 scripts/gen-theme.py --check   # fail if those copies are stale
 ```
 
-One palette, not four: edit `theme.lua`, run the script, and the terminal colours,
-the shell prompt and the launcher all follow. The prompt is ours as well —
-`config/zsh/prompt.zsh`, with `ZSH_THEME=""` in `.zshrc` so oh-my-zsh contributes
-its plugins and completion but not its looks.
+One palette, not four: edit `theme.lua`, run the script, and kitty, the shell
+prompt, fuzzel, yazi, the lock screen, mako, GTK and Qt all follow. The prompt is
+ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in `.zshrc` so
+oh-my-zsh contributes its plugins and completion but not its looks.
+
+The cursor and icons are ready-made rather than generated: `simp1e-amber` (a gold
+cursor, in both hyprcursor and xcursor) and `Adwaita-yellow` (Adwaita with the
+folders and places recoloured to the accent). Both are AUR packages — see
+`packages.txt`.
 
 Wallpapers live in `images/wallpapers/`, each one with its source and licence in
 the `CREDITS.md` beside it: everything committed there is CC0 or public domain,
@@ -187,6 +192,19 @@ systemctl --user enable --now polkit-gnome.service
 The portals (`xdg-desktop-portal` and its backends) need no enabling: D-Bus
 starts them on demand, and which backend serves an interface is decided by
 `UseIn` in `/usr/share/xdg-desktop-portal/portals/`.
+
+**The cursor and icon theme reach the portal through GSettings**, and that is
+dconf state (a binary file), so it is set once here rather than symlinked:
+
+```bash
+gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-yellow'
+gsettings set org.gnome.desktop.interface cursor-theme 'simp1e-amber'
+gsettings set org.gnome.desktop.interface cursor-size 24
+```
+
+GTK and Qt get the same values from their tracked config files
+(`gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`, `qt6ct/qt6ct.conf`), and Hyprland
+from `hyprland.lua`.
 
 **The home directories are created once**, so `~/Documents`, `~/Downloads` and
 the rest exist and every program agrees on where they are:

@@ -38,12 +38,13 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 ----------------
 ---- CURSOR -----
 ----------------
--- Set explicitly, and not as a stylistic preference: this system had no cursor
--- theme installed at all (no /usr/share/icons/*/cursors existed), so there was
--- nothing to draw. adwaita-cursors was installed for this commit; a cursor that
--- matches the theme can replace it later.
-hl.env("XCURSOR_THEME", "Adwaita")
+-- The cursor. simp1e-amber is gold, matching the accent; the theme ships both
+-- xcursor (for GTK/Qt apps) and hyprcursor (for Hyprland), so the one name
+-- covers both. HYPRCURSOR_SIZE and XCURSOR_SIZE have to agree or the pointer
+-- changes size crossing the compositor/app boundary.
+hl.env("XCURSOR_THEME", "simp1e-amber")
 hl.env("XCURSOR_SIZE", "24")
+hl.env("HYPRCURSOR_SIZE", "24")
 -- Qt apps read the palette through qt6ct only with this platform theme set.
 -- config/environment.d/qt.conf does the same for the systemd user session.
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")

@@ -177,6 +177,12 @@ xdg-utils
 lsd
 bat
 
+# theme pass: Qt theming
+# qt6ct is how Qt apps read the palette and the icon theme. The cursor
+# (simp1e-amber) and the icon theme (Adwaita-yellow) are AUR-only, so they are
+# listed in the note below rather than here.
+qt6ct
+
 # ---------------------------------------------------------------------------
 # Everything above is in the repos and can be installed with the command at the
 # top of this file. The one exception is the AUR helper, which pacman cannot
@@ -191,4 +197,9 @@ bat
 # Building from source also means cargo/rust is installed as a make dependency
 # and then removed; config/paru/paru.conf sets RemoveMake so future builds clean
 # their own toolchains up.
+#
+# The cursor and icon themes are AUR-only too:
+#   paru -S simp1e-amber-hyprcursor adwaita-colors-icon-theme
+#   simp1e-amber:  gold cursor, ships both hyprcursor (Hyprland) and xcursor (apps)
+#   adwaita-colors: Adwaita with the folders/places recoloured; we use Adwaita-yellow
 # ---------------------------------------------------------------------------
