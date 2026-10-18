@@ -116,6 +116,37 @@ hl.config({
 })
 
 ------------------
+---- DECORATION ---
+------------------
+-- Depth: rounded corners, a shadow, and blur worth having. Rounding defaults to
+-- 0 (everything square); blur is on by default but at 1 pass, so it is barely
+-- there. The shadow uses bg0 -- the photograph's own shadow colour -- instead
+-- of pure black, so even the shade stays warm and on the palette.
+hl.config({
+    decoration = {
+        rounding = 8,
+        blur = {
+            enabled = true,
+            size = 6,
+            passes = 3,
+            ignore_opacity = false,
+        },
+        shadow = {
+            enabled = true,
+            range = 24,
+            render_power = 3,
+            color = rgba(theme.bg0, "88"),
+        },
+    },
+})
+
+-- Layer surfaces do not blur by default; each thing that floats over the
+-- wallpaper opts in by namespace. fuzzel is "launcher", mako "notifications"
+-- (both confirmed live with `hyprctl layers`).
+hl.layer_rule({ match = { namespace = "launcher" }, blur = true })
+hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
+
+------------------
 ---- GESTURES ----
 ------------------
 -- Three-finger horizontal swipe switches workspaces, the gesture Hyprland
