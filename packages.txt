@@ -140,6 +140,16 @@ cliphist
 # it in place, which through a symlink would write into the repo.
 xdg-user-dirs
 
+# CJK and emoji fonts
+# Until now every Chinese character was a tofu box. Source Han Sans CN rather
+# than noto-fonts-cjk: 56 MiB against 299 MiB, because Noto ships all four
+# regional families where this one font already answers for zh-cn, zh-tw, ja and
+# ko (checked with `fc-match` per language, and with a Traditional-only glyph and
+# a kana). Glyph *forms* are the Simplified ones; add the TW/HK variant later if
+# the Traditional shapes matter. Noto Color Emoji covers the emoji.
+adobe-source-han-sans-cn-fonts
+noto-fonts-emoji
+
 # 09 - file manager
 # yazi is the file manager, with image, video, PDF and archive previews inside
 # the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,
