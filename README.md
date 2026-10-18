@@ -2,7 +2,7 @@
 
 My Arch Linux desktop, built from a bare install — one component per commit.
 
-Hyprland (Wayland) under uwsm · kitty · zsh + oh-my-zsh · yazi
+Hyprland (Wayland) under uwsm · kitty · zsh + oh-my-zsh · fuzzel · yazi
 
 ## Layout
 
@@ -46,18 +46,30 @@ for the window borders and the background colour.
 Nothing else reads Lua, so the other copies are generated instead of hand-written:
 
 ```bash
-scripts/gen-theme.py           # rewrite config/kitty/theme.conf and config/zsh/theme.zsh
+scripts/gen-theme.py           # rewrite the copies for kitty, zsh and fuzzel
 scripts/gen-theme.py --check   # fail if those copies are stale
 ```
 
-One palette, not four: edit `theme.lua`, run the script, and both the terminal
-colours and the shell prompt follow. The prompt is ours as well —
+One palette, not four: edit `theme.lua`, run the script, and the terminal colours,
+the shell prompt and the launcher all follow. The prompt is ours as well —
 `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in `.zshrc` so oh-my-zsh contributes
 its plugins and completion but not its looks.
 
 Wallpapers live in `images/wallpapers/`, each one with its source and licence in
 the `CREDITS.md` beside it: everything committed there is CC0 or public domain,
 because this repository is public.
+
+## Keys
+
+Everything is `SUPER` plus one key. This is the whole set so far — it grows with
+each component.
+
+| Key | What it does |
+| --- | --- |
+| `SUPER + Q` | new terminal (kitty) |
+| `SUPER + Space` | application launcher (fuzzel) |
+| `SUPER + C` | close the focused window |
+| `SUPER + M` | end the session and return to the TTY |
 
 ## Setup that lives outside the repo
 

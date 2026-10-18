@@ -5,8 +5,9 @@ theme.lua is the single source of truth for the colours, because Hyprland reads
 Lua directly and this repository has one palette, not four. Nothing else reads
 Lua, so this script writes the copies the other two consumers need:
 
-    config/kitty/theme.conf   the colours for kitty; kitty.conf includes it
-    config/zsh/theme.zsh      the same values as shell variables, for the prompt
+    config/kitty/theme.conf    the colours for kitty; kitty.conf includes it
+    config/zsh/theme.zsh       the same values as shell variables, for the prompt
+    config/fuzzel/colors.ini   the colours for the launcher, which fuzzel.ini includes
 
 Hue values are never written down twice. What *is* written twice, deliberately,
 is the meaning: which colour plays which part. That is a decision, not a value,
@@ -41,6 +42,25 @@ KITTY = [
     ("url_color", "teal"),  # links are the other "this is the live thing"
     ("selection_background", "bg2"),  # a surface, so it adds no fourth meaning
     ("selection_foreground", "fg0"),
+]
+
+# fuzzel's colours, which are RGBA. The launcher floats over the wallpaper, so
+# its surface is slightly translucent (f2); everything else is opaque. Note what
+# carries a hue and what does not: the box itself is a surface, the text is
+# information, gold marks what you typed, and teal marks the row you are about to
+# run -- the same "the thing you are acting on right now" teal means elsewhere.
+FUZZEL = [
+    ("background", "bg0", "f2"),
+    ("text", "fg1", None),
+    ("input", "fg0", None),
+    ("prompt", "gold", None),
+    ("placeholder", "fg2", None),
+    ("match", "gold", None),
+    ("selection", "bg2", None),
+    ("selection-text", "teal", None),
+    ("selection-match", "bright_cyan", None),
+    ("counter", "fg2", None),
+    ("border", "fg2", "bf"),
 ]
 
 # ANSI order is fixed by the terminal, not by us: 0-7 then the 8 "bright" slots.
@@ -102,6 +122,15 @@ def zsh_theme(roles: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def fuzzel_conf(roles: dict[str, str], ansi: dict[str, str]) -> str:
+    lines = [GENERATED, ""]
+    lines.append("[colors]")
+    for option, name, alpha in FUZZEL:
+        # a name may be a role (gold) or an ANSI slot (bright_cyan)
+        lines.append(f"{option}={(roles.get(name) or ansi[name]).lstrip('#')}{alpha or 'ff'}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     roles, ansi = parse_palette(PALETTE)
@@ -112,6 +141,7 @@ def main(argv: list[str]) -> int:
     outputs = {
         ROOT / "config/kitty/theme.conf": kitty_conf(roles, ansi),
         ROOT / "config/zsh/theme.zsh": zsh_theme(roles),
+        ROOT / "config/fuzzel/colors.ini": fuzzel_conf(roles, ansi),
     }
 
     stale: list[Path] = []
@@ -120,6 +150,7 @@ def main(argv: list[str]) -> int:
             continue
         stale.append(path)
         if not check:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content)
 
     for path in stale:

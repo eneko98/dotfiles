@@ -104,6 +104,8 @@ hl.config({
 local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+-- The launcher. $HOME rather than ~, because the command goes through sh -c.
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- Escape hatch back to the TTY. This goes through uwsm on purpose: the session
 -- is no longer just a compositor, it is a set of systemd units, and killing the

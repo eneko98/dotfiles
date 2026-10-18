@@ -60,3 +60,10 @@ uwsm
 # the uwsm wiki recommends the unit, and a unit restarts on crash and stops with the
 # session. One-time setup: systemctl --user enable hyprpaper.service
 hyprpaper
+
+# 08 - desktop essentials: the application launcher
+# fuzzel, on SUPER + Space. Toolkit-free -- no GTK, no X11, unlike wofi (GTK) or
+# dmenu (X11, needs XWayland). Its colours are generated from the palette by
+# scripts/gen-theme.py, which is the fourth consumer and the reason that script
+# exists at all.
+fuzzel

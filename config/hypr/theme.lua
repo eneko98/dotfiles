@@ -4,8 +4,9 @@
 -- paints its borders and its background from it. Nothing else reads Lua, so
 -- scripts/gen-theme.py *generates* the copies the other programs need, rather
 -- than having them guess:
---     config/kitty/theme.conf   included by kitty.conf
---     config/zsh/theme.zsh      sourced by the prompt
+--     config/kitty/theme.conf    included by kitty.conf
+--     config/zsh/theme.zsh       sourced by the prompt
+--     config/fuzzel/colors.ini   included by fuzzel.ini
 -- Edit the values here, then run the script. The copies cannot drift, and
 -- `scripts/gen-theme.py --check` would say so if they did.
 --
