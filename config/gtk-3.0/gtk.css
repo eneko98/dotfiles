@@ -1,0 +1,239 @@
+@import url("palette.css");
+
+/*
+ * The GTK3 look. GTK3's Adwaita is compiled into libgtk-3 with literal colours,
+ * so redefining its named colours does nothing; what works is a user stylesheet,
+ * which GTK loads at a higher priority, and writing the rules out. The colours
+ * come from palette.css, generated from config/hypr/theme.lua.
+ *
+ * This is deliberately a *core* set: windows, headerbars, views, entries,
+ * buttons, menus, tabs, scrollbars, tooltips. Widgets not named here keep the
+ * dark Adwaita look (settings.ini sets prefer-dark), so nothing should be
+ * glaringly wrong -- just not yet ours. Add to it as things turn up.
+ */
+
+/* Windows and headerbars: the raised surface. */
+window,
+.background {
+	background-color: @bg1;
+	color: @fg0;
+}
+
+headerbar,
+.titlebar {
+	background-color: @bg1;
+	color: @fg0;
+	border-bottom: 1px solid @bg2;
+	box-shadow: none;
+}
+
+headerbar:backdrop,
+.titlebar:backdrop {
+	color: @fg1;
+}
+
+/* Views, lists and text views: the darker "paper". */
+.view,
+treeview.view,
+iconview,
+list,
+.list,
+flowbox,
+textview,
+textview text {
+	background-color: @bg0;
+	color: @fg0;
+}
+
+treeview.view:selected,
+list row:selected,
+flowboxchild:selected,
+.view:selected {
+	background-color: @gold;
+	color: @bg0;
+}
+
+treeview.view:disabled,
+list row:disabled {
+	color: @fg2;
+}
+
+/* Entries. */
+entry,
+spinbutton {
+	background-color: @bg0;
+	color: @fg0;
+	border: 1px solid @bg2;
+}
+
+entry:focus,
+spinbutton:focus {
+	border-color: @gold;
+}
+
+entry:disabled,
+spinbutton:disabled {
+	color: @fg2;
+}
+
+/* Buttons. shade() is GTK's own function, not CSS-standard. */
+button {
+	background-color: @bg2;
+	color: @fg0;
+	border: 1px solid @bg2;
+}
+
+button:hover {
+	background-color: shade(@bg2, 1.4);
+}
+
+button:active,
+button:checked {
+	background-color: @gold;
+	color: @bg0;
+}
+
+button:disabled {
+	background-color: @bg1;
+	color: @fg2;
+	border-color: @bg1;
+}
+
+button.suggested-action {
+	background-color: @gold;
+	color: @bg0;
+}
+
+button.destructive-action {
+	background-color: @red;
+	color: @bg0;
+}
+
+button.flat {
+	background-color: transparent;
+	border-color: transparent;
+}
+
+button.flat:hover {
+	background-color: @bg2;
+}
+
+/* Menus and popovers. */
+menu,
+.menu,
+popover,
+.context-menu {
+	background-color: @bg1;
+	color: @fg0;
+	border: 1px solid @bg2;
+}
+
+menuitem:hover,
+modelbutton:hover {
+	background-color: @gold;
+	color: @bg0;
+}
+
+/* Notebook tabs: the selected one is the accent, like the active border. */
+notebook > header {
+	background-color: @bg1;
+	border-color: @bg2;
+}
+
+notebook > header > tabs > tab {
+	color: @fg1;
+}
+
+notebook > header > tabs > tab:hover {
+	color: @fg0;
+}
+
+notebook > header > tabs > tab:checked {
+	color: @gold;
+}
+
+/* Scrollbars. */
+scrollbar {
+	background-color: @bg1;
+}
+
+scrollbar slider {
+	background-color: @bg2;
+}
+
+scrollbar slider:hover {
+	background-color: @fg2;
+}
+
+scrollbar slider:active {
+	background-color: @gold;
+}
+
+/* Links take the single neon, as they do everywhere else. */
+*:link {
+	color: @teal;
+}
+
+/* Separators and frames. */
+separator {
+	background-color: @bg2;
+}
+
+frame > border {
+	border-color: @bg2;
+}
+
+/* Progress: the accent, on a surface. */
+progressbar trough {
+	background-color: @bg2;
+}
+
+progressbar progress {
+	background-color: @gold;
+}
+
+/* Switches, scales and their sliders. */
+switch {
+	background-color: @bg2;
+}
+
+switch:checked {
+	background-color: @gold;
+}
+
+switch slider {
+	background-color: @fg0;
+}
+
+scale trough {
+	background-color: @bg2;
+}
+
+scale highlight {
+	background-color: @gold;
+}
+
+scale slider {
+	background-color: @fg0;
+}
+
+/* Checks and radios. */
+check,
+radio {
+	background-color: @bg0;
+	border: 1px solid @fg2;
+}
+
+check:checked,
+radio:checked {
+	background-color: @gold;
+	color: @bg0;
+}
+
+/* Tooltips. */
+tooltip,
+tooltip.background {
+	background-color: @bg0;
+	color: @fg0;
+	border: 1px solid @fg2;
+}
