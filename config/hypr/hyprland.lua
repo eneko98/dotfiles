@@ -44,6 +44,9 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 -- matches the theme can replace it later.
 hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("XCURSOR_SIZE", "24")
+-- Qt apps read the palette through qt6ct only with this platform theme set.
+-- config/environment.d/qt.conf does the same for the systemd user session.
+hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
 
 ------------------
 ---- KEYBOARD -----
