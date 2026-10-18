@@ -109,6 +109,20 @@ hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
 
+-- Workspaces. Workspace 1..10, but the tenth key is "0", hence i % 10.
+-- Unbound keys would otherwise be free keys, so all twenty get a bind: switch
+-- with SUPER + <n>, send the focused window with SUPER + SHIFT + <n>.
+for i = 1, 10 do
+    local key = i % 10
+    hl.bind(mainMod .. " + " .. key,         hl.dsp.focus({ workspace = i }))
+    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+end
+
+-- Cycle through the workspaces that actually exist, rather than the fixed
+-- numbers: e+1 is "the next existing one". Same binding Hyprland ships.
+hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
+hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains
 -- what "the focused window" actually captures. Hyprland runs these through a

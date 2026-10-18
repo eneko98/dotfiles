@@ -69,6 +69,9 @@ each component.
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (fuzzel) |
 | `SUPER + E` | file manager (yazi) |
+| `SUPER + 1..0` | switch to workspace 1-10 |
+| `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
+| `SUPER + scroll` | previous / next existing workspace |
 | `Print` | screenshot the whole screen |
 | `SUPER + Shift + A` | screenshot an area you drag over |
 | `SUPER + Shift + W` | screenshot the focused window |
