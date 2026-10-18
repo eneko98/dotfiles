@@ -10,6 +10,7 @@ Lua, so this script writes the copies the other two consumers need:
     config/fuzzel/colors.ini      the colours for the launcher, which fuzzel.ini includes
     config/yazi/theme.toml        the colours for the file manager
     config/hypr/hyprlock-theme.conf  hyprlang variables for the lock screen
+    config/mako/theme             the colours for notifications, included by config
 
 Hue values are never written down twice. What *is* written twice, deliberately,
 is the meaning: which colour plays which part. That is a decision, not a value,
@@ -218,6 +219,22 @@ def hyprlock_theme(roles: dict[str, str], _ansi: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def mako_theme(roles: dict[str, str], _ansi: dict[str, str]) -> str:
+    lines = [GENERATED, ""]
+    lines.append("# mako's colours. config/mako/config includes this file.")
+    lines.append("")
+    lines.append(f"background-color={roles['bg1']}f2")  # a surface, 95% opaque
+    lines.append(f"text-color={roles['fg0']}ff")
+    lines.append(f"border-color={roles['gold']}ff")
+    lines.append(f"progress-color=over {roles['teal']}ff")
+    lines.append("")
+    lines.append("# Red is right in exactly one place: something is critical. Same alarm")
+    lines.append("# colour the prompt uses when a command fails.")
+    lines.append("[urgency=critical]")
+    lines.append(f"border-color={roles['red']}ff")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     roles, ansi = parse_palette(PALETTE)
@@ -231,6 +248,7 @@ def main(argv: list[str]) -> int:
         ROOT / "config/fuzzel/colors.ini": fuzzel_conf(roles, ansi),
         ROOT / "config/yazi/theme.toml": yazi_conf(roles, ansi),
         ROOT / "config/hypr/hyprlock-theme.conf": hyprlock_theme(roles, ansi),
+        ROOT / "config/mako/theme": mako_theme(roles, ansi),
     }
 
     stale: list[Path] = []

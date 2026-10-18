@@ -1,0 +1,31 @@
+# mako, the notification daemon.
+#
+# The colours are not written here: `include` pulls in the generated palette
+# file, which is one more copy of theme.lua. mako wants an absolute path or one
+# starting with ~/ (kitty's include is relative to the including file), so this
+# names the installed location and stays right wherever the repo is cloned.
+include=~/.config/mako/theme
+
+# Top-right, inset so a popup clears Hyprland's 20px outer gaps.
+anchor=top-right
+outer-margin=16
+margin=8
+padding=10
+width=340
+height=180
+border-size=2
+border-radius=6
+
+# Text and icons. The format is left at mako's default, "<b>%s</b>\n%b": the
+# first line is the summary in bold, then the body.
+font=JetBrainsMono Nerd Font 10
+max-icon-size=48
+icon-border-radius=4
+text-alignment=left
+
+# Behaviour: ordinary notifications expire after eight seconds, the last ten
+# stay in history, same-application notifications group, and at most five show.
+default-timeout=8000
+max-visible=5
+max-history=10
+group-by=app-name

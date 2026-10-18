@@ -1,0 +1,14 @@
+[Unit]
+Description=Notification daemon (mako)
+Documentation=man:mako(1)
+PartOf=graphical-session.target
+After=graphical-session.target
+ConditionEnvironment=WAYLAND_DISPLAY
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/mako
+Restart=on-failure
+
+[Install]
+WantedBy=graphical-session.target

@@ -165,6 +165,14 @@ after a period of inactivity and locks it again before the machine sleeps;
 systemctl --user enable --now hypridle.service
 ```
 
+**Notifications.** `mako` is the notification daemon. It ships no systemd unit,
+so this repo carries one under `config/systemd/user/`, and it is enabled the
+same way:
+
+```bash
+systemctl --user enable --now mako.service
+```
+
 **paru is the AUR helper, built once by hand.** It cannot come from pacman, so
 it is the one tool this repo cannot list in `packages.txt`:
 
