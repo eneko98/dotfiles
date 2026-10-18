@@ -103,3 +103,19 @@ xdg-utils
 # the terminal's 16 colours instead of shipping a palette of its own.
 lsd
 bat
+
+# ---------------------------------------------------------------------------
+# Everything above is in the repos and can be installed with the command at the
+# top of this file. The one exception is the AUR helper, which pacman cannot
+# install, so it is NOT listed here:
+#
+#   paru    built once from source with git + makepkg -si:
+#             git clone https://aur.archlinux.org/paru.git
+#             cd paru && makepkg -si
+#
+# paru-bin is deliberately not used: its prebuilt binary links against
+# libalpm.so.15 while this system ships .16 (pacman 7.1), so it will not start.
+# Building from source also means cargo/rust is installed as a make dependency
+# and then removed; config/paru/paru.conf sets RemoveMake so future builds clean
+# their own toolchains up.
+# ---------------------------------------------------------------------------

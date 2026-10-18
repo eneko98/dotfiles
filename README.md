@@ -152,4 +152,18 @@ hyprctl hyprpaper listactive
 The images themselves live in `images/wallpapers/`, each one with its source and
 licence recorded in `CREDITS.md` beside it.
 
+**paru is the AUR helper, built once by hand.** It cannot come from pacman, so
+it is the one tool this repo cannot list in `packages.txt`:
+
+```bash
+git clone https://aur.archlinux.org/paru.git
+cd paru && makepkg -si
+```
+
+`paru-bin` is deliberately not used: its prebuilt binary links against
+`libalpm.so.15` while this system ships `.16` (pacman 7.1), so it exits with
+`cannot open shared object file`. `config/paru/paru.conf` includes
+`/etc/paru.conf` first — paru reads one file, it does not merge them — and then
+enables `RemoveMake`, so a build's toolchain does not stay installed.
+
 Work in progress.
