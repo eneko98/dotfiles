@@ -47,6 +47,13 @@ KITTY = [
     ("url_color", "teal"),  # links are the other "this is the live thing"
     ("selection_background", "bg2"),  # a surface, so it adds no fourth meaning
     ("selection_foreground", "fg0"),
+    # The tab bar, which only shows with more than one tab: gold marks the
+    # active one, same meaning as the active window border.
+    ("tab_bar_background", "bg1"),
+    ("active_tab_background", "gold"),
+    ("active_tab_foreground", "bg0"),
+    ("inactive_tab_background", "bg1"),
+    ("inactive_tab_foreground", "fg1"),
 ]
 
 # fuzzel's colours, which are RGBA. The launcher floats over the wallpaper, so
