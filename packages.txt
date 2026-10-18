@@ -76,3 +76,22 @@ fuzzel
 grim
 slurp
 wl-clipboard
+
+# 09 - file manager
+# yazi is the file manager, with image, video, PDF and archive previews inside
+# the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,
+# fast grep, fuzzy selection and learned cd. The yazi theme is generated from the
+# palette, so scripts/gen-theme.py gains a fifth consumer. xdg-utils is needed
+# for the default "open with" behaviour.
+yazi
+fd
+ripgrep
+fzf
+zoxide
+jq
+ffmpegthumbnailer
+poppler
+imagemagick
+7zip
+chafa
+xdg-utils

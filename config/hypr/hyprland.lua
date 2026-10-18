@@ -106,6 +106,8 @@ local mainMod = "SUPER"
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 -- The launcher. $HOME rather than ~, because the command goes through sh -c.
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
+-- The file manager, opened directly in a terminal. Closing yazi closes kitty.
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
 
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains

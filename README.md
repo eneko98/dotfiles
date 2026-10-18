@@ -68,6 +68,7 @@ each component.
 | --- | --- |
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (fuzzel) |
+| `SUPER + E` | file manager (yazi) |
 | `Print` | screenshot the whole screen |
 | `SUPER + Shift + A` | screenshot an area you drag over |
 | `SUPER + Shift + W` | screenshot the focused window |

@@ -19,6 +19,10 @@ export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 # directory.
 export ZSH_COMPDUMP="$ZSH_CACHE_DIR/zcompdump-${HOST}"
 
+# The only editor installed on this machine.
+export EDITOR="nvim"
+export VISUAL="nvim"
+
 # History is state. oh-my-zsh only falls back to ~/.zsh_history while this is
 # unset, so it has to be set before oh-my-zsh is sourced.
 export HISTFILE="${XDG_STATE_HOME:-$HOME/.local/state}/zsh/history"
@@ -51,6 +55,27 @@ source "$ZSH/oh-my-zsh.sh"
 # widgets, which prompt.zsh does not touch -- it sets PROMPT/RPROMPT, reads the
 # palette from the generated theme.zsh, and adds one precmd hook.
 source "$ZDOTDIR/prompt.zsh"
+
+# --- directory jumping and fuzzy finding -------------------------------------
+# zoxide learns where you cd, so `z foo` jumps to the most likely directory.
+eval "$(zoxide init zsh)"
+
+# fzf key bindings and completion. These install ZLE widgets, so they must be
+# sourced before zsh-syntax-highlighting.
+source /usr/share/fzf/key-bindings.zsh
+source /usr/share/fzf/completion.zsh
+
+# --- yazi --------------------------------------------------------------------
+# Wrapper that cd's into the directory yazi was last in when you quit.
+function y() {
+    local tmp
+    tmp="$(mktemp -t yazi-cwd.XXXXXX)" || return
+    yazi "$@" --cwd-file="$tmp"
+    if cwd="$(command cat -- "$tmp")" && [[ -n "$cwd" ]] && [[ "$cwd" != "$PWD" ]]; then
+        builtin cd -- "$cwd" || return
+    fi
+    rm -f -- "$tmp"
+}
 
 # --- plugins installed as Arch packages --------------------------------------
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh

@@ -8,6 +8,7 @@ Lua, so this script writes the copies the other two consumers need:
     config/kitty/theme.conf    the colours for kitty; kitty.conf includes it
     config/zsh/theme.zsh       the same values as shell variables, for the prompt
     config/fuzzel/colors.ini   the colours for the launcher, which fuzzel.ini includes
+    config/yazi/theme.toml     the colours for the file manager
 
 Hue values are never written down twice. What *is* written twice, deliberately,
 is the meaning: which colour plays which part. That is a decision, not a value,
@@ -131,6 +132,81 @@ def fuzzel_conf(roles: dict[str, str], ansi: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def yazi_conf(roles: dict[str, str], _ansi: dict[str, str]) -> str:
+    r = roles
+    return (
+        GENERATED
+        + """
+# This overrides the chrome in yazi's default dark theme. Filetype and icon
+# colours are left as named ANSI colours, which resolve to our own ANSI 16.
+#
+# Note: [mgr] and [tabs] overrides are ignored by yazi 26.9.1 in our tests
+# (the CWD and tab bar stay on the default ANSI colours), so we leave them
+# alone. The defaults already sit on our palette: cyan for CWD, blue for the
+# active tab, so the result is still coherent.
+
+[mode]
+normal_main = { fg = "BG0", bg = "GOLD", bold = true }
+normal_alt = { fg = "GOLD", bg = "BG1" }
+select_main = { fg = "BG0", bg = "RED", bold = true }
+select_alt = { fg = "RED", bg = "BG1" }
+unset_main = { fg = "BG0", bg = "RED", bold = true }
+unset_alt = { fg = "RED", bg = "BG1" }
+
+[indicator]
+parent = { reversed = true }
+current = { reversed = true }
+preview = { underline = true }
+
+[status]
+overall = { fg = "FG0", bg = "BG1" }
+perm_sep = { fg = "FG2" }
+
+[which]
+border = { fg = "FG2" }
+cand = { fg = "GOLD" }
+rest = { fg = "FG2" }
+desc = { fg = "TEAL" }
+
+[confirm]
+border = { fg = "FG2" }
+title = { fg = "GOLD" }
+
+[pick]
+border = { fg = "FG2" }
+active = { fg = "TEAL", bold = true }
+
+[input]
+border = { fg = "FG2" }
+title = { fg = "GOLD" }
+
+[cmp]
+border = { fg = "FG2" }
+
+[tasks]
+border = { fg = "FG2" }
+hovered = { fg = "TEAL", bold = true }
+
+[help]
+border = { fg = "FG2" }
+chord = { fg = "TEAL" }
+
+[notify]
+title_info = { fg = "green" }
+title_warn = { fg = "yellow" }
+title_error = { fg = "red" }
+"""
+        .replace("TEAL", r["teal"])
+        .replace("FG2", r["fg2"])
+        .replace("BG0", r["bg0"])
+        .replace("GOLD", r["gold"])
+        .replace("BG1", r["bg1"])
+        .replace("RED", r["red"])
+        .replace("FG0", r["fg0"])
+        + "\n"
+    )
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     roles, ansi = parse_palette(PALETTE)
@@ -142,6 +218,7 @@ def main(argv: list[str]) -> int:
         ROOT / "config/kitty/theme.conf": kitty_conf(roles, ansi),
         ROOT / "config/zsh/theme.zsh": zsh_theme(roles),
         ROOT / "config/fuzzel/colors.ini": fuzzel_conf(roles, ansi),
+        ROOT / "config/yazi/theme.toml": yazi_conf(roles, ansi),
     }
 
     stale: list[Path] = []
