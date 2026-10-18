@@ -67,3 +67,12 @@ hyprpaper
 # scripts/gen-theme.py, which is the fourth consumer and the reason that script
 # exists at all.
 fuzzel
+
+# 08 - desktop essentials: screenshots
+# grim reads pixels from the compositor and writes a PNG, slurp is the "drag a
+# rectangle" part, wl-clipboard puts the result on the clipboard so a shot can be
+# pasted straight into a chat. All three in extra: no portal, no daemon, 185 KiB
+# together. Driven by config/hypr/scripts/screenshot.
+grim
+slurp
+wl-clipboard

@@ -106,6 +106,16 @@ local mainMod = "SUPER"
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 -- The launcher. $HOME rather than ~, because the command goes through sh -c.
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
+
+-- Screenshots: the whole screen, an area you drag over, or the focused window.
+-- The helper script writes the file, copies it to the clipboard, and explains
+-- what "the focused window" actually captures. Hyprland runs these through a
+-- shell, so $HOME is expanded -- verified, not assumed.
+local screenshot = "$HOME/.config/hypr/scripts/screenshot"
+
+hl.bind("Print", hl.dsp.exec_cmd(screenshot))
+hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd(screenshot .. " area"))
+hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(screenshot .. " window"))
 hl.bind(mainMod .. " + C", hl.dsp.window.close())
 -- Escape hatch back to the TTY. This goes through uwsm on purpose: the session
 -- is no longer just a compositor, it is a set of systemd units, and killing the

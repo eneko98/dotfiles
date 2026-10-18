@@ -1,0 +1,63 @@
+#!/bin/sh
+# Screenshots, in the three shapes one actually wants. Bound in hyprland.lua:
+#
+#   Print               the whole screen
+#   SUPER + Shift + A   an area you drag over
+#   SUPER + Shift + W   the focused window
+#
+# Every one is saved under ~/Pictures/Screenshots and also put on the clipboard,
+# so a shot can go straight into a chat without touching the filesystem.
+#
+# Why grim and not something else: grim is a 46 KiB Wayland client that reads
+# pixels from the compositor and writes a PNG, and slurp (38 KiB) is the
+# "drag a rectangle" part. Both are in extra: no portal, no daemon.
+#
+# The window mode is a *crop of the screen*, not a capture of the window itself.
+# grim copies from the compositor's output, so anything overlapping the focused
+# window appears in the shot as well. That is what every grim-based setup does --
+# capturing one surface in isolation needs the screenshot portal from
+# xdg-desktop-portal-hyprland, which is still on the roadmap.
+#
+# There is no notification when a shot is taken, because there is no notification
+# daemon yet. Adding one to that list would be the natural first thing to do here.
+
+set -eu
+
+dir="$HOME/Pictures/Screenshots"
+file="$dir/$(date +%Y-%m-%d_%H-%M-%S).png"
+mkdir -p "$dir"
+
+case "${1:-screen}" in
+	area)
+		# Cancelling slurp with Escape means "never mind", not "failed", so this
+		# exits quietly rather than showing an error.
+		geometry="$(slurp)" || exit 0
+		grim -g "$geometry" "$file"
+		;;
+	window)
+		# hyprctl prints "at: 21,21" and "size: 1878,1038" on their own lines.
+		# grim wants "21,21 1878x1038" -- note the comma in the position but an
+		# "x" between width and height, which is where this first went wrong.
+		# One awk pass reads both fields and rewrites the separator. There is no
+		# jq on this machine to read hyprctl's -j output instead.
+		geometry="$(hyprctl activewindow | awk -F': ' '
+			/^[[:space:]]*at: /   { at = $2 }
+			/^[[:space:]]*size: / { size = $2 }
+			END { if (at && size) { sub(/,/, "x", size); print at " " size } }')"
+		if [ -z "$geometry" ]; then
+			printf 'screenshot: no focused window\n' >&2
+			exit 1
+		fi
+		grim -g "$geometry" "$file"
+		;;
+	screen) grim "$file" ;;
+	*)
+		printf 'usage: %s [screen|area|window]\n' "$0" >&2
+		exit 2
+		;;
+esac
+
+# The mime type matters: without it the clipboard holds a PNG that pastes as a
+# filename in some applications.
+wl-copy --type image/png < "$file"
+printf '%s\n' "$file"

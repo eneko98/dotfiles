@@ -68,8 +68,14 @@ each component.
 | --- | --- |
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (fuzzel) |
+| `Print` | screenshot the whole screen |
+| `SUPER + Shift + A` | screenshot an area you drag over |
+| `SUPER + Shift + W` | screenshot the focused window |
 | `SUPER + C` | close the focused window |
 | `SUPER + M` | end the session and return to the TTY |
+
+Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard, so
+they can be pasted straight into a chat.
 
 ## Setup that lives outside the repo
 
