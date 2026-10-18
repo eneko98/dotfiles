@@ -188,6 +188,17 @@ The portals (`xdg-desktop-portal` and its backends) need no enabling: D-Bus
 starts them on demand, and which backend serves an interface is decided by
 `UseIn` in `/usr/share/xdg-desktop-portal/portals/`.
 
+**The home directories are created once**, so `~/Documents`, `~/Downloads` and
+the rest exist and every program agrees on where they are:
+
+```bash
+xdg-user-dirs-update
+```
+
+The `~/.config/user-dirs.dirs` it writes is deliberately **not** in this repo:
+the tool rewrites that file in place, and through a symlink it would write into
+the repository itself.
+
 **paru is the AUR helper, built once by hand.** It cannot come from pacman, so
 it is the one tool this repo cannot list in `packages.txt`:
 

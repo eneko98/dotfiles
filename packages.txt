@@ -133,6 +133,13 @@ polkit-gnome
 # mode, on SUPER + V.
 cliphist
 
+# 08 - desktop essentials: the home directories
+# So ~/Documents, ~/Downloads and friends exist and every program agrees on
+# where they are. One command, run once (see the README); the file it generates,
+# ~/.config/user-dirs.dirs, is not tracked on purpose -- xdg-user-dirs rewrites
+# it in place, which through a symlink would write into the repo.
+xdg-user-dirs
+
 # 09 - file manager
 # yazi is the file manager, with image, video, PDF and archive previews inside
 # the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,
