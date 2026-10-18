@@ -108,6 +108,10 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
+-- Lock the session. hyprlock itself, not loginctl: hypridle already catches the
+-- DBus lock event for the idle and sleep paths, and this way the key still works
+-- if that daemon is ever stopped.
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 
 -- Workspaces. Workspace 1..10, but the tenth key is "0", hence i % 10.
 -- Unbound keys would otherwise be free keys, so all twenty get a bind: switch

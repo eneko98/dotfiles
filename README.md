@@ -69,6 +69,7 @@ each component.
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (fuzzel) |
 | `SUPER + E` | file manager (yazi) |
+| `SUPER + L` | lock the screen (hyprlock) |
 | `SUPER + 1..0` | switch to workspace 1-10 |
 | `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
 | `SUPER + scroll` | previous / next existing workspace |
@@ -151,6 +152,14 @@ hyprctl hyprpaper listactive
 
 The images themselves live in `images/wallpapers/`, each one with its source and
 licence recorded in `CREDITS.md` beside it.
+
+**The idle daemon is a systemd user service too.** `hypridle` locks the session
+after a period of inactivity and locks it again before the machine sleeps;
+`hyprlock` is what it launches. Same one-time enable as hyprpaper:
+
+```bash
+systemctl --user enable --now hypridle.service
+```
 
 **paru is the AUR helper, built once by hand.** It cannot come from pacman, so
 it is the one tool this repo cannot list in `packages.txt`:

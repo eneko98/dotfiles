@@ -5,10 +5,11 @@ theme.lua is the single source of truth for the colours, because Hyprland reads
 Lua directly and this repository has one palette, not four. Nothing else reads
 Lua, so this script writes the copies the other two consumers need:
 
-    config/kitty/theme.conf    the colours for kitty; kitty.conf includes it
-    config/zsh/theme.zsh       the same values as shell variables, for the prompt
-    config/fuzzel/colors.ini   the colours for the launcher, which fuzzel.ini includes
-    config/yazi/theme.toml     the colours for the file manager
+    config/kitty/theme.conf       the colours for kitty; kitty.conf includes it
+    config/zsh/theme.zsh          the same values as shell variables, for the prompt
+    config/fuzzel/colors.ini      the colours for the launcher, which fuzzel.ini includes
+    config/yazi/theme.toml        the colours for the file manager
+    config/hypr/hyprlock-theme.conf  hyprlang variables for the lock screen
 
 Hue values are never written down twice. What *is* written twice, deliberately,
 is the meaning: which colour plays which part. That is a decision, not a value,
@@ -207,6 +208,16 @@ title_error = { fg = "red" }
     )
 
 
+def hyprlock_theme(roles: dict[str, str], _ansi: dict[str, str]) -> str:
+    lines = [GENERATED, ""]
+    lines.append("# hyprlock is a hyprlang program, not Lua, so the palette has to reach it")
+    lines.append("# as hyprlang variables. config/hypr/hyprlock.conf sources this file.")
+    lines.append("")
+    for name in ("bg0", "bg1", "fg0", "fg1", "fg2", "gold", "teal", "red"):
+        lines.append(f"${name} = rgba({roles[name].lstrip('#')}ff)")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
     roles, ansi = parse_palette(PALETTE)
@@ -219,6 +230,7 @@ def main(argv: list[str]) -> int:
         ROOT / "config/zsh/theme.zsh": zsh_theme(roles),
         ROOT / "config/fuzzel/colors.ini": fuzzel_conf(roles, ansi),
         ROOT / "config/yazi/theme.toml": yazi_conf(roles, ansi),
+        ROOT / "config/hypr/hyprlock-theme.conf": hyprlock_theme(roles, ansi),
     }
 
     stale: list[Path] = []
