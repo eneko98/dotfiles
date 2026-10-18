@@ -166,6 +166,15 @@ hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_S
 hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl -q set 5%+"))
 hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -q set 5%-"))
 
+-- Media keys, through playerctl, which talks to whatever MPRIS player is
+-- running (mpv, Firefox, Spotify...). Play and Pause are separate keysyms on
+-- some keyboards, so both are bound. With no player these just exit non-zero.
+hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"))
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"))
+hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"))
+hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"))
+hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"))
+
 -- Wi-Fi. Not on the laptop's own key: that one is already handled by the
 -- kernel's built-in rfkill-input handler, so binding it here would toggle twice.
 -- See config/hypr/scripts/wifi-toggle.

@@ -88,13 +88,16 @@ wl-clipboard
 hyprlock
 hypridle
 
-# 08 - desktop essentials: volume and brightness keys
+# 08 - desktop essentials: volume, brightness and media keys
 # wpctl is already here with wireplumber, so the volume keys need no new package;
 # pavucontrol is the GUI mixer (and a way to pick the default sink/source).
 # brightnessctl writes the backlight through the permissions udev/logind already
-# grant the active user, so no sudo or extra group is needed.
+# grant the active user, so no sudo or extra group is needed. playerctl drives
+# whichever MPRIS player is running, so the media keys work with mpv, Firefox
+# and the like without knowing which one is playing.
 brightnessctl
 pavucontrol
+playerctl
 
 # 08 - desktop essentials: notifications
 # mako is a Wayland-native notification daemon with no toolkit: its dependencies
