@@ -175,6 +175,9 @@ hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wifi-togg
 -- copies is config/systemd/user/cliphist.service.
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/clipboard"))
 
+-- Session menu: lock, log out, suspend, reboot or power off from a list.
+hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/session-menu"))
+
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains
 -- what "the focused window" actually captures. Hyprland runs these through a

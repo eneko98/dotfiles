@@ -1,0 +1,28 @@
+#!/bin/sh
+# One key for lock, log out, sleep, reboot and power off.
+#
+# fuzzel in dmenu mode: the label is what you read, the case below is what runs.
+# `uwsm stop` is the ordered session shutdown, the same thing SUPER + M does --
+# not a kill of the compositor, which would skip the shutdown of its clients.
+# On this machine a logout lands back in a fresh session, because tty1
+# autologins again (see the README); that makes it a "restart the desktop" entry.
+#
+# Esc gives an empty choice and does nothing.
+
+choice="$(
+    printf '%s\n' \
+        'Lock' \
+        'Log out' \
+        'Suspend' \
+        'Reboot' \
+        'Power off' |
+        fuzzel --dmenu --prompt 'session: '
+)" || exit 0
+
+case "$choice" in
+	Lock)        hyprlock ;;
+	'Log out')   uwsm stop ;;
+	Suspend)     systemctl suspend ;;
+	Reboot)      systemctl reboot ;;
+	'Power off') systemctl poweroff ;;
+esac
