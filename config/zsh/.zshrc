@@ -56,6 +56,9 @@ source "$ZSH/oh-my-zsh.sh"
 # palette from the generated theme.zsh, and adds one precmd hook.
 source "$ZDOTDIR/prompt.zsh"
 
+# --- aliases ------------------------------------------------------------------
+source "$ZDOTDIR/aliases.zsh"
+
 # --- directory jumping and fuzzy finding -------------------------------------
 # zoxide learns where you cd, so `z foo` jumps to the most likely directory.
 eval "$(zoxide init zsh)"

@@ -95,3 +95,11 @@ imagemagick
 7zip
 chafa
 xdg-utils
+
+# terminal niceties
+# lsd replaces ls with colours and Nerd Font icons; bat replaces cat with
+# syntax highlighting. Both are aliased in config/zsh/aliases.zsh, so `ls` and
+# `cat` keep working but look better. bat is themed with `ansi`, so it borrows
+# the terminal's 16 colours instead of shipping a palette of its own.
+lsd
+bat
