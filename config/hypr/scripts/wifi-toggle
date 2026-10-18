@@ -1,0 +1,17 @@
+#!/bin/sh
+# Toggle Wi-Fi through NetworkManager.
+#
+# Deliberately NOT bound to the laptop's own rfkill key. That key sends
+# KEY_RFKILL, and this kernel has the rfkill-input handler built in
+# (CONFIG_RFKILL_INPUT=y), so the kernel already toggles the radio by itself. A
+# Hyprland bind on the same key would toggle it a second time and cancel out.
+#
+# This exists so Wi-Fi is one key away on any keyboard, and is bound in
+# hyprland.lua to SUPER + N.
+
+state="$(nmcli radio wifi)"
+if [ "$state" = "enabled" ]; then
+	nmcli radio wifi off
+else
+	nmcli radio wifi on
+fi

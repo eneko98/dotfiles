@@ -127,6 +127,23 @@ end
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
 
+-- Hardware keys. Brightness and volume reach the compositor as XF86 keysyms and
+-- nothing handles them by default, so they are bound here. Volume is
+-- wireplumber's wpctl; -l 1.0 stops the key from pushing past 100%.
+hl.bind("XF86AudioRaiseVolume", hl.dsp.exec_cmd("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"))
+hl.bind("XF86AudioLowerVolume", hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"))
+hl.bind("XF86AudioMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"))
+hl.bind("XF86AudioMicMute",     hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"))
+
+-- Brightness is brightnessctl, which can write the backlight as this user.
+hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("brightnessctl -q set 5%+"))
+hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("brightnessctl -q set 5%-"))
+
+-- Wi-Fi. Not on the laptop's own key: that one is already handled by the
+-- kernel's built-in rfkill-input handler, so binding it here would toggle twice.
+-- See config/hypr/scripts/wifi-toggle.
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wifi-toggle"))
+
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains
 -- what "the focused window" actually captures. Hyprland runs these through a

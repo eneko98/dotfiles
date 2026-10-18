@@ -88,6 +88,14 @@ wl-clipboard
 hyprlock
 hypridle
 
+# 08 - desktop essentials: volume and brightness keys
+# wpctl is already here with wireplumber, so the volume keys need no new package;
+# pavucontrol is the GUI mixer (and a way to pick the default sink/source).
+# brightnessctl writes the backlight through the permissions udev/logind already
+# grant the active user, so no sudo or extra group is needed.
+brightnessctl
+pavucontrol
+
 # 09 - file manager
 # yazi is the file manager, with image, video, PDF and archive previews inside
 # the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,

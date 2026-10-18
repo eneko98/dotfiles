@@ -61,8 +61,9 @@ because this repository is public.
 
 ## Keys
 
-Everything is `SUPER` plus one key. This is the whole set so far — it grows with
-each component.
+Most things are `SUPER` plus one key; the laptop's own volume, brightness and
+Wi-Fi keys work too. This is the whole set so far — it grows with each
+component.
 
 | Key | What it does |
 | --- | --- |
@@ -70,6 +71,9 @@ each component.
 | `SUPER + Space` | application launcher (fuzzel) |
 | `SUPER + E` | file manager (yazi) |
 | `SUPER + L` | lock the screen (hyprlock) |
+| volume keys | up / down in 5% steps, mute |
+| brightness keys | up / down in 5% steps |
+| `SUPER + N` | toggle Wi-Fi (the laptop's own Wi-Fi key also works) |
 | `SUPER + 1..0` | switch to workspace 1-10 |
 | `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
 | `SUPER + scroll` | previous / next existing workspace |
