@@ -52,6 +52,19 @@ hl.config({
     input = {
         -- The machine's vconsole keymap is "es" too.
         kb_layout = "es",
+
+        -- The touchpad. These are written out even where they match the
+        -- default, so the intent is visible and a future default cannot change
+        -- it silently. natural_scroll is a taste call: false is traditional
+        -- (sliding down scrolls down); flip it to true for content to follow
+        -- your fingers. scroll_method no longer exists in this version -- the
+        -- two-finger gesture is not configurable any more.
+        touchpad = {
+            natural_scroll = false,
+            tap_to_click = true,
+            disable_while_typing = true,
+            tap_and_drag = true,
+        },
     },
     misc = {
         -- No built-in wallpaper and no Hyprland logo behind the windows.
@@ -96,6 +109,20 @@ hl.config({
     dwindle = {
         force_split = 2,
     },
+})
+
+------------------
+---- GESTURES ----
+------------------
+-- Three-finger horizontal swipe switches workspaces, the gesture Hyprland
+-- ships. `action = "workspace"` is the built-in swipe; the field also takes a
+-- Lua function, so a custom gesture is a function here rather than a new
+-- option somewhere. (The old gestures:workspace_swipe booleans are gone in
+-- 0.56 -- the gesture is declared, not enabled.)
+hl.gesture({
+    fingers = 3,
+    direction = "horizontal",
+    action = "workspace",
 })
 
 ------------------
