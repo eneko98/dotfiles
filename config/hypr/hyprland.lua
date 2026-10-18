@@ -116,6 +116,20 @@ hl.config({
 })
 
 ------------------
+----- GAPS -------
+------------------
+-- gaps_out is the space between a window and the screen edge; gaps_in is the
+-- space *between* windows. 20 (the default gaps_out) wastes a lot of panel and
+-- pushes the shadow off-screen, so it is tightened to 8. gaps_in stays at the
+-- default 5 -- the two are independent, so this only touches the outer margin.
+hl.config({
+    general = {
+        gaps_out = 8,
+        gaps_in = 5,
+    },
+})
+
+------------------
 ---- DECORATION ---
 ------------------
 -- Depth: rounded corners, a shadow, and blur worth having. Rounding defaults to
