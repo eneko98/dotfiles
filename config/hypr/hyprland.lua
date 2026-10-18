@@ -161,6 +161,35 @@ hl.layer_rule({ match = { namespace = "launcher" }, blur = true })
 hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
 
 ------------------
+--- ANIMATIONS ---
+------------------
+-- Subtle motion: beziers, no springs, so nothing bounces. `open` is an ease-out
+-- (starts, then settles) for anything appearing, `close` a soft ease-in-out that
+-- never lingers, and `glide` is nearly linear for workspaces. Layers use fade,
+-- not pop, so the launcher and notifications arrive quietly.
+-- Curves are declared with hl.curve; there is no hl.bezier.
+hl.curve("open",  { type = "bezier", points = { {0.22, 1}, {0.36, 1} } })
+hl.curve("close", { type = "bezier", points = { {0.4, 0},  {0.2, 1}  } })
+hl.curve("glide", { type = "bezier", points = { {0.5, 0.5}, {0.75, 1} } })
+
+hl.animation({ leaf = "windows",       enabled = true, speed = 3.0, bezier = "open" })
+hl.animation({ leaf = "windowsIn",     enabled = true, speed = 2.8, bezier = "open" })
+hl.animation({ leaf = "windowsOut",    enabled = true, speed = 2.2, bezier = "close" })
+hl.animation({ leaf = "border",        enabled = true, speed = 3.0, bezier = "open" })
+hl.animation({ leaf = "fade",          enabled = true, speed = 2.5, bezier = "glide" })
+hl.animation({ leaf = "fadeIn",        enabled = true, speed = 2.5, bezier = "open" })
+hl.animation({ leaf = "fadeOut",       enabled = true, speed = 2.0, bezier = "close" })
+hl.animation({ leaf = "layers",        enabled = true, speed = 3.0, bezier = "open",  style = "fade" })
+hl.animation({ leaf = "layersIn",      enabled = true, speed = 3.0, bezier = "open",  style = "fade" })
+hl.animation({ leaf = "layersOut",     enabled = true, speed = 2.0, bezier = "close", style = "fade" })
+hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 2.5, bezier = "open" })
+hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 2.0, bezier = "close" })
+hl.animation({ leaf = "workspaces",    enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
+hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
+hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
+hl.animation({ leaf = "zoomFactor",    enabled = true, speed = 4.0, bezier = "open" })
+
+------------------
 ---- GESTURES ----
 ------------------
 -- Three-finger horizontal swipe switches workspaces, the gesture Hyprland
