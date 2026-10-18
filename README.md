@@ -173,6 +173,18 @@ same way:
 systemctl --user enable --now mako.service
 ```
 
+**Privilege prompts need an agent.** `polkitd` runs as a system service, but
+nothing can actually ask you for a password without a per-session agent.
+`polkit-gnome` ships no unit either, so this repo carries one:
+
+```bash
+systemctl --user enable --now polkit-gnome.service
+```
+
+The portals (`xdg-desktop-portal` and its backends) need no enabling: D-Bus
+starts them on demand, and which backend serves an interface is decided by
+`UseIn` in `/usr/share/xdg-desktop-portal/portals/`.
+
 **paru is the AUR helper, built once by hand.** It cannot come from pacman, so
 it is the one tool this repo cannot list in `packages.txt`:
 

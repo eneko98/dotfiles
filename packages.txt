@@ -107,6 +107,22 @@ pavucontrol
 mako
 libnotify
 
+# 08 - desktop essentials: portals and the polkit agent
+# The portal is how sandboxes and modern apps ask the desktop for things: file
+# pickers, screen sharing, screenshots. xdg-desktop-portal reads one backend per
+# interface, chosen by UseIn -- the GTK backend does FileChooser and friends, the
+# Hyprland backend does Screenshot/ScreenCast/GlobalShortcuts. Both are needed.
+# The agent is what actually draws a password prompt; polkitd (the daemon) was
+# already installed but could not ask anyone anything without one.
+# polkit-gnome rather than hyprpolkitagent: 64 KiB and no new dependencies, where
+# the Hyprland one drags in Qt6 plus declarative (~55 MiB). It ships no unit, so
+# this repo carries one:
+#     systemctl --user enable --now polkit-gnome.service
+xdg-desktop-portal
+xdg-desktop-portal-gtk
+xdg-desktop-portal-hyprland
+polkit-gnome
+
 # 09 - file manager
 # yazi is the file manager, with image, video, PDF and archive previews inside
 # the terminal. fd, ripgrep, fzf and zoxide are the surrounding tools: fast find,
