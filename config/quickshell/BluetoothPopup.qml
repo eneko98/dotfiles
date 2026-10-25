@@ -10,6 +10,7 @@
 
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 import QtQuick
 
 Popup {
@@ -19,6 +20,34 @@ Popup {
 
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool on: adapter ? adapter.enabled : false
+
+    // Pairing needs a BlueZ agent and this machine has none, so one is started
+    // only while the popup is open: bt-agent (bluez-tools) with the
+    // NoInputNoOutput capability auto-confirms a Just Works pairing, and when
+    // the popup closes the agent goes away with SIGTERM. Nobody can pair while
+    // the popup is closed, which is also the safer default.
+    //
+    // The start/stop is imperative, not a `running:` binding: Process writes its
+    // own `running` when it starts and exits, which breaks the binding and left
+    // the agent alive after the popup closed (measured with a timer).
+    Process {
+        id: agent
+        command: ["bt-agent", "-c", "NoInputNoOutput"]
+    }
+
+    function updateAgent() {
+        const wanted = root.visible && root.adapter !== null && root.adapter.enabled;
+
+        if (wanted) {
+            if (!agent.running)
+                agent.running = true;
+        } else if (agent.running) {
+            // bt-agent ignores SIGTERM (measured: `kill` left it alive), so
+            // `running = false` would not stop it. SIGKILL it instead; the bus
+            // connection dies with the process and BlueZ drops the agent.
+            agent.signal(9);
+        }
+    }
 
     // Connected first, then paired, then by name.
     readonly property var devices: {
@@ -35,6 +64,8 @@ Popup {
     }
 
     onVisibleChanged: {
+        root.updateAgent();
+
         if (root.adapter)
             root.adapter.discovering = root.visible && root.adapter.enabled;
     }
@@ -43,6 +74,8 @@ Popup {
         target: root.adapter
 
         function onEnabledChanged() {
+            root.updateAgent();
+
             if (root.adapter && root.visible)
                 root.adapter.discovering = root.adapter.enabled;
         }
@@ -125,17 +158,6 @@ Popup {
                     height: 26
                     radius: 4
                     color: hover.containsMouse && !row.modelData.connected ? Theme.bg2 : "transparent"
-
-                    // Pairing a new device is only half the job: connect it as
-                    // soon as the pairing completes.
-                    Connections {
-                        target: row.modelData
-
-                        function onPairedChanged() {
-                            if (row.modelData.paired)
-                                row.modelData.connect();
-                        }
-                    }
 
                     Text {
                         anchors.left: parent.left

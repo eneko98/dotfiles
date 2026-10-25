@@ -200,6 +200,12 @@ quickshell
 bluez
 bluez-utils
 
+# Bluetooth pairing agent: bluez-tools brings bt-agent, which registers a BlueZ
+# agent with the NoInputNoOutput capability. The bar's bluetooth popup starts it
+# only while the popup is open, so pairing is possible exactly when the user is
+# looking at the popup. Without it, pair() fails: bluez alone has no agent.
+bluez-tools
+
 # Battery
 # upower exposes the battery over D-Bus. Its daemon is D-Bus activated, so the
 # package is enough: no service to enable. The bar reads UPower.displayDevice.
