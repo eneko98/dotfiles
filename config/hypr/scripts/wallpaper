@@ -60,7 +60,7 @@ set)
 	# which watches its Theme.qml link). Apps that read their theme at startup
 	# (GTK, Qt, Firefox, yazi, fuzzel, hyprlock) pick it up when they next start.
 	if [ -x "$repo/scripts/extract-palette.py" ]; then
-		"$repo/scripts/extract-palette.py" "$path" >/dev/null 2>&1 || true
+		"$repo/scripts/extract-palette.py" "$path" >"$state_dir/retheme.log" 2>&1 || true
 		"$repo/scripts/gen-theme.py" >/dev/null 2>&1 || true
 		hyprctl reload >/dev/null 2>&1 || true
 		pkill -USR1 -x kitty 2>/dev/null || true

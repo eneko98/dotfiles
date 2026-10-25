@@ -93,10 +93,19 @@ done < <(find "$src_dir" -type f -not -path "$src_dir/firefox/*" -print0 | sort 
 if ((dry_run)); then
 	printf 'note    the palette copies under %s would be regenerated and linked\n' "$state_theme"
 else
-	"$repo_dir/scripts/gen-theme.py" >/dev/null
+	theme_out="$("$repo_dir/scripts/gen-theme.py")"
 	for rel in "${generated[@]}"; do
 		link_one "$state_theme/$rel" "$dst_dir/$rel"
 	done
+
+	# If the palette copies were (re)written, Theme.qml may be a new inode, and
+	# Quickshell watches the inode it loaded. Restarting the bar is cheaper than
+	# leaving it on the previous palette when install.sh runs mid-session.
+	if [[ "$theme_out" != "up to date" ]] \
+		&& systemctl --user is-active --quiet quickshell.service 2>/dev/null; then
+		printf 'reload  quickshell.service (regenerated palette)\n'
+		systemctl --user restart quickshell.service || true
+	fi
 fi
 
 # Firefox is the one tree that is not a 1:1 mirror: its profile lives under
