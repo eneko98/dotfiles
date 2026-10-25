@@ -105,8 +105,10 @@ playerctl
 # colours are generated from the palette, so it is one more copy of theme.lua.
 # libnotify is only here for notify-send, which is how one tests a notification
 # daemon and what scripts tend to use. mako ships no systemd unit, so this repo
-# carries one:
-#     systemctl --user enable --now mako.service
+# carries one. The Quickshell notification centre now owns
+# org.freedesktop.Notifications, so mako is stopped and disabled; the package,
+# theme and unit stay as a fallback:
+#     systemctl --user disable --now mako.service
 mako
 libnotify
 
