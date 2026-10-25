@@ -243,6 +243,36 @@ ShellRoot {
                 Bluetooth { id: bluetoothModule }
                 Battery { id: batteryModule }
                 Tray {}
+
+                // The bell: opens the notification history; the count is gold
+                // only when there is something to read.
+                Row {
+                    spacing: 4
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "󰂚"
+                        color: notifications.count > 0 ? Theme.fg0 : Theme.fg1
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 14
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: notifications.openHistory()
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: notifications.count > 0
+                        text: notifications.count
+                        color: Theme.gold
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 10
+                    }
+                }
+
                 Power {}
             }
         }
@@ -277,4 +307,10 @@ ShellRoot {
     // The volume/brightness bubble at the bottom.
     Osd {
         id: osd
+    }
+
+    // The notification server, toasts and history. mako's service is disabled
+    // while this owns org.freedesktop.Notifications.
+    NotificationCenter {
+        id: notifications
     }}
