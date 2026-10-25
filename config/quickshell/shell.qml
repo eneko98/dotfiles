@@ -63,6 +63,12 @@ ShellRoot {
         launcher.open();
     }
 
+    // The wallpaper picker is centred for the same reason.
+    function openWallpaperPicker() {
+        wallpaperPicker.rightMargin = (bar.width - wallpaperPicker.panelWidth) / 2;
+        wallpaperPicker.open();
+    }
+
     PanelWindow {
         id: bar
 
@@ -340,6 +346,27 @@ ShellRoot {
 
         function close(): void {
             launcher.close();
+        }
+    }
+
+    // The wallpaper picker, opened by SUPER + W through the wallpaper script
+    // (`qs ipc call wallpaper toggle`).
+    WallpaperPicker {
+        id: wallpaperPicker
+    }
+
+    IpcHandler {
+        target: "wallpaper"
+
+        function toggle(): void {
+            if (wallpaperPicker.visible)
+                wallpaperPicker.close();
+            else
+                root.openWallpaperPicker();
+        }
+
+        function close(): void {
+            wallpaperPicker.close();
         }
     }
 }

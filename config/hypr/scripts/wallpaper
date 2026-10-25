@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# Wallpaper state and application.
+#
+#   wallpaper            open the picker (through the bar's IPC)
+#   wallpaper set PATH   apply it now, remember it, regenerate the lock background
+#   wallpaper restore    apply the remembered one (login unit)
+#
+# hyprpaper gets the live change; the state lives under XDG_STATE_HOME, not in
+# the repo, so the tracked hyprpaper.conf stays the default.
+#
+# The lock screen shows a blurred copy of the chosen image, generated here into
+# the state dir; LockSurface.qml falls back to the committed default when it is
+# missing (first boot).
+
+set -eu
+
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+state_file="$state_dir/wallpaper"
+lock_file="$state_dir/lock-wallpaper.png"
+
+blur() {
+	[ -f "$1" ] || return 0
+	mkdir -p "$state_dir"
+	magick "$1" -resize '1920x1080^' -gravity center -extent 1920x1080 \
+		-blur 0x18 -modulate 55,95,100 "$lock_file" 2>/dev/null || true
+}
+
+# At login the restore unit is ordered after hyprpaper.service but not after the
+# daemon is actually listening, so retry briefly instead of dropping the choice.
+apply() {
+	i=0
+	while [ "$i" -lt 20 ]; do
+		if hyprctl hyprpaper wallpaper ", $1" >/dev/null 2>&1; then
+			return 0
+		fi
+		i=$((i + 1))
+		sleep 0.5
+	done
+	return 1
+}
+
+case "${1:-}" in
+set)
+	[ -n "${2:-}" ] && [ -f "$2" ] || exit 1
+	apply "$2" || exit 1
+	mkdir -p "$state_dir"
+	printf '%s\n' "$2" >"$state_file"
+	blur "$2"
+	;;
+restore)
+	[ -f "$state_file" ] || exit 0
+	path=$(cat "$state_file")
+	[ -f "$path" ] || exit 0
+	apply "$path" || true
+	blur "$path"
+	;;
+*)
+	exec qs ipc call wallpaper toggle
+	;;
+esac

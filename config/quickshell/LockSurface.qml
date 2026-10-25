@@ -5,13 +5,12 @@
 // (lock.qml, the real lock) and inside a FloatingWindow (lock-test.qml, where the
 // layout and PAM can be tried without locking the session).
 //
-// The background is a pre-blurred copy of the wallpaper: blurring a live
+// The background is a pre-blurred copy of the current wallpaper: blurring a live
 // screenshot inside QML would need a shader or the background-effect protocol,
-// and the lock surface is not a normal layer surface. The file is generated from
-// the CC0 original and recorded in images/wallpapers/CREDITS.md.
-//
-// The wallpaper path repeats the repo assumption hyprpaper already makes; when
-// images/ is published at a stable XDG path, this is one of the places to change.
+// and the lock surface is not a normal layer surface. config/hypr/scripts/wallpaper
+// regenerates it in XDG_STATE_HOME whenever a wallpaper is applied; on first boot
+// there is none yet, so it falls back to the committed default (whose licence and
+// derivation are in images/wallpapers/CREDITS.md).
 
 import Quickshell
 import QtQuick
@@ -41,10 +40,19 @@ Rectangle {
         precision: SystemClock.Minutes
     }
 
+    readonly property string lockWallpaper:
+        Quickshell.env("HOME") + "/.local/state/dotfiles/lock-wallpaper.png"
+    readonly property string defaultLockWallpaper:
+        Quickshell.env("HOME") + "/repos/dotfiles/images/wallpapers/hong-kong-night-lock.png"
+
     Image {
         anchors.fill: parent
-        source: Quickshell.env("HOME") + "/repos/dotfiles/images/wallpapers/hong-kong-night-lock.png"
+        source: root.lockWallpaper
         fillMode: Image.PreserveAspectCrop
+
+        // First boot: the setter has not run, so there is no generated copy.
+        onStatusChanged: if (status === Image.Error)
+            source = root.defaultLockWallpaper
     }
 
     // A wash of bg0 so the text reads over the brightest bokeh.

@@ -84,6 +84,7 @@ component.
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (Quickshell) |
 | `SUPER + E` | file manager (yazi) |
+| `SUPER + W` | wallpaper picker |
 | `SUPER + L` | lock the screen (Quickshell) |
 | volume keys | up / down in 5% steps, mute |
 | brightness keys | up / down in 5% steps |
@@ -196,15 +197,24 @@ the compositor would do neither:
 systemctl --user enable --now hyprpaper.service
 ```
 
-Changing the wallpaper does not need a restart:
+**The picker is `SUPER + W`.** Changing the wallpaper does not need a restart:
+it lists the committed images in `images/wallpapers/` plus anything you drop in
+`~/Pictures/Wallpapers/`, and applies the choice with hyprpaper. The path is remembered under
+`~/.local/state/dotfiles/`, so it survives a reboot — the tracked
+`hyprpaper.conf` only provides the initial default. The lock screen's blurred
+background is regenerated from whichever image you pick.
+
+The remembered choice is re-applied at login by a one-shot unit:
 
 ```bash
-hyprctl hyprpaper wallpaper ', ~/pictures/whatever.png'
-hyprctl hyprpaper listactive
+systemctl --user enable wallpaper-restore.service
 ```
 
-The images themselves live in `images/wallpapers/`, each one with its source and
-licence recorded in `CREDITS.md` beside it.
+The images in `images/wallpapers/` each have their source and licence recorded in
+`CREDITS.md` beside them, because everything committed there is CC0 or public
+domain. `~/Pictures/Wallpapers` is yours and stays out of the repository. By hand,
+the same thing is `hyprctl hyprpaper wallpaper ', <path>'` followed by
+`hyprctl hyprpaper listactive` to confirm.
 
 **The idle daemon is a systemd user service too.** `hypridle` locks the session
 after a period of inactivity and locks it again before the machine sleeps; the
