@@ -1,11 +1,19 @@
 #!/bin/sh
 #
-# Lock the session with the Quickshell lock, which runs as its own process:
-# a bar reload must not destroy the session lock (the compositor would leave the
+# Lock the session with the Quickshell lock, which runs as its own process: a bar
+# reload must not destroy the session lock (the compositor would leave the
 # session locked with a solid colour, by design).
+#
+# Run it in a transient systemd unit, not as a child of whoever called us:
+# hypridle starts this script, and restarting hypridle used to kill the lock
+# process with its cgroup while the session was locked -- the session then stayed
+# hidden until a reboot. A transient unit belongs to the user manager instead.
 #
 # flock makes a second invocation a no-op: only one WlSessionLock can be locked,
 # and a second lock process would just hang around.
 
-exec flock -n "${XDG_RUNTIME_DIR:-/tmp}/quickshell-lock.lock" \
-	quickshell -p "$HOME/.config/quickshell/lock.qml"
+exec systemd-run --user --collect --quiet \
+	--unit=quickshell-lock \
+	--description="Quickshell session lock" \
+	/usr/bin/flock -n "${XDG_RUNTIME_DIR:-/tmp}/quickshell-lock.lock" \
+	/usr/bin/quickshell -p "$HOME/.config/quickshell/lock.qml"
