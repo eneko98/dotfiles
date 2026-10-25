@@ -211,6 +211,12 @@ bluez-tools
 # package is enough: no service to enable. The bar reads UPower.displayDevice.
 upower
 
+# Browser
+# Firefox, for the web (and for browsing r/unixporn while deciding what to build
+# next). Native Wayland through the MOZ_ENABLE_WAYLAND=1 already in the session
+# environment. Its profile lives in ~/.mozilla and is machine state, not tracked.
+firefox
+
 # ---------------------------------------------------------------------------
 # Everything above is in the repos and can be installed with the command at the
 # top of this file. The one exception is the AUR helper, which pacman cannot
