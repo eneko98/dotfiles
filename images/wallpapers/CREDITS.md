@@ -43,3 +43,18 @@ im = ImageEnhance.Contrast(im).enhance(1.05)
 im.resize((1920, 1080), Image.LANCZOS).save("hong-kong-night.png", optimize=True)
 EOF
 ```
+
+## hong-kong-night-lock.png
+
+The lock screen's background, derived from `hong-kong-night.png` above (same source,
+same photographer, same CC0 licence). Blurred and dimmed so large light text reads over
+it, and small enough to keep the repo honest:
+
+```bash
+convert images/wallpapers/hong-kong-night.png -blur 0x18 -modulate 55,95,100 \
+    images/wallpapers/hong-kong-night-lock.png
+```
+
+The blur is baked in because the lock surface cannot blur a live screenshot without a
+shader (or the background-effect protocol) and the pre-blurred file is one less moving
+part at the most fragile moment of the session.

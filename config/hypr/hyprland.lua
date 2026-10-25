@@ -220,10 +220,9 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
--- Lock the session. hyprlock itself, not loginctl: hypridle already catches the
--- DBus lock event for the idle and sleep paths, and this way the key still works
--- if that daemon is ever stopped.
-hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
+-- Lock the session with the Quickshell lock (its own process, so a bar reload
+-- cannot destroy it), not loginctl: the key still works if hypridle is stopped.
+hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/lock"))
 
 -- Fullscreen the window under the cursor: focus follows the mouse here, so that
 -- is the active window. mode "fullscreen" is the real one -- it covers the bar

@@ -51,7 +51,8 @@ scripts/gen-theme.py --check   # fail if those copies are stale
 ```
 
 One palette, not four: edit `theme.lua`, run the script, and kitty, the shell
-prompt, fuzzel, yazi, the lock screen, mako, GTK, Qt and Firefox all follow. The
+prompt, fuzzel, yazi, mako, GTK, Qt and Firefox all follow, and the lock screen reads
+`Theme.qml` directly. The
 prompt is ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in
 `.zshrc` so oh-my-zsh contributes its plugins and completion but not its looks.
 
@@ -83,7 +84,7 @@ component.
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (fuzzel) |
 | `SUPER + E` | file manager (yazi) |
-| `SUPER + L` | lock the screen (hyprlock) |
+| `SUPER + L` | lock the screen (Quickshell) |
 | volume keys | up / down in 5% steps, mute |
 | brightness keys | up / down in 5% steps |
 | media keys | play / pause, next, previous (playerctl) |
@@ -113,6 +114,21 @@ holidays (the fixed dates plus Good Friday) and marks any day listed in
 It is user data and stays untracked; regional and local holidays belong there
 too. When today has an event, the notification centre sends one "Today" toast at
 startup and on the first check of a new day.
+
+## Lock screen
+
+`SUPER + L`, `hypridle` and the session menu all run
+`config/hypr/scripts/lock`, which starts a **separate** Quickshell process
+(`quickshell -p ~/.config/quickshell/lock.qml`). Separate is deliberate: a bar
+reload would destroy the session lock, and the compositor then keeps the session
+hidden behind a solid colour by design. The screen shows the wallpaper blurred and
+dimmed, the serif clock, the seal and a PAM password field
+(`config/quickshell/pam/password.conf`, `auth required pam_unix.so`); `flock`
+makes a second invocation a no-op. The entrance and the unlock fade are in
+`LockSurface.qml` / `LockContext.qml`.
+
+`hyprlock` stays installed with its config and generated theme as a fallback: run
+`hyprlock` by hand if the Quickshell lock ever breaks.
 
 ## Setup that lives outside the repo
 
@@ -186,8 +202,9 @@ The images themselves live in `images/wallpapers/`, each one with its source and
 licence recorded in `CREDITS.md` beside it.
 
 **The idle daemon is a systemd user service too.** `hypridle` locks the session
-after a period of inactivity and locks it again before the machine sleeps;
-`hyprlock` is what it launches. Same one-time enable as hyprpaper:
+after a period of inactivity and locks it again before the machine sleeps; the
+Quickshell lock (`config/hypr/scripts/lock`) is what it launches. Same one-time
+enable as hyprpaper:
 
 ```bash
 systemctl --user enable --now hypridle.service

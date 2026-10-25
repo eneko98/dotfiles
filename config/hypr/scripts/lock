@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# Lock the session with the Quickshell lock, which runs as its own process:
+# a bar reload must not destroy the session lock (the compositor would leave the
+# session locked with a solid colour, by design).
+#
+# flock makes a second invocation a no-op: only one WlSessionLock can be locked,
+# and a second lock process would just hang around.
+
+exec flock -n "${XDG_RUNTIME_DIR:-/tmp}/quickshell-lock.lock" \
+	quickshell -p "$HOME/.config/quickshell/lock.qml"

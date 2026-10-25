@@ -20,7 +20,7 @@ choice="$(
 )" || exit 0
 
 case "$choice" in
-	Lock)        hyprlock ;;
+	Lock)        "$HOME/.config/hypr/scripts/lock" ;;
 	'Log out')   uwsm stop ;;
 	Suspend)     systemctl suspend ;;
 	Reboot)      systemctl reboot ;;
