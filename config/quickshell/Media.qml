@@ -48,10 +48,13 @@ Row {
 
     Text {
         anchors.verticalCenter: parent.verticalCenter
+        // The MDI glyph's visual box sits about 2 px above the text's at this
+        // size; nudge it down so the triangle reads centred next to the title.
+        anchors.verticalCenterOffset: 1
         text: root.player && root.player.isPlaying ? "󰏤" : "󰐊"
         color: Theme.fg1
         font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 14
+        font.pixelSize: 15
 
         MouseArea {
             anchors.fill: parent
