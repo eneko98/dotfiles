@@ -92,5 +92,16 @@ ShellRoot {
                 font.pixelSize: 12
             }
         }
+
+        // The right group, built left to right: volume first, then wifi,
+        // bluetooth, battery and the power button. Each module is its own file.
+        Row {
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.rightMargin: 14
+            spacing: 14
+
+            Volume {}
+        }
     }
 }
