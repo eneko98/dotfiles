@@ -47,6 +47,14 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
+-- The Bibata hyprcursor build renders the Ice theme in amber; the xcursor copy
+-- is the correct white pointer. Force the xcursor until that port is fixed.
+-- XCURSOR_THEME still names the theme for GTK/Qt, which read the xcursor copy.
+hl.config({
+    cursor = {
+        enable_hyprcursor = false,
+    },
+})
 -- Qt apps read the palette through qt6ct only with this platform theme set.
 -- config/environment.d/qt.conf does the same for the systemd user session.
 hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")

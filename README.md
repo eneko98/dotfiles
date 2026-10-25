@@ -89,8 +89,10 @@ dir. Firefox only reads them when
 `user.js` sets, so **restart Firefox once** after the first install.
 
 The cursor is ready-made rather than generated: `Bibata-Modern-Ice`, a white
-rounded pointer from the Bibata set (both hyprcursor and xcursor). It is neutral
-on purpose: it has to read on any palette the wallpaper generates.
+rounded pointer from the Bibata set. The package ships both hyprcursor and
+xcursor; the hyprcursor build renders Ice in amber, so `cursor.enable_hyprcursor`
+is false and the white xcursor copy is used. It is neutral on purpose: it has to
+read on any palette the wallpaper generates.
 `XCURSOR_THEME` also goes to the systemd user session
 (`config/environment.d/cursor.conf`), because the bar and the idle daemon are
 services and would otherwise fall back to Adwaita.

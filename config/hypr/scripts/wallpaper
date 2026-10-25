@@ -35,7 +35,7 @@ blur() {
 # may not be listening yet; retry briefly instead of dropping the choice.
 apply() {
 	i=0
-	while [ "$i" -lt 20 ]; do
+	while [ "$i" -lt 60 ]; do
 		if hyprctl hyprpaper wallpaper ", $1" >/dev/null 2>&1; then
 			return 0
 		fi
@@ -80,6 +80,7 @@ restore)
 	[ -f "$state_file" ] || exit 0
 	path=$(cat "$state_file")
 	[ -f "$path" ] || exit 0
+	printf 'restoring wallpaper %s\n' "$path"
 	apply "$path" || true
 	blur "$path"
 	set_icon_theme
