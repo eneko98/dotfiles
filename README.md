@@ -136,7 +136,7 @@ component.
 | `SUPER + Shift + A` | screenshot an area you drag over |
 | `SUPER + Shift + W` | screenshot the focused window |
 | `SUPER + C` | close the focused window |
-| `SUPER + M` | end the session and return to the TTY |
+| `SUPER + M` | log out and return to the login screen |
 
 Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard, so
 they can be pasted straight into a chat.
@@ -205,29 +205,87 @@ git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git ~/.local/share/oh-my-
 sudo usermod -s /usr/bin/zsh "$USER"
 ```
 
-**tty1 logs in automatically**, so a boot lands in the desktop instead of at a
-login prompt. `getty`'s `ExecStart` is replaced by a drop-in, because the unit
-itself belongs to systemd:
+**The login screen is `greetd` + `regreet`.** A boot now lands at a graphical
+greeter instead of autologging in. `greetd` owns tty1 (its unit conflicts with
+`getty@tty1`, so the old autologin drop-in is gone) and starts
+`cage -s -- regreet` as the `greeter` user; regreet lists
+`/usr/share/wayland-sessions` and offers **Hyprland (uwsm-managed)** — pick that
+one, not the plain `Hyprland` entry, so the session stays a systemd user session.
 
 ```ini
-# /etc/systemd/system/getty@tty1.service.d/autologin.conf
-[Service]
-ExecStart=
-ExecStart=-/usr/bin/agetty --noreset --noclear --autologin eneko98 - ${TERM}
+# /etc/greetd/config.toml
+[terminal]
+vt = 1
+
+[default_session]
+command = "cage -s -- regreet"
+user = "greeter"
 ```
 
-The bare `ExecStart=` is required — it clears the inherited command before the
-new one is added. From there the login shell starts the session: zsh reads
-`config/zsh/.zprofile`, which runs `uwsm check may-start` and execs the
-compositor as a systemd user session (`wayland-wm@hyprland.desktop.service`,
-pulled in with `graphical-session.target`). tty2 and above keep an ordinary
-login prompt on purpose: that is the way back in if a config ever breaks the
-session. To get the prompt back, remove the drop-in and reload:
+```toml
+# /etc/greetd/regreet.toml (the parts that matter)
+skip_selection = false
+
+[background]
+path = "/usr/share/backgrounds/greeter.png"
+fit = "Cover"
+
+[GTK]
+application_prefer_dark_theme = true
+cursor_theme_name = "Bibata-Modern-Ice"
+font_name = "Adwaita Sans 11"
+icon_theme_name = "Adwaita-teal"
+theme_name = "Adwaita"
+
+[appearance]
+greeting_msg = "Welcome back!"
+```
+
+The greeter is a seat of its own, so cage needs the keyboard and cursor before
+regreet starts; a drop-in sets them:
+
+```ini
+# /etc/systemd/system/greetd.service.d/environment.conf
+[Service]
+Environment=XKB_DEFAULT_LAYOUT=es
+Environment=XCURSOR_THEME=Bibata-Modern-Ice
+Environment=XCURSOR_SIZE=24
+```
+
+The desktop's palette image is copied where the `greeter` user can read it:
 
 ```bash
-sudo rm -r /etc/systemd/system/getty@tty1.service.d
+sudo install -d /usr/share/backgrounds
+sudo install -m 644 images/wallpapers/default.png /usr/share/backgrounds/greeter.png
+```
+
+Enable it once; `greetd` installs the `display-manager.service` alias, and its
+unit already conflicts with `getty@tty1`:
+
+```bash
+sudo systemctl enable greetd.service
+```
+
+tty2 and above keep an ordinary login prompt on purpose: that is the way back in
+if a config ever breaks the login screen. A TTY login is a shell now (the
+`.zprofile` no longer execs uwsm); to start a session by hand from there:
+
+```bash
+uwsm start -e -D Hyprland hyprland.desktop
+```
+
+To go back to the old autologin, disable the manager, remove the alias and
+restore the getty drop-in and the `.zprofile` hook from the commit before the
+login manager:
+
+```bash
+sudo systemctl disable greetd.service
+sudo rm /etc/systemd/system/display-manager.service
 sudo systemctl daemon-reload
 ```
+
+The greeter's stylesheet hook is `/etc/greetd/regreet.css` (`regreet --style`);
+the colours are the default GTK dark for now, with the palette image behind it.
 
 **The wallpaper is a systemd user service.** `hyprpaper` ships a unit, and a unit
 restarts if it crashes and shuts down with the session — a bare child process of

@@ -255,3 +255,13 @@ firefox
 #   adwaita-colors: Adwaita with the folders/places recoloured; the variant follows
 #                   the accent (Adwaita-teal for the default blue palette)
 # ---------------------------------------------------------------------------
+
+# Login manager: greetd + regreet under cage
+# A graphical greeter instead of the tty1 autologin. greetd owns tty1 and its
+# unit conflicts with getty@tty1; cage is the kiosk compositor regreet draws in;
+# gtk4-layer-shell lets regreet fill it. The greeter user comes with greetd (in
+# the video group). The configs and the background copy live in the README.
+greetd
+greetd-regreet
+cage
+gtk4-layer-shell
