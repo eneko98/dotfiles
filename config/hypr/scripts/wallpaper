@@ -31,8 +31,8 @@ blur() {
 		-blur 0x18 -modulate 55,95,100 "$lock_file" 2>/dev/null || true
 }
 
-# At login the restore unit is ordered after hyprpaper.service but not after the
-# daemon is actually listening, so retry briefly instead of dropping the choice.
+# At login the restore unit starts alongside the graphical session, so hyprpaper
+# may not be listening yet; retry briefly instead of dropping the choice.
 apply() {
 	i=0
 	while [ "$i" -lt 20 ]; do

@@ -1,6 +1,5 @@
 [Unit]
 Description=Apply the saved wallpaper
-After=hyprpaper.service
 PartOf=graphical-session.target
 ConditionEnvironment=WAYLAND_DISPLAY
 
