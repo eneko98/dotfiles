@@ -146,9 +146,11 @@ startup and on the first check of a new day.
 
 `SUPER + L`, `hypridle` and the session menu all run
 `config/hypr/scripts/lock`, which starts a **separate** Quickshell process
-(`quickshell -p ~/.config/quickshell/lock.qml`). Separate is deliberate: a bar
-reload would destroy the session lock, and the compositor then keeps the session
-hidden behind a solid colour by design. The screen shows the current wallpaper
+(`quickshell -p ~/.config/quickshell/lock.qml`) in its own transient systemd
+unit (`quickshell-lock`). Both parts are deliberate: a bar reload would destroy
+the session lock, and a lock left as a child of hypridle dies when hypridle is
+restarted — either way the compositor keeps the session hidden behind a solid
+colour by design. The screen shows the current wallpaper
 blurred and dimmed (regenerated when you pick one), the serif clock, the seal and
 a PAM password field
 (`config/quickshell/pam/password.conf`, `auth required pam_unix.so`); `flock`
@@ -294,8 +296,10 @@ systemctl --user enable --now quickshell.service
 ```
 
 **Night light is `hyprsunset`.** Its package ships the user unit (unlike
-quickshell or mako), so it only needs enabling once. The control centre toggles
-it through `hyprctl hyprsunset temperature` / `identity`:
+quickshell or mako), so it only needs enabling once. It starts with `--identity`
+(a drop-in under `config/systemd/user/`), because its built-in default is a
+6000 K warm filter; the control centre turns the filter on through
+`hyprctl hyprsunset temperature` / `identity`:
 
 ```bash
 systemctl --user enable --now hyprsunset.service
