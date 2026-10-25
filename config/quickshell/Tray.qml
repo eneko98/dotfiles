@@ -38,7 +38,7 @@ Row {
                 // coordinates here because the bar spans the whole screen.
                 const p = entry.mapToItem(null, 0, 0);
                 menu.rightMargin = entry.Window.width - (p.x + entry.width);
-                menu.menu = entry.modelData.menu;
+                menu.open(entry.modelData.menu);
                 menu.visible = true;
             }
 
@@ -61,9 +61,12 @@ Row {
 
                 anchors.fill: parent
                 hoverEnabled: true
+                // MouseArea only accepts the left button by default, so a
+                // right click would never reach onClicked.
+                acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                 cursorShape: Qt.PointingHandCursor
 
-                onClicked: (mouse) => {
+                onClicked: function(mouse) {
                     if (mouse.button === Qt.LeftButton) {
                         if (entry.modelData.onlyMenu)
                             entry.openMenu();
