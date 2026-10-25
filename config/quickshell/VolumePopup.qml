@@ -58,48 +58,13 @@ Popup {
         }
     }
 
-    // A slider is small enough to draw by hand: a track, a fill and a handle.
-    Item {
-        id: slider
-
+    Slider {
         width: parent.width
-        height: 18
+        value: root.volume
 
-        Rectangle {
-            anchors.verticalCenter: parent.verticalCenter
-            width: parent.width
-            height: 4
-            radius: 2
-            color: Theme.bg2
-
-            Rectangle {
-                width: parent.width * root.volume
-                height: parent.height
-                radius: 2
-                color: Theme.gold
-            }
-        }
-
-        Rectangle {
-            x: root.volume * (slider.width - width)
-            anchors.verticalCenter: parent.verticalCenter
-            width: 8
-            height: 16
-            radius: 4
-            color: Theme.fg0
-        }
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-
-            function setFromX(x) {
-                if (root.audio)
-                    root.audio.volume = Math.max(0, Math.min(1, x / width));
-            }
-
-            onPressed: function (mouse) { setFromX(mouse.x); }
-            onPositionChanged: function (mouse) { if (pressed) setFromX(mouse.x); }
+        onMoved: function (value) {
+            if (root.audio)
+                root.audio.volume = value;
         }
     }
 

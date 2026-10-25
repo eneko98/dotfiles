@@ -48,11 +48,15 @@ Row {
 
     // TapHandler is a handler, not an Item, so it does not disturb the Row.
     // The popup hangs under the module: its right edge is the module's.
+    // Also called by the control centre: the popup opens under the module no
+    // matter where the request came from.
+    function openPopup() {
+        const p = root.mapToItem(null, 0, 0);
+        popup.rightMargin = root.Window.width - (p.x + root.width);
+        popup.visible = true;
+    }
+
     TapHandler {
-        onTapped: {
-            const p = root.mapToItem(null, 0, 0);
-            popup.rightMargin = root.Window.width - (p.x + root.width);
-            popup.visible = true;
-        }
+        onTapped: root.openPopup()
     }
 }

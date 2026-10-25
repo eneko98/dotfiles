@@ -215,6 +215,12 @@ bluez-tools
 # package is enough: no service to enable. The bar reads UPower.displayDevice.
 upower
 
+# Night light
+# hyprsunset applies a blue-light filter through the compositor (a CTM matrix,
+# not a screen shader), so it does not show up in screenshots. Its package ships
+# the systemd user unit; the control centre toggles it over IPC.
+hyprsunset
+
 # Browser
 # Firefox, for the web (and for browsing r/unixporn while deciding what to build
 # next). Native Wayland through the MOZ_ENABLE_WAYLAND=1 already in the session

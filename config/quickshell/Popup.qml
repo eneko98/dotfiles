@@ -70,6 +70,20 @@ PanelWindow {
         border.width: 1
         border.color: Theme.gold
 
+        // The window maps and the panel fades/scales in from its top edge. The
+        // close is instant: the window is hidden the moment `visible` goes false.
+        opacity: root.visible ? 1 : 0
+        scale: root.visible ? 1 : 0.96
+        transformOrigin: Item.Top
+
+        Behavior on opacity {
+            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+        }
+
+        Behavior on scale {
+            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        }
+
         focus: true
         Keys.onEscapePressed: root.visible = false
 

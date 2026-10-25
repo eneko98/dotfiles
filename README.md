@@ -214,6 +214,14 @@ repo carries one:
 systemctl --user enable --now quickshell.service
 ```
 
+**Night light is `hyprsunset`.** Its package ships the user unit (unlike
+quickshell or mako), so it only needs enabling once. The control centre toggles
+it through `hyprctl hyprsunset temperature` / `identity`:
+
+```bash
+systemctl --user enable --now hyprsunset.service
+```
+
 **Bluetooth is a system service.** `bluez` provides the daemon, and this laptop
 had the adapter present but soft-blocked. Enable it once, and clear the block if
 it is still set:

@@ -49,7 +49,16 @@ ShellRoot {
             Hyprland.dispatch("workspace " + workspaceId);
     }
 
+    // The island opens the control centre centred under itself: the panel's
+    // right margin is half of what is left of the screen once the panel is out.
+    function openControlCenter() {
+        controlCenter.rightMargin = (bar.width - controlCenter.panelWidth) / 2;
+        controlCenter.visible = true;
+    }
+
     PanelWindow {
+        id: bar
+
         anchors {
             top: true
             left: true
@@ -179,6 +188,8 @@ ShellRoot {
                 id: islandArea
                 anchors.fill: parent
                 hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.openControlCenter()
             }
         }
 
@@ -198,13 +209,39 @@ ShellRoot {
                 anchors.centerIn: parent
                 spacing: 14
 
-                Volume {}
-                Wifi {}
-                Bluetooth {}
-                Battery {}
+                Volume { id: volumeModule }
+                Wifi { id: wifiModule }
+                Bluetooth { id: bluetoothModule }
+                Battery { id: batteryModule }
                 Tray {}
                 Power {}
             }
+        }
+    }
+
+    // The control centre, as wide as the bar is narrow. The module cards close
+    // it first, then open the module's own popup, so two backdrops never stack.
+    ControlCenter {
+        id: controlCenter
+
+        onNetworkRequested: {
+            controlCenter.visible = false;
+            wifiModule.openPopup();
+        }
+
+        onBluetoothRequested: {
+            controlCenter.visible = false;
+            bluetoothModule.openPopup();
+        }
+
+        onBatteryRequested: {
+            controlCenter.visible = false;
+            batteryModule.openPopup();
+        }
+
+        onSessionRequested: {
+            controlCenter.visible = false;
+            Quickshell.execDetached(["sh", "-c", "$HOME/.config/hypr/scripts/session-menu"]);
         }
     }
 }
