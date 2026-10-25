@@ -17,6 +17,14 @@ import Quickshell.Hyprland
 import QtQuick
 
 ShellRoot {
+    // A view into the system clock. Minutes precision is enough for a bar and
+    // cheaper than Seconds: QML only recomputes the bound text when the minute
+    // changes, with no timer and no process of our own.
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
+
     PanelWindow {
         anchors {
             top: true
@@ -60,6 +68,28 @@ ShellRoot {
                         font.bold: modelData.focused
                     }
                 }
+            }
+        }
+
+        // The centre: the time, then the date a step dimmer. The text is bound
+        // to clock.date, so Qt redraws it when the minute ticks.
+        Row {
+            anchors.centerIn: parent
+            spacing: 8
+
+            Text {
+                text: Qt.formatDateTime(clock.date, "hh:mm")
+                color: Theme.fg0
+                font.family: "Adwaita Sans"
+                font.pixelSize: 13
+                font.bold: true
+            }
+
+            Text {
+                text: Qt.formatDateTime(clock.date, "ddd d MMM")
+                color: Theme.fg1
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
             }
         }
     }
