@@ -259,4 +259,9 @@ ShellRoot {
             Quickshell.execDetached(["sh", "-c", "$HOME/.config/hypr/scripts/session-menu"]);
         }
     }
+
+    // The volume/brightness bubble at the bottom.
+    Osd {
+        id: osd
+    }
 }
