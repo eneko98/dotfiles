@@ -1,10 +1,10 @@
 // The bluetooth module: a glyph that dims when the adapter is off, the name of
-// the connected device when there is one, and a click that powers the adapter
-// on or off.
+// the connected device when there is one, and a click that opens our popup
+// (BluetoothPopup.qml) with the adapter switch and the device list.
 //
 // Bluetooth.defaultAdapter is the adapter (usually one). Its `devices` model
-// holds the devices connected to it, and the one with connected === true is the
-// one to show. `enabled` is writable, which is what the TapHandler toggles.
+// holds the devices it knows, and the one with connected === true is the one to
+// show. `enabled` is writable, which is what the popup's switch toggles.
 
 import Quickshell
 import Quickshell.Bluetooth
@@ -44,10 +44,15 @@ Row {
         font.pixelSize: 12
     }
 
+    BluetoothPopup {
+        id: popup
+    }
+
     TapHandler {
         onTapped: {
-            if (root.adapter)
-                root.adapter.enabled = !root.adapter.enabled;
+            const p = root.mapToItem(null, 0, 0);
+            popup.rightMargin = root.Window.width - (p.x + root.width);
+            popup.visible = true;
         }
     }
 }
