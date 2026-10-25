@@ -181,12 +181,16 @@ after a period of inactivity and locks it again before the machine sleeps;
 systemctl --user enable --now hypridle.service
 ```
 
-**Notifications.** `mako` is the notification daemon. It ships no systemd unit,
-so this repo carries one under `config/systemd/user/`, and it is enabled the
-same way:
+**Notifications.** The Quickshell shell owns `org.freedesktop.Notifications` now
+(`NotificationServer` in `config/quickshell/`): toasts top right, a history
+behind the bell in the bar, and do-not-disturb in that history. Two daemons
+cannot share the bus name, so mako's unit has to be **stopped and disabled**
+while the bar runs. mako stays installed, with its generated theme and unit in
+the repo, as the fallback if the centre is ever turned off:
 
 ```bash
-systemctl --user enable --now mako.service
+systemctl --user stop mako.service
+systemctl --user disable mako.service
 ```
 
 **Privilege prompts need an agent.** `polkitd` runs as a system service, but
