@@ -1,0 +1,15 @@
+# Yazi's own defaults are good; this only adds the one key every file manager
+# has and Yazi does not: Delete removes the hovered/selected file.
+#
+# `remove` sends it to the trash (FreeDesktop spec) after a confirmation, which
+# is what a file manager's Delete key does. The permanent variant is still `D`
+# (remove --permanently), and `d` is the same trash action as this key.
+#
+# prepend_keymap, not keymap: the whole default keymap stays, this is added on
+# top. In the [mgr] layer <Delete> is unbound by default (only [input] uses it,
+# to delete a character in a text box).
+
+[mgr]
+prepend_keymap = [
+	{ on = "<Delete>", run = "remove", desc = "Trash selected files" },
+]
