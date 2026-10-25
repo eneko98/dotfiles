@@ -225,6 +225,12 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
 -- if that daemon is ever stopped.
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("hyprlock"))
 
+-- Fullscreen the window under the cursor: focus follows the mouse here, so that
+-- is the active window. mode "fullscreen" is the real one -- it covers the bar
+-- and drops borders and gaps (0,0 1920x1080 measured), while "maximized" would
+-- stop at the bar's work area. Fullscreen on no window is a no-op.
+hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen" }))
+
 -- Workspaces. Workspace 1..10, but the tenth key is "0", hence i % 10.
 -- Unbound keys would otherwise be free keys, so all twenty get a bind: switch
 -- with SUPER + <n>, send the focused window with SUPER + SHIFT + <n>.
