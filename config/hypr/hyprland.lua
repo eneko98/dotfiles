@@ -157,7 +157,9 @@ hl.config({
 -- Layer surfaces do not blur by default; each thing that floats over the
 -- wallpaper opts in by namespace. fuzzel is "launcher", mako "notifications"
 -- (both confirmed live with `hyprctl layers`).
-hl.layer_rule({ match = { namespace = "launcher" }, blur = true })
+-- The launcher is the exception: it pops in (appears at once) instead of
+-- fading, so opening it feels instant. Notifications keep the fade.
+hl.layer_rule({ match = { namespace = "launcher" }, blur = true, animation = "popin" })
 hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
 
 ------------------
@@ -165,8 +167,8 @@ hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
 ------------------
 -- Subtle motion: beziers, no springs, so nothing bounces. `open` is an ease-out
 -- (starts, then settles) for anything appearing, `close` a soft ease-in-out that
--- never lingers, and `glide` is nearly linear for workspaces. Layers use fade,
--- not pop, so the launcher and notifications arrive quietly.
+-- never lingers, and `glide` is nearly linear for workspaces. The launcher pops
+-- in (style popin) rather than fading, so it feels like it appears at once.
 -- Curves are declared with hl.curve; there is no hl.bezier.
 hl.curve("open",  { type = "bezier", points = { {0.22, 1}, {0.36, 1} } })
 hl.curve("close", { type = "bezier", points = { {0.4, 0},  {0.2, 1}  } })
