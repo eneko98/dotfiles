@@ -191,14 +191,163 @@ Popup {
             const date = new Date(year, month, i - firstWeekday + 1);
             cells.push({
                 day: date.getDate(),
+                key: root.dateKey(date),
                 inMonth: date.getMonth() === month,
                 isToday: date.getFullYear() === today.getFullYear()
                     && date.getMonth() === today.getMonth()
-                    && date.getDate() === today.getDate()
+                    && date.getDate() === today.getDate(),
+                hasEvents: root.eventsFor(date).length > 0
             });
         }
 
         return cells;
+    }
+
+    // --- Calendar events --------------------------------------------------
+    // Spain's national holidays are computed: the fixed dates plus Good Friday
+    // (Easter - 2 days). Regional and local ones are not invented here; they go
+    // in the events file, a date -> text map the user maintains:
+    //   ~/.local/share/calendar/events.json
+    // User data, untracked, reloaded when it changes.
+    property var holidayCache: ({})
+    property string selectedKey: ""
+    property string lastNotifiedKey: ""
+
+    readonly property string todayKey: root.dateKey(clock.date)
+
+    FileView {
+        id: eventsFile
+
+        path: Quickshell.env("HOME") + "/.local/share/calendar/events.json"
+        watchChanges: true
+        printErrors: false
+
+        onFileChanged: reload()
+    }
+
+    readonly property var userEvents: {
+        const raw = eventsFile.text();
+
+        if (raw === "" || raw.trim() === "")
+            return ({});
+
+        try {
+            const data = JSON.parse(raw);
+            return data !== null && typeof data === "object" ? data : ({});
+        } catch (e) {
+            return ({});
+        }
+    }
+
+    function dateKey(date) {
+        return date.getFullYear()
+            + "-" + ("0" + (date.getMonth() + 1)).slice(-2)
+            + "-" + ("0" + date.getDate()).slice(-2);
+    }
+
+    // Anonymous Gregorian algorithm (Meeus/Jones/Butcher).
+    function easterDate(year) {
+        const a = year % 19;
+        const b = Math.floor(year / 100);
+        const c = year % 100;
+        const d = Math.floor(b / 4);
+        const e = b % 4;
+        const f = Math.floor((b + 8) / 25);
+        const g = Math.floor((b - f + 1) / 3);
+        const h = (19 * a + b - d - g + 15) % 30;
+        const i = Math.floor(c / 4);
+        const k = c % 4;
+        const l = (32 + 2 * e + 2 * i - h - k) % 7;
+        const m = Math.floor((a + 11 * h + 22 * l) / 451);
+        const month = Math.floor((h + l - 7 * m + 114) / 31) - 1;
+        const day = ((h + l - 7 * m + 114) % 31) + 1;
+
+        return new Date(year, month, day);
+    }
+
+    function holidaysForYear(year) {
+        if (root.holidayCache[year] !== undefined)
+            return root.holidayCache[year];
+
+        const map = {};
+        const add = function (month, day, name) {
+            const key = year + "-" + ("0" + month).slice(-2) + "-" + ("0" + day).slice(-2);
+
+            if (map[key] === undefined)
+                map[key] = [];
+            map[key].push(name);
+        };
+
+        add(1, 1, "Año Nuevo");
+        add(1, 6, "Epifanía");
+        add(5, 1, "Fiesta del Trabajo");
+        add(8, 15, "Asunción");
+        add(10, 12, "Fiesta Nacional");
+        add(11, 1, "Todos los Santos");
+        add(12, 6, "Constitución");
+        add(12, 8, "Inmaculada");
+        add(12, 25, "Navidad");
+
+        const easter = root.easterDate(year);
+        const goodFriday = new Date(year, easter.getMonth(), easter.getDate() - 2);
+        add(goodFriday.getMonth() + 1, goodFriday.getDate(), "Viernes Santo");
+
+        root.holidayCache[year] = map;
+        return map;
+    }
+
+    function eventsFor(date) {
+        const key = root.dateKey(date);
+        const events = [];
+        const holidays = root.holidaysForYear(date.getFullYear())[key];
+
+        if (holidays !== undefined)
+            events.push.apply(events, holidays);
+
+        const own = root.userEvents[key];
+        if (own !== undefined) {
+            if (Array.isArray(own))
+                events.push.apply(events, own);
+            else
+                events.push(String(own));
+        }
+
+        return events;
+    }
+
+    readonly property date selectedDate: {
+        const key = root.selectedKey === "" ? root.todayKey : root.selectedKey;
+        const parts = key.split("-");
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    }
+
+    readonly property var selectedEvents: root.eventsFor(root.selectedDate)
+    readonly property string selectedLabel: Qt.formatDateTime(root.selectedDate, "ddd d MMM")
+
+    function notifyToday() {
+        if (root.lastNotifiedKey === root.todayKey)
+            return;
+
+        const events = root.eventsFor(clock.date);
+        if (events.length === 0)
+            return;
+
+        root.lastNotifiedKey = root.todayKey;
+        Quickshell.execDetached(["notify-send", "-a", "Calendar", "-i", "x-office-calendar",
+            "Today", events.join(" · ")]);
+    }
+
+    Timer {
+        interval: 5000
+        running: true
+        onTriggered: root.notifyToday()
+    }
+
+    Timer {
+        interval: 60000
+        repeat: true
+        running: true
+        onTriggered: root.notifyToday()
     }
 
     // WMO weather codes as Open-Meteo returns them: a label for the card and an
@@ -597,6 +746,52 @@ Popup {
                             font.pixelSize: 10
                             font.bold: dayCell.modelData.isToday
                         }
+
+                        Rectangle {
+                            visible: dayCell.modelData.hasEvents && !dayCell.modelData.isToday
+                            anchors.bottom: parent.bottom
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: 3
+                            height: 3
+                            radius: 1.5
+                            color: Theme.gold
+                        }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.selectedKey = dayCell.modelData.key
+                        }
+                    }
+                }
+            }
+
+            // The selected day's events, holidays included.
+            Item {
+                width: parent.width
+                implicitHeight: selectedColumn.implicitHeight
+
+                Column {
+                    id: selectedColumn
+                    width: parent.width
+                    spacing: 2
+
+                    Text {
+                        text: root.selectedLabel
+                        color: Theme.fg2
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 9
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: root.selectedEvents.length > 0
+                            ? root.selectedEvents.join(" · ")
+                            : "No events"
+                        color: root.selectedEvents.length > 0 ? Theme.fg0 : Theme.fg2
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 10
+                        wrapMode: Text.Wrap
                     }
                 }
             }

@@ -102,6 +102,18 @@ component.
 Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard, so
 they can be pasted straight into a chat.
 
+**Calendar events.** The control centre's month grid computes Spain's national
+holidays (the fixed dates plus Good Friday) and marks any day listed in
+`~/.local/share/calendar/events.json`, a date → text map you maintain:
+
+```json
+{ "2026-12-24": "Nochebuena", "2026-12-25": "Comida en casa" }
+```
+
+It is user data and stays untracked; regional and local holidays belong there
+too. When today has an event, the notification centre sends one "Today" toast at
+startup and on the first check of a new day.
+
 ## Setup that lives outside the repo
 
 A few things cannot be symlinked out of `config/`, because they have to exist
