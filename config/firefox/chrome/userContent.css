@@ -1,0 +1,12 @@
+/* Web content: the palette reaches Firefox's own pages and the scrollbars, not
+ * the sites themselves. Restyling every website is a rabbit hole and would
+ * fight the sites' own design, so this stays deliberately small.
+ */
+
+@import url("palette.css");
+
+:root {
+	color-scheme: dark !important;
+	scrollbar-color: var(--bg2) var(--bg0) !important;
+	scrollbar-width: thin !important;
+}

@@ -51,9 +51,17 @@ scripts/gen-theme.py --check   # fail if those copies are stale
 ```
 
 One palette, not four: edit `theme.lua`, run the script, and kitty, the shell
-prompt, fuzzel, yazi, the lock screen, mako, GTK and Qt all follow. The prompt is
-ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in `.zshrc` so
-oh-my-zsh contributes its plugins and completion but not its looks.
+prompt, fuzzel, yazi, the lock screen, mako, GTK, Qt and Firefox all follow. The
+prompt is ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in
+`.zshrc` so oh-my-zsh contributes its plugins and completion but not its looks.
+
+Firefox is the one tree that is not linked into `~/.config`: its profile lives
+under `~/.config/mozilla/firefox/<id>/` and that id is machine state.
+`scripts/install.sh` reads the default profile from `profiles.ini` and links
+`config/firefox/user.js` and `chrome/*.css` into it (`palette.css` is generated;
+the rules are `userChrome.css` and `userContent.css`). Firefox only reads them
+when `toolkit.legacyUserProfileCustomizations.stylesheets` is on, which
+`user.js` sets, so **restart Firefox once** after the first install.
 
 The cursor and icons are ready-made rather than generated: `simp1e-amber` (a gold
 cursor, in both hyprcursor and xcursor) and `Adwaita-yellow` (Adwaita with the

@@ -1,0 +1,130 @@
+/* The browser chrome, in the bar's palette.
+ *
+ * palette.css is generated from config/hypr/theme.lua; this file only holds the
+ * rules, the same split as the GTK stylesheets. Firefox's own theme variables
+ * are overridden first (they are what most of the chrome actually reads), then
+ * the selectors that need it.
+ *
+ * Gold keeps its meaning: the active tab and a focused URL bar, nothing else.
+ */
+
+@import url("palette.css");
+
+:root {
+	--lwt-accent-color: var(--bg0) !important;
+	--lwt-text-color: var(--fg0) !important;
+	--toolbar-bgcolor: var(--bg1) !important;
+	--toolbar-color: var(--fg0) !important;
+	--tab-selected-bgcolor: var(--bg0) !important;
+	--tab-selected-textcolor: var(--fg0) !important;
+	--toolbarbutton-hover-background: var(--bg2) !important;
+	--toolbarbutton-active-background: var(--bg2) !important;
+	--tab-loading-fill: var(--gold) !important;
+	--urlbar-box-bgcolor: var(--bg0) !important;
+	--urlbar-box-text-color: var(--fg0) !important;
+	--urlbar-box-hover-bgcolor: var(--bg2) !important;
+	--focus-outline-color: var(--gold) !important;
+	--urlbar-box-focus-outline-color: var(--gold) !important;
+}
+
+/* The window and the toolbars. Firefox paints several nested strips, so they
+ * all get the same colour and no default grey can leak at an edge. */
+#main-window,
+#navigator-toolbox,
+#TabsToolbar,
+#nav-bar,
+#PersonalToolbar,
+#titlebar {
+	background-color: var(--bg1) !important;
+	color: var(--fg0) !important;
+}
+
+#navigator-toolbox {
+	border-bottom: 1px solid var(--bg2) !important;
+}
+
+/* Tabs: quiet when inactive, the selected one is the accent. */
+.tabbrowser-tab {
+	color: var(--fg1) !important;
+}
+
+.tabbrowser-tab[selected] {
+	color: var(--fg0) !important;
+}
+
+.tab-background {
+	border-radius: 6px !important;
+}
+
+.tabbrowser-tab[selected] .tab-background {
+	background-color: var(--bg0) !important;
+	border: 1px solid var(--bg2) !important;
+	box-shadow: inset 0 -2px var(--gold) !important;
+}
+
+.tabbrowser-tab:hover .tab-background {
+	background-color: var(--bg2) !important;
+}
+
+/* URL bar: sunken, with the gold edge only when it has focus. */
+#urlbar-background,
+#searchbar {
+	background-color: var(--bg0) !important;
+	border: 1px solid var(--bg2) !important;
+	border-radius: 6px !important;
+}
+
+#urlbar[focused] #urlbar-background,
+#urlbar[breakout-extend] #urlbar-background {
+	border-color: var(--gold) !important;
+}
+
+#urlbar-input,
+.searchbar-textbox {
+	color: var(--fg0) !important;
+}
+
+#urlbar-input::placeholder {
+	color: var(--fg2) !important;
+}
+
+/* Buttons, menus and panels. */
+toolbarbutton:hover {
+	background-color: var(--bg2) !important;
+}
+
+menupopup,
+panel {
+	--panel-background: var(--bg1) !important;
+	--panel-color: var(--fg0) !important;
+	--panel-border-color: var(--bg2) !important;
+}
+
+menupopup > menuitem,
+menupopup > menu {
+	color: var(--fg0) !important;
+}
+
+menupopup > menuitem:hover,
+menupopup > menu:hover {
+	background-color: var(--bg2) !important;
+}
+
+/* Find bar and sidebar. */
+findbar,
+.findbar-container {
+	background-color: var(--bg1) !important;
+	color: var(--fg0) !important;
+}
+
+#sidebar-box,
+#sidebar-header {
+	background-color: var(--bg1) !important;
+	color: var(--fg0) !important;
+}
+
+/* Scrollbars in every panel Firefox draws. */
+* {
+	scrollbar-color: var(--bg2) var(--bg0) !important;
+	scrollbar-width: thin !important;
+}
