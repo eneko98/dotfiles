@@ -160,12 +160,112 @@ Popup {
             Quickshell.execDetached(["hyprctl", "hyprsunset", "identity"]);
     }
 
+    // --- Weather + calendar ----------------------------------------------
+    // wttr.in over curl, no API key: it answers with the location, temperature
+    // and condition for the caller's IP. Refreshed when the panel opens and
+    // every 15 minutes while it stays open. A failed request shows a dash
+    // instead of a stale promise.
+    property string weatherText: "—"
+    property string weatherLocation: ""
+    property string weatherGlyph: "󰖐"
+    property int monthOffset: 0
+
+    readonly property date today: clock.date
+
+    readonly property string monthLabel: Qt.formatDateTime(
+        new Date(today.getFullYear(), today.getMonth() + monthOffset, 1), "MMMM yyyy")
+
+    readonly property var monthDays: {
+        const base = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+        const year = base.getFullYear();
+        const month = base.getMonth();
+        const firstWeekday = (base.getDay() + 6) % 7;
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const cells = [];
+
+        for (let i = 0; i < 42; ++i) {
+            const date = new Date(year, month, i - firstWeekday + 1);
+            cells.push({
+                day: date.getDate(),
+                inMonth: date.getMonth() === month,
+                isToday: date.getFullYear() === today.getFullYear()
+                    && date.getMonth() === today.getMonth()
+                    && date.getDate() === today.getDate()
+            });
+        }
+
+        return cells;
+    }
+
+    function weatherIcon(condition) {
+        const c = condition.toLowerCase();
+
+        if (c.indexOf("rain") >= 0 || c.indexOf("drizzle") >= 0 || c.indexOf("shower") >= 0)
+            return "󰖗";
+        if (c.indexOf("snow") >= 0 || c.indexOf("sleet") >= 0 || c.indexOf("blizzard") >= 0)
+            return "󰖘";
+        if (c.indexOf("thunder") >= 0)
+            return "󰖓";
+        if (c.indexOf("fog") >= 0 || c.indexOf("mist") >= 0 || c.indexOf("haze") >= 0)
+            return "󰖑";
+        if (c.indexOf("cloud") >= 0 || c.indexOf("overcast") >= 0)
+            return "󰖐";
+        if (c.indexOf("sun") >= 0 || c.indexOf("clear") >= 0)
+            return "󰖙";
+        return "󰖐";
+    }
+
+    function refreshWeather() {
+        weatherQuery.running = false;
+        weatherQuery.running = true;
+    }
+
+    Process {
+        id: weatherQuery
+
+        command: ["curl", "-fsS", "--max-time", "8", "https://wttr.in/?format=%l|%t|%C"]
+
+        stdout: StdioCollector {
+            id: weatherOut
+
+            onStreamFinished: {
+                const line = weatherOut.text.trim();
+                if (line === "")
+                    return;
+
+                const parts = line.split("|");
+                if (parts.length < 3)
+                    return;
+
+                root.weatherLocation = parts[0];
+                root.weatherText = parts[1] + " · " + parts[2];
+                root.weatherGlyph = root.weatherIcon(parts[2]);
+            }
+        }
+
+        onExited: function (exitCode) {
+            if (exitCode !== 0) {
+                root.weatherText = "—";
+                root.weatherLocation = "";
+                root.weatherGlyph = "󰖐";
+            }
+        }
+    }
+
+    Timer {
+        interval: 900000
+        repeat: true
+        running: root.visible
+        onTriggered: root.refreshWeather()
+    }
+
     onVisibleChanged: {
         if (!visible)
             return;
 
         brightnessRead.running = false;
         brightnessRead.running = true;
+        root.refreshWeather();
     }
 
     // --- Header -----------------------------------------------------------
@@ -257,6 +357,17 @@ Popup {
         }
     }
 
+    // --- Weather ----------------------------------------------------------
+    ControlCard {
+        width: parent.width
+        glyph: root.weatherGlyph
+        title: "Weather"
+        detail: root.weatherLocation === ""
+            ? root.weatherText
+            : root.weatherText + " · " + root.weatherLocation
+        onClicked: root.refreshWeather()
+    }
+
     // --- Volume -----------------------------------------------------------
     Item {
         width: parent.width
@@ -340,6 +451,139 @@ Popup {
 
             onMoved: function (value) {
                 root.setBrightness(value);
+            }
+        }
+    }
+
+    // --- Calendar ---------------------------------------------------------
+    Item {
+        width: parent.width
+        implicitHeight: calendarColumn.implicitHeight
+
+        Column {
+            id: calendarColumn
+            width: parent.width
+            spacing: 6
+
+            Item {
+                width: parent.width
+                height: 18
+
+                Text {
+                    anchors.left: parent.left
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.monthLabel
+                    color: Theme.fg1
+                    font.family: "Source Han Serif CN"
+                    font.pixelSize: 12
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.monthOffset = 0
+                    }
+                }
+
+                Row {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 14
+
+                    Text {
+                        text: "‹"
+                        color: prevMonth.containsMouse ? Theme.gold : Theme.fg2
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 14
+
+                        MouseArea {
+                            id: prevMonth
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.monthOffset--
+                        }
+                    }
+
+                    Text {
+                        text: "›"
+                        color: nextMonth.containsMouse ? Theme.gold : Theme.fg2
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 14
+
+                        MouseArea {
+                            id: nextMonth
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.monthOffset++
+                        }
+                    }
+                }
+            }
+
+            Grid {
+                id: weekdayGrid
+                width: parent.width
+                columns: 7
+
+                Repeater {
+                    model: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+
+                    delegate: Text {
+                        id: weekday
+
+                        required property string modelData
+
+                        width: weekdayGrid.width / 7
+                        horizontalAlignment: Text.AlignHCenter
+                        text: weekday.modelData
+                        color: Theme.fg2
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 9
+                    }
+                }
+            }
+
+            Grid {
+                id: dayGrid
+                width: parent.width
+                columns: 7
+                rowSpacing: 2
+
+                Repeater {
+                    model: root.monthDays
+
+                    delegate: Item {
+                        id: dayCell
+
+                        required property var modelData
+
+                        width: dayGrid.width / 7
+                        height: 22
+
+                        Rectangle {
+                            visible: dayCell.modelData.isToday
+                            anchors.centerIn: parent
+                            width: 20
+                            height: 20
+                            radius: 10
+                            color: Theme.gold
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: dayCell.modelData.day
+                            color: dayCell.modelData.isToday ? Theme.bg0
+                                : dayCell.modelData.inMonth ? Theme.fg0
+                                : Theme.fg2
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 10
+                            font.bold: dayCell.modelData.isToday
+                        }
+                    }
+                }
             }
         }
     }

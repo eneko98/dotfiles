@@ -223,6 +223,11 @@ upower
 # the systemd user unit; the control centre toggles it over IPC.
 hyprsunset
 
+# Weather
+# The control centre asks wttr.in for the current conditions: no API key, but it
+# needs curl. The query runs on demand, so there is no daemon and no polling.
+curl
+
 # Browser
 # Firefox, for the web (and for browsing r/unixporn while deciding what to build
 # next). Native Wayland through the MOZ_ENABLE_WAYLAND=1 already in the session
