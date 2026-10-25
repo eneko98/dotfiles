@@ -1,16 +1,20 @@
--- The palette, in one place.
+-- The palette: this file is the committed default.
 --
 -- Hyprland requires this file (config/hypr/hyprland.lua, `require("theme")`) and
--- paints its borders and its background from it. Nothing else reads Lua, so
--- scripts/gen-theme.py *generates* the copies the other programs need, rather
--- than having them guess:
---     config/kitty/theme.conf    included by kitty.conf
---     config/zsh/theme.zsh       sourced by the prompt
---     config/fuzzel/colors.ini   included by fuzzel.ini
--- Edit the values here, then run the script. The copies cannot drift, and
--- `scripts/gen-theme.py --check` would say so if they did.
+-- paints its borders and its background from it. When a wallpaper has generated
+-- one, the *active* palette is $XDG_STATE_HOME/dotfiles/palette.lua
+-- (scripts/extract-palette.py) and the loader below returns it instead of the
+-- table here; deleting that file, or running `extract-palette.py --reset`, comes
+-- back to these values.
 --
--- Where the colours come from: the wallpaper, images/wallpapers/hong-kong-night.png.
+-- Nothing else reads Lua, so scripts/gen-theme.py writes the copies the other
+-- programs need from the active palette, under $XDG_STATE_HOME/dotfiles/theme/
+-- (not into the repository: the palette follows the wallpaper, which is machine
+-- state). scripts/install.sh links each copy to the fixed path its program
+-- expects. `scripts/gen-theme.py --check` reports a stale copy.
+--
+-- Where these defaults come from: the wallpaper,
+-- images/wallpapers/hong-kong-night.png.
 --   * bg0 is the photograph's own shadow mass, so the desktop reads as an
 --     extension of the image rather than a box on top of it.
 --   * gold and teal are its two chroma families (a neon sign, a lit facade),
@@ -19,10 +23,20 @@
 --   * red is NOT in the photograph. The reddest cluster in it is orange
 --     (#b88540), so red here is a designed addition, not an extracted colour.
 --
--- How to use them: three hues only. Gold does the work (accent, active things).
--- Teal appears rarely and means "this is the thing you are acting on right now"
--- (focus, links). Red appears almost never and means "something is wrong".
--- A new colour has to earn a new *meaning* -- never a new mood.
+-- How to use them: three hues only. Gold does the work (accent, active things);
+-- with a generated palette "gold" is the accent slot and its hue follows the
+-- image. Teal appears rarely and means "this is the thing you are acting on
+-- right now" (focus, links). Red appears almost never and means "something is
+-- wrong". A new colour has to earn a new *meaning* -- never a new mood.
+
+-- The live palette, when one has been generated from the chosen wallpaper.
+-- pcall, not a bare dofile: a half-written file must not take Hyprland down.
+local state_home = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
+local generated = state_home .. "/dotfiles/palette.lua"
+local ok, palette = pcall(dofile, generated)
+if ok and type(palette) == "table" and palette.bg0 and palette.fg0 and palette.gold then
+    return palette
+end
 
 local theme = {
     bg0 = "#0a0708", -- base: terminal background, misc:background_color

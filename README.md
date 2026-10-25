@@ -30,38 +30,55 @@ git clone https://github.com/eneko98/dotfiles ~/repos/dotfiles
 ~/repos/dotfiles/scripts/install.sh             # symlink config/ into ~/.config
 ```
 
-The script only ever creates symlinks. It does not install packages, and it never
-overwrites a real file — `~/.config` stays a normal directory, with only the files
-that live in this repo linked into it.
+The script only creates symlinks and regenerates the palette's copies. It does not
+install packages, and it never overwrites a real file — `~/.config` stays a normal
+directory, with only the files that live in this repo (and the generated palette
+copies) linked into it.
 
 ## The theme
 
-The colours are taken from the wallpaper, so the desktop and the image behind it
-agree with each other.
+The colours follow the wallpaper: pick one with **SUPER + W** and the palette is
+re-derived from it, so the desktop and the image behind it agree.
 
-`config/hypr/theme.lua` is the palette: nine named roles plus the sixteen ANSI
-colours a terminal needs. Hyprland reads it directly — `hyprland.lua` requires it
-for the window borders and the background colour.
+`config/hypr/theme.lua` is the committed default: nine named roles plus the
+sixteen ANSI colours a terminal needs. Hyprland reads it directly — `hyprland.lua`
+requires it for the borders and the background — and, when a wallpaper has
+generated one, the file returns `$XDG_STATE_HOME/dotfiles/palette.lua` instead of
+its own values.
 
-Nothing else reads Lua, so the other copies are generated instead of hand-written:
+Nothing else reads Lua, so every other copy is generated:
 
 ```bash
-scripts/gen-theme.py           # rewrite the generated copies
-scripts/gen-theme.py --check   # fail if those copies are stale
+scripts/extract-palette.py <wallpaper>   # derive a palette from an image
+scripts/extract-palette.py --reset       # back to the committed default
+scripts/gen-theme.py                     # rewrite the generated copies
+scripts/gen-theme.py --check             # fail if those copies are stale
 ```
 
-One palette, not four: edit `theme.lua`, run the script, and kitty, the shell
-prompt, fuzzel, yazi, mako, GTK, Qt and Firefox all follow, and the lock screen reads
-`Theme.qml` directly. The
-prompt is ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in
+The copies live under `$XDG_STATE_HOME/dotfiles/theme/`, not in the repository,
+because the palette is machine state: trying a wallpaper must not dirty the repo.
+`scripts/install.sh` generates them and links each one to the fixed path its
+program expects (kitty's `theme.conf`, `Theme.qml`, the GTK CSS, the Firefox
+palette, …), so those programs keep reading the paths they already know.
+
+Hyprland and kitty reload live, and the bar reloads itself when `Theme.qml`
+changes; GTK, Qt, Firefox, yazi, fuzzel and hyprlock read their theme at startup,
+so they pick the new colours up when they next start. A full GUI restart is the
+honest "apply everything".
+
+`gold` and `teal` are role slots, not promises: their hues come from the
+wallpaper. Red stays the reserved "something is wrong" colour, and the ANSI hues a
+terminal needs stay fixed and contrast-checked — see `scripts/extract-palette.py`.
+The prompt is ours as well — `config/zsh/prompt.zsh`, with `ZSH_THEME=""` in
 `.zshrc` so oh-my-zsh contributes its plugins and completion but not its looks.
 
 Firefox is the one tree that is not linked into `~/.config`: its profile lives
 under `~/.config/mozilla/firefox/<id>/` and that id is machine state.
 `scripts/install.sh` reads the default profile from `profiles.ini` and links
-`config/firefox/user.js` and `chrome/*.css` into it (`palette.css` is generated;
-the rules are `userChrome.css` and `userContent.css`). Firefox only reads them
-when `toolkit.legacyUserProfileCustomizations.stylesheets` is on, which
+`config/firefox/user.js` and the two hand-written rules (`userChrome.css`,
+`userContent.css`) into it, plus the generated `palette.css` from the state
+dir. Firefox only reads them when
+`toolkit.legacyUserProfileCustomizations.stylesheets` is on, which
 `user.js` sets, so **restart Firefox once** after the first install.
 
 The cursor and icons are ready-made rather than generated: `simp1e-amber` (a gold
@@ -127,8 +144,9 @@ startup and on the first check of a new day.
 `config/hypr/scripts/lock`, which starts a **separate** Quickshell process
 (`quickshell -p ~/.config/quickshell/lock.qml`). Separate is deliberate: a bar
 reload would destroy the session lock, and the compositor then keeps the session
-hidden behind a solid colour by design. The screen shows the wallpaper blurred and
-dimmed, the serif clock, the seal and a PAM password field
+hidden behind a solid colour by design. The screen shows the current wallpaper
+blurred and dimmed (regenerated when you pick one), the serif clock, the seal and
+a PAM password field
 (`config/quickshell/pam/password.conf`, `auth required pam_unix.so`); `flock`
 makes a second invocation a no-op. The entrance and the unlock fade are in
 `LockSurface.qml` / `LockContext.qml`.
@@ -199,10 +217,11 @@ systemctl --user enable --now hyprpaper.service
 
 **The picker is `SUPER + W`.** Changing the wallpaper does not need a restart:
 it lists the committed images in `images/wallpapers/` plus anything you drop in
-`~/Pictures/Wallpapers/`, and applies the choice with hyprpaper. The path is remembered under
-`~/.local/state/dotfiles/`, so it survives a reboot — the tracked
-`hyprpaper.conf` only provides the initial default. The lock screen's blurred
-background is regenerated from whichever image you pick.
+`~/Pictures/Wallpapers/`, and applies the choice with hyprpaper and re-derives the palette from it (see
+**The theme**). The path is remembered under `~/.local/state/dotfiles/`, so it
+survives a reboot — the tracked `hyprpaper.conf` only provides the initial
+default. The lock screen's blurred background is regenerated from whichever image
+you pick.
 
 The remembered choice is re-applied at login by a one-shot unit:
 

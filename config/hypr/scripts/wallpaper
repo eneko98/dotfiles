@@ -19,6 +19,11 @@ state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
 state_file="$state_dir/wallpaper"
 lock_file="$state_dir/lock-wallpaper.png"
 
+# This script is symlinked into ~/.config; resolve its real location to find the
+# repository, so the generator paths do not need a hardcoded clone location.
+here=$(dirname "$(readlink -f "$0")")
+repo=$(cd "$here/../../.." && pwd)
+
 blur() {
 	[ -f "$1" ] || return 0
 	mkdir -p "$state_dir"
@@ -43,10 +48,23 @@ apply() {
 case "${1:-}" in
 set)
 	[ -n "${2:-}" ] && [ -f "$2" ] || exit 1
-	apply "$2" || exit 1
+	# Remember an absolute path: the restore unit does not run in this cwd.
+	path=$(readlink -f "$2")
+	apply "$path" || exit 1
 	mkdir -p "$state_dir"
-	printf '%s\n' "$2" >"$state_file"
-	blur "$2"
+	printf '%s\n' "$path" >"$state_file"
+	blur "$path"
+
+	# The palette follows the wallpaper: re-derive it, rewrite the generated
+	# copies and refresh what reloads live (Hyprland, kitty, and Quickshell --
+	# which watches its Theme.qml link). Apps that read their theme at startup
+	# (GTK, Qt, Firefox, yazi, fuzzel, hyprlock) pick it up when they next start.
+	if [ -x "$repo/scripts/extract-palette.py" ]; then
+		"$repo/scripts/extract-palette.py" "$path" >/dev/null 2>&1 || true
+		"$repo/scripts/gen-theme.py" >/dev/null 2>&1 || true
+		hyprctl reload >/dev/null 2>&1 || true
+		pkill -USR1 -x kitty 2>/dev/null || true
+	fi
 	;;
 restore)
 	[ -f "$state_file" ] || exit 0

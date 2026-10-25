@@ -8,18 +8,40 @@
 # Only the files committed here are linked, so ~/.config stays a normal directory
 # and programs can still write their own state next to our symlinks. Real files
 # are never overwritten -- anything in the way is reported and left alone.
+#
+# The palette's copies are the exception: they are *generated* from the active
+# palette (the chosen wallpaper's, or the committed default) and live under
+# XDG_STATE_HOME, because the palette is machine state. This script runs
+# scripts/gen-theme.py and links each generated file to the fixed path its
+# program expects.
 
 set -euo pipefail
 
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 src_dir="$repo_dir/config"
 dst_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+state_theme="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/theme"
+
+# Every path scripts/gen-theme.py writes, relative to both ~/.config and the
+# state theme dir. Firefox is handled with its profile, below.
+generated=(
+	kitty/theme.conf
+	zsh/theme.zsh
+	fuzzel/colors.ini
+	yazi/theme.toml
+	hypr/hyprlock-theme.conf
+	mako/theme
+	gtk-3.0/palette.css
+	gtk-4.0/palette.css
+	qt6ct/colors/theme.conf
+	quickshell/Theme.qml
+)
 
 dry_run=0
 case "${1:-}" in
 	--dry-run | -n) dry_run=1 ;;
 	-h | --help)
-		sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'
+		sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'
 		exit 0
 		;;
 	"") ;;
@@ -37,19 +59,18 @@ fi
 changed=0
 skipped=0
 
-while IFS= read -r -d '' src; do
-	rel="${src#"$src_dir"/}"
-	dst="$dst_dir/$rel"
+link_one() {
+	local src="$1" dst="$2"
 
 	if [[ -L "$dst" ]]; then
-		if [[ "$(readlink -f -- "$dst")" == "$(readlink -f -- "$src")" ]]; then
-			continue
+		if [[ "$(readlink -- "$dst")" == "$src" ]]; then
+			return 0
 		fi
 		printf 'relink  %s\n' "$dst"
 	elif [[ -e "$dst" ]]; then
 		printf 'SKIP    %s exists and is not a symlink -- move it aside\n' "$dst" >&2
 		skipped=$((skipped + 1))
-		continue
+		return 0
 	else
 		printf 'link    %s -> %s\n' "$dst" "$src"
 	fi
@@ -59,7 +80,24 @@ while IFS= read -r -d '' src; do
 		ln -sfn -- "$src" "$dst"
 	fi
 	changed=$((changed + 1))
+}
+
+while IFS= read -r -d '' src; do
+	rel="${src#"$src_dir"/}"
+	link_one "$src" "$dst_dir/$rel"
 done < <(find "$src_dir" -type f -not -path "$src_dir/firefox/*" -print0 | sort -z)
+
+# Regenerate the palette's copies from the active palette, then link them where
+# the programs look. A retheme writes the same files under the state dir; the
+# links survive it.
+if ((dry_run)); then
+	printf 'note    the palette copies under %s would be regenerated and linked\n' "$state_theme"
+else
+	"$repo_dir/scripts/gen-theme.py" >/dev/null
+	for rel in "${generated[@]}"; do
+		link_one "$state_theme/$rel" "$dst_dir/$rel"
+	done
+fi
 
 # Firefox is the one tree that is not a 1:1 mirror: its profile lives under
 # ~/.config/mozilla/firefox/<machine-specific-id>/, so the theme files are linked
@@ -76,27 +114,12 @@ if [[ -f "$firefox_ini" ]]; then
 	if [[ -n "${firefox_profile:-}" && -d "$firefox_profile_dir" ]]; then
 		while IFS= read -r -d '' src; do
 			rel="${src#"$firefox_theme"/}"
-			dst="$firefox_profile_dir/$rel"
-
-			if [[ -L "$dst" ]]; then
-				if [[ "$(readlink -f -- "$dst")" == "$(readlink -f -- "$src")" ]]; then
-					continue
-				fi
-				printf 'relink  %s\n' "$dst"
-			elif [[ -e "$dst" ]]; then
-				printf 'SKIP    %s exists and is not a symlink -- move it aside\n' "$dst" >&2
-				skipped=$((skipped + 1))
-				continue
-			else
-				printf 'link    %s -> %s\n' "$dst" "$src"
-			fi
-
-			if ((!dry_run)); then
-				mkdir -p -- "$(dirname -- "$dst")"
-				ln -sfn -- "$src" "$dst"
-			fi
-			changed=$((changed + 1))
+			link_one "$src" "$firefox_profile_dir/$rel"
 		done < <(find "$firefox_theme" -type f -print0 | sort -z)
+
+		# The palette is generated, so it comes from the state dir.
+		link_one "$state_theme/firefox/chrome/palette.css" \
+			"$firefox_profile_dir/chrome/palette.css"
 	fi
 fi
 

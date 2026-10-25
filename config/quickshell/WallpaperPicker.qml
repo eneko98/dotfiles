@@ -154,7 +154,7 @@ Popup {
         Text {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
-            text: "Enter to apply · Esc to close"
+            text: "Enter to apply · colours follow · Esc to close"
             color: Theme.fg2
             font.family: "Adwaita Sans"
             font.pixelSize: 10
