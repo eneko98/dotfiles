@@ -142,6 +142,16 @@ ShellRoot {
                 ColorAnimation { duration: 160 }
             }
 
+            // Declared before the row so the play button inside Media sits
+            // above it: later items win the click.
+            MouseArea {
+                id: islandArea
+                anchors.fill: parent
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.openControlCenter()
+            }
+
             // The serif's digits are proportional; "88:88" measures the widest
             // case so the island keeps one width and does not breathe every
             // minute. tnum helps when the font has it, the fixed width covers
@@ -160,6 +170,18 @@ ShellRoot {
                 anchors.centerIn: parent
                 spacing: 8
 
+                // The dynamic part: shows while a player has a track.
+                Media {
+                    id: media
+                }
+
+                Rectangle {
+                    visible: media.active
+                    width: 1
+                    height: 14
+                    color: Theme.bg2
+                }
+
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDateTime(clock.date, "hh:mm")
@@ -173,8 +195,10 @@ ShellRoot {
                     font.features: ({ "tnum": 1 })
                 }
 
+                // The date steps aside while the media section is up.
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
+                    visible: !media.active
                     text: Qt.formatDateTime(clock.date, "ddd d MMM")
                     color: Theme.fg1
                     font.family: "Adwaita Sans"
@@ -182,15 +206,6 @@ ShellRoot {
                 }
             }
 
-            // Hover is the whole interaction until the control centre exists;
-            // the MouseArea also claims the area for the click it will handle.
-            MouseArea {
-                id: islandArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.openControlCenter()
-            }
         }
 
         // --- Right pill: the status modules --------------------------------
