@@ -147,7 +147,11 @@ xdg-user-dirs
 # ko (checked with `fc-match` per language, and with a Traditional-only glyph and
 # a kana). Glyph *forms* are the Simplified ones; add the TW/HK variant later if
 # the Traditional shapes matter. Noto Color Emoji covers the emoji.
+# Source Han Serif CN is the matching serif, for the bar's clock and the
+# control centre's titles: a 宋体 face reads far more "Chinese" than the sans,
+# and only the family used is loaded by the bar. 77 MiB.
 adobe-source-han-sans-cn-fonts
+adobe-source-han-serif-cn-fonts
 noto-fonts-emoji
 
 # 09 - file manager
