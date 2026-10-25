@@ -45,6 +45,20 @@ apply() {
 	return 1
 }
 
+# The login screen is system state too: the greeter user cannot read this home
+# (0700), so the generated stylesheet and the current wallpaper's blurred copy
+# are installed into /etc/greetd and /usr/share/backgrounds. sudo is passwordless
+# here; if it is not, the greeter simply keeps the previous theme.
+install_greeter() {
+	css="$state_dir/theme/greeter/regreet.css"
+	if [ -f "$css" ]; then
+		sudo -n install -m 644 "$css" /etc/greetd/regreet.css 2>/dev/null || true
+	fi
+	if [ -f "$lock_file" ]; then
+		sudo -n install -m 644 "$lock_file" /usr/share/backgrounds/greeter.png 2>/dev/null || true
+	fi
+}
+
 # The icon variant follows the accent; gen-theme.py wrote its name. GSettings is
 # what the portal (and through it GTK and fuzzel) reads.
 set_icon_theme() {
@@ -71,6 +85,7 @@ set)
 		"$repo/scripts/extract-palette.py" "$path" >"$state_dir/retheme.log" 2>&1 || true
 		"$repo/scripts/gen-theme.py" >/dev/null 2>&1 || true
 		set_icon_theme
+		install_greeter
 		systemctl --user restart polkit-gnome.service >/dev/null 2>&1 || true
 		hyprctl reload >/dev/null 2>&1 || true
 		pkill -USR1 -x kitty 2>/dev/null || true
@@ -84,6 +99,7 @@ restore)
 	apply "$path" || true
 	blur "$path"
 	set_icon_theme
+	install_greeter
 	;;
 *)
 	exec qs ipc call wallpaper toggle
