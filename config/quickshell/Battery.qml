@@ -1,4 +1,5 @@
-// The battery module: a battery glyph by level and the percentage.
+// The battery module: a battery glyph by level and the percentage. Clicking it
+// opens our own popup (BatteryPopup.qml) with the state, time, power and health.
 //
 // UPower.displayDevice is the aggregate device desktop environments show. It is
 // never null, but may not be initialised yet, so `ready` guards the bindings.
@@ -52,5 +53,13 @@ Row {
 
     BatteryPopup {
         id: popup
+    }
+
+    TapHandler {
+        onTapped: {
+            const p = root.mapToItem(null, 0, 0);
+            popup.rightMargin = root.Window.width - (p.x + root.width);
+            popup.visible = true;
+        }
     }
 }
