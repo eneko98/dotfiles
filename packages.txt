@@ -184,8 +184,8 @@ bat
 
 # theme pass: Qt theming
 # qt6ct is how Qt apps read the palette and the icon theme. The cursor
-# (Bibata-Modern-Ice) and the icon theme (Adwaita-teal) are AUR-only, so they
-# are listed in the note below rather than here.
+# (Bibata-Modern-Ice) and the Adwaita-* icon variants are AUR-only, so they are
+# listed in the note below rather than here; gen-theme.py picks the variant.
 qt6ct
 
 # Phase 3 - our own bar
@@ -252,5 +252,6 @@ firefox
 #   paru -S bibata-cursor-git adwaita-colors-icon-theme
 #   bibata-cursor-git: Bibata Modern Classic/Ice/Amber, hyprcursor + xcursor;
 #                      we use Bibata-Modern-Ice (neutral white, rounded)
-#   adwaita-colors: Adwaita with the folders/places recoloured; we use Adwaita-teal
+#   adwaita-colors: Adwaita with the folders/places recoloured; the variant follows
+#                   the accent (Adwaita-teal for the default blue palette)
 # ---------------------------------------------------------------------------

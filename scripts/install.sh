@@ -33,7 +33,10 @@ generated=(
 	mako/theme
 	gtk-3.0/palette.css
 	gtk-4.0/palette.css
+	gtk-3.0/settings.ini
+	gtk-4.0/settings.ini
 	qt6ct/colors/theme.conf
+	qt6ct/qt6ct.conf
 	quickshell/Theme.qml
 )
 
@@ -97,6 +100,13 @@ else
 	for rel in "${generated[@]}"; do
 		link_one "$state_theme/$rel" "$dst_dir/$rel"
 	done
+
+	# The icon theme reaches GTK/fuzzel through the portal, so gsettings has to
+	# carry the generated value too; the GTK and Qt files already have it.
+	if [[ -f "$state_theme/icon-theme" ]] && command -v gsettings >/dev/null 2>&1; then
+		gsettings set org.gnome.desktop.interface icon-theme \
+			"$(cat "$state_theme/icon-theme")" >/dev/null 2>&1 || true
+	fi
 
 	# If the palette copies were (re)written, Theme.qml may be a new inode, and
 	# Quickshell watches the inode it loaded. Restarting the bar is cheaper than

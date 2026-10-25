@@ -45,6 +45,14 @@ apply() {
 	return 1
 }
 
+# The icon variant follows the accent; gen-theme.py wrote its name. GSettings is
+# what the portal (and through it GTK and fuzzel) reads.
+set_icon_theme() {
+	file="$state_dir/theme/icon-theme"
+	[ -f "$file" ] || return 0
+	gsettings set org.gnome.desktop.interface icon-theme "$(cat "$file")" 2>/dev/null || true
+}
+
 case "${1:-}" in
 set)
 	[ -n "${2:-}" ] && [ -f "$2" ] || exit 1
@@ -62,6 +70,8 @@ set)
 	if [ -x "$repo/scripts/extract-palette.py" ]; then
 		"$repo/scripts/extract-palette.py" "$path" >"$state_dir/retheme.log" 2>&1 || true
 		"$repo/scripts/gen-theme.py" >/dev/null 2>&1 || true
+		set_icon_theme
+		systemctl --user restart polkit-gnome.service >/dev/null 2>&1 || true
 		hyprctl reload >/dev/null 2>&1 || true
 		pkill -USR1 -x kitty 2>/dev/null || true
 	fi
@@ -72,6 +82,7 @@ restore)
 	[ -f "$path" ] || exit 0
 	apply "$path" || true
 	blur "$path"
+	set_icon_theme
 	;;
 *)
 	exec qs ipc call wallpaper toggle

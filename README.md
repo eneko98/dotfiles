@@ -58,13 +58,20 @@ scripts/gen-theme.py --check             # fail if those copies are stale
 The copies live under `$XDG_STATE_HOME/dotfiles/theme/`, not in the repository,
 because the palette is machine state: trying a wallpaper must not dirty the repo.
 `scripts/install.sh` generates them and links each one to the fixed path its
-program expects (kitty's `theme.conf`, `Theme.qml`, the GTK CSS, the Firefox
-palette, …), so those programs keep reading the paths they already know.
+program expects (kitty's `theme.conf`, `Theme.qml`, the GTK CSS and settings, the
+Qt palette and config, the icon theme, the Firefox palette, …), so those programs
+keep reading the paths they already know.
 
 Hyprland and kitty reload live, and the bar reloads itself when `Theme.qml`
-changes; GTK, Qt, Firefox, yazi, fuzzel and hyprlock read their theme at startup,
-so they pick the new colours up when they next start. A full GUI restart is the
-honest "apply everything".
+changes; GTK, Qt, Firefox, yazi, fuzzel and hyprlock read their theme at startup
+(the icon variant included), so they pick it up when they next start. A full GUI
+restart is the honest "apply everything".
+
+After an `extract-palette.py --reset`, run `gen-theme.py` and then
+`gsettings set org.gnome.desktop.interface icon-theme "$(cat
+~/.local/state/dotfiles/theme/icon-theme)"` (or run
+`config/hypr/scripts/wallpaper restore`, which does it) so the icons return to the
+default's variant too.
 
 `gold` and `teal` are role slots, not promises: their hues come from the
 wallpaper. Red stays the reserved "something is wrong" colour, and the ANSI hues a
@@ -81,14 +88,20 @@ dir. Firefox only reads them when
 `toolkit.legacyUserProfileCustomizations.stylesheets` is on, which
 `user.js` sets, so **restart Firefox once** after the first install.
 
-The cursor and icons are ready-made rather than generated: `Bibata-Modern-Ice`
-(a white, rounded pointer from the Bibata set, in both hyprcursor and xcursor)
-and `Adwaita-teal` (Adwaita with the folders and places in the accent's teal —
-the one static colour left). The cursor is neutral on purpose: it reads on any
-palette the wallpaper generates. `XCURSOR_THEME` also goes to the systemd user
-session (`config/environment.d/cursor.conf`), because the bar and the idle
-daemon are services and would otherwise fall back to Adwaita. Both are AUR
-packages — see `packages.txt`.
+The cursor is ready-made rather than generated: `Bibata-Modern-Ice`, a white
+rounded pointer from the Bibata set (both hyprcursor and xcursor). It is neutral
+on purpose: it has to read on any palette the wallpaper generates.
+`XCURSOR_THEME` also goes to the systemd user session
+(`config/environment.d/cursor.conf`), because the bar and the idle daemon are
+services and would otherwise fall back to Adwaita.
+
+The icons do follow the accent: `gen-theme.py` maps the accent's hue to one of
+the `Adwaita-*` variants from `adwaita-colors-icon-theme` (teal for the default
+blue), writes it into the GTK settings, `qt6ct.conf` and fuzzel's include, and
+writes `theme/icon-theme`; `install.sh` and the wallpaper script set the GSettings
+value that the portal reads. App icons are their own, so this is the folder/place
+colour, not a recolour of Firefox. Both cursor and icon packages are AUR — see
+`packages.txt`.
 
 There is one committed wallpaper, `images/wallpapers/default.png`: generated for
 this repository from the palette, CC0, with the exact command in the `CREDITS.md`
@@ -276,17 +289,19 @@ starts them on demand, and which backend serves an interface is decided by
 `UseIn` in `/usr/share/xdg-desktop-portal/portals/`.
 
 **The cursor and icon theme reach the portal through GSettings**, and that is
-dconf state (a binary file), so it is set once here rather than symlinked:
+dconf state (a binary file). The icon value is generated from the accent and set
+by `install.sh` and by the wallpaper script; the cursor is fixed. The manual
+commands are the fallback:
 
 ```bash
-gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-teal'
+gsettings set org.gnome.desktop.interface icon-theme "$(cat ~/.local/state/dotfiles/theme/icon-theme)"
 gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Ice'
 gsettings set org.gnome.desktop.interface cursor-size 24
 ```
 
-GTK and Qt get the same values from their tracked config files
-(`gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`, `qt6ct/qt6ct.conf`), and Hyprland
-from `hyprland.lua`.
+GTK and Qt get the same values from their generated config files
+(`gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`, `qt6ct/qt6ct.conf`, linked by
+`install.sh`), and Hyprland from `hyprland.lua`.
 
 **The bar is a systemd user service too.** Quickshell draws it from
 `config/quickshell/` (QML), and like mako and hypridle it ships no unit, so this
