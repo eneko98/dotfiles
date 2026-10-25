@@ -25,7 +25,10 @@ ShellRoot {
         }
 
         implicitHeight: 34
-        color: Theme.bg1
+        // Transparent surface, so only the components paint and the wallpaper
+        // shows through the rest. "transparent" is a QML colour keyword, not a
+        // palette value, so the no-hex rule still holds.
+        color: "transparent"
 
         // The left group. A plain Row, not a layout: the items have fixed sizes
         // and no need to share space.
