@@ -104,6 +104,7 @@ ShellRoot {
             Volume {}
             Wifi {}
             Bluetooth {}
+            Battery {}
         }
     }
 }

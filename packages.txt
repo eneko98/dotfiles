@@ -200,6 +200,11 @@ quickshell
 bluez
 bluez-utils
 
+# Battery
+# upower exposes the battery over D-Bus. Its daemon is D-Bus activated, so the
+# package is enough: no service to enable. The bar reads UPower.displayDevice.
+upower
+
 # ---------------------------------------------------------------------------
 # Everything above is in the repos and can be installed with the command at the
 # top of this file. The one exception is the AUR helper, which pacman cannot
