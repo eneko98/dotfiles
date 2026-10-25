@@ -150,11 +150,9 @@ xdg-user-dirs
 # ko (checked with `fc-match` per language, and with a Traditional-only glyph and
 # a kana). Glyph *forms* are the Simplified ones; add the TW/HK variant later if
 # the Traditional shapes matter. Noto Color Emoji covers the emoji.
-# Source Han Serif CN is the matching serif, for the bar's clock and the
-# control centre's titles: a 宋体 face reads far more "Chinese" than the sans,
-# and only the family used is loaded by the bar. 77 MiB.
+# The bar and the lock use Adwaita Sans now (the CJK serif left with the old
+# identity), so the sans is only needed for actual Chinese text.
 adobe-source-han-sans-cn-fonts
-adobe-source-han-serif-cn-fonts
 noto-fonts-emoji
 
 # 09 - file manager
@@ -186,7 +184,7 @@ bat
 
 # theme pass: Qt theming
 # qt6ct is how Qt apps read the palette and the icon theme. The cursor
-# (Bibata-Modern-Ice) and the icon theme (Adwaita-yellow) are AUR-only, so they
+# (Bibata-Modern-Ice) and the icon theme (Adwaita-teal) are AUR-only, so they
 # are listed in the note below rather than here.
 qt6ct
 
@@ -254,5 +252,5 @@ firefox
 #   paru -S bibata-cursor-git adwaita-colors-icon-theme
 #   bibata-cursor-git: Bibata Modern Classic/Ice/Amber, hyprcursor + xcursor;
 #                      we use Bibata-Modern-Ice (neutral white, rounded)
-#   adwaita-colors: Adwaita with the folders/places recoloured; we use Adwaita-yellow
+#   adwaita-colors: Adwaita with the folders/places recoloured; we use Adwaita-teal
 # ---------------------------------------------------------------------------

@@ -43,7 +43,7 @@ Rectangle {
     readonly property string lockWallpaper:
         Quickshell.env("HOME") + "/.local/state/dotfiles/lock-wallpaper.png"
     readonly property string defaultLockWallpaper:
-        Quickshell.env("HOME") + "/repos/dotfiles/images/wallpapers/hong-kong-night-lock.png"
+        Quickshell.env("HOME") + "/repos/dotfiles/images/wallpapers/default-lock.png"
 
     Image {
         anchors.fill: parent
@@ -92,10 +92,6 @@ Rectangle {
             }
         }
 
-        Seal {
-            anchors.horizontalCenter: parent.horizontalCenter
-        }
-
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 2
@@ -104,7 +100,7 @@ Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "hh:mm")
                 color: Theme.fg0
-                font.family: "Source Han Serif CN"
+                font.family: "Adwaita Sans"
                 font.pixelSize: 96
                 font.features: ({ "tnum": 1 })
             }
@@ -113,7 +109,7 @@ Rectangle {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
                 color: Theme.fg1
-                font.family: "Source Han Serif CN"
+                font.family: "Adwaita Sans"
                 font.pixelSize: 17
             }
         }

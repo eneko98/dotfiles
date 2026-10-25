@@ -83,16 +83,17 @@ dir. Firefox only reads them when
 
 The cursor and icons are ready-made rather than generated: `Bibata-Modern-Ice`
 (a white, rounded pointer from the Bibata set, in both hyprcursor and xcursor)
-and `Adwaita-yellow` (Adwaita with the folders and places in a warm yellow — the
-one static colour left). The cursor is neutral on purpose: it reads on any
+and `Adwaita-teal` (Adwaita with the folders and places in the accent's teal —
+the one static colour left). The cursor is neutral on purpose: it reads on any
 palette the wallpaper generates. `XCURSOR_THEME` also goes to the systemd user
 session (`config/environment.d/cursor.conf`), because the bar and the idle
 daemon are services and would otherwise fall back to Adwaita. Both are AUR
 packages — see `packages.txt`.
 
-Wallpapers live in `images/wallpapers/`, each one with its source and licence in
-the `CREDITS.md` beside it: everything committed there is CC0 or public domain,
-because this repository is public.
+There is one committed wallpaper, `images/wallpapers/default.png`: generated for
+this repository from the palette, CC0, with the exact command in the `CREDITS.md`
+beside it. Your own images live in `~/Pictures/Wallpapers` and stay untracked;
+the picker lists both.
 
 ## Keys
 
@@ -151,8 +152,8 @@ unit (`quickshell-lock`). Both parts are deliberate: a bar reload would destroy
 the session lock, and a lock left as a child of hypridle dies when hypridle is
 restarted — either way the compositor keeps the session hidden behind a solid
 colour by design. The screen shows the current wallpaper
-blurred and dimmed (regenerated when you pick one), the serif clock, the seal and
-a PAM password field
+blurred and dimmed (regenerated when you pick one), the clock and a PAM
+password field
 (`config/quickshell/pam/password.conf`, `auth required pam_unix.so`); `flock`
 makes a second invocation a no-op. The entrance and the unlock fade are in
 `LockSurface.qml` / `LockContext.qml`.
@@ -278,7 +279,7 @@ starts them on demand, and which backend serves an interface is decided by
 dconf state (a binary file), so it is set once here rather than symlinked:
 
 ```bash
-gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-yellow'
+gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-teal'
 gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Ice'
 gsettings set org.gnome.desktop.interface cursor-size 24
 ```

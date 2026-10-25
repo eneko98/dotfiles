@@ -147,7 +147,7 @@ Popup {
             anchors.verticalCenter: parent.verticalCenter
             text: "Wallpaper"
             color: Theme.fg1
-            font.family: "Source Han Serif CN"
+            font.family: "Adwaita Sans"
             font.pixelSize: 13
         }
 

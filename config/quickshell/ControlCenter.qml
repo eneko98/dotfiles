@@ -444,13 +444,11 @@ Popup {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
 
-            Seal {}
-
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 text: "System"
                 color: Theme.fg1
-                font.family: "Source Han Serif CN"
+                font.family: "Adwaita Sans"
                 font.pixelSize: 12
             }
         }
@@ -465,7 +463,7 @@ Popup {
         }
     }
 
-    // The one hairline: gold at a third, under the header.
+    // The one hairline: the accent at a third, under the header.
     Rectangle {
         width: parent.width
         height: 1
@@ -638,7 +636,7 @@ Popup {
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.monthLabel
                     color: Theme.fg1
-                    font.family: "Source Han Serif CN"
+                    font.family: "Adwaita Sans"
                     font.pixelSize: 12
 
                     MouseArea {

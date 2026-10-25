@@ -13,21 +13,17 @@
 -- state). scripts/install.sh links each copy to the fixed path its program
 -- expects. `scripts/gen-theme.py --check` reports a stale copy.
 --
--- Where these defaults come from: the wallpaper,
--- images/wallpapers/hong-kong-night.png.
---   * bg0 is the photograph's own shadow mass, so the desktop reads as an
---     extension of the image rather than a box on top of it.
---   * gold and teal are its two chroma families (a neon sign, a lit facade),
---     taken from the extraction as #f3c562 and #8eb9b3 and dialled down so they
---     work as chrome instead of glowing.
---   * red is NOT in the photograph. The reddest cluster in it is orange
---     (#b88540), so red here is a designed addition, not an extracted colour.
+-- The default is the blue/violet palette the watchtower wallpaper produced,
+-- curated here so a fresh clone (or `extract-palette.py --reset`) has it without
+-- needing the image. A generated palette in XDG_STATE_HOME wins when a wallpaper
+-- is picked.
 --
--- How to use them: three hues only. Gold does the work (accent, active things);
--- with a generated palette "gold" is the accent slot and its hue follows the
--- image. Teal appears rarely and means "this is the thing you are acting on
--- right now" (focus, links). Red appears almost never and means "something is
--- wrong". A new colour has to earn a new *meaning* -- never a new mood.
+-- How to use them: three hues only. `gold` is the accent slot -- the name is
+-- historical; the default is a cyan blue (#5eadcc) -- and does the work (active
+-- things). `teal` is the neon (#ab8bd2, a muted violet) and means "this is the
+-- thing you are acting on right now" (focus, links). Red appears almost never and
+-- means "something is wrong". A new colour has to earn a new *meaning* -- never
+-- a new mood.
 
 -- The live palette, when one has been generated from the chosen wallpaper.
 -- pcall, not a bare dofile: a half-written file must not take Hyprland down.
@@ -39,41 +35,39 @@ if ok and type(palette) == "table" and palette.bg0 and palette.fg0 and palette.g
 end
 
 local theme = {
-    bg0 = "#0a0708", -- base: terminal background, misc:background_color
-    bg1 = "#151011", -- raised surface: bar, panels, menus
-    bg2 = "#20191b", -- selection, current workspace, current tab
-    fg0 = "#ddd4c5", -- primary text            13.7:1 on bg0
-    fg1 = "#9a8f83", -- secondary text, comments 6.3:1
-    fg2 = "#6b6259", -- dim: inactive borders, rules 3.4:1 -- never body text
-    gold = "#d3a75a", -- accent: active border, highlights      9.0:1
-    teal = "#6fb3ae", -- neon: cursor, focus, links             8.3:1
-    red = "#c2452f", -- alarm: errors, failures                 4.0:1
+    bg0 = "#06060a", -- base: terminal background, misc:background_color
+    bg1 = "#0e0e15", -- raised surface: bar, panels, menus
+    bg2 = "#171621", -- selection, current workspace, current tab
+    fg0 = "#d0d0da", -- primary text            13.2:1 on bg0
+    fg1 = "#86859b", -- secondary text, comments 5.6:1
+    fg2 = "#5f5f70", -- dim: inactive borders, rules 3.2:1 -- never body text
+    gold = "#5eadcc", -- accent: active border, highlights      8.0:1
+    teal = "#ab8bd2", -- neon: cursor, focus, links             7.1:1
+    red = "#c6482f", -- alarm: errors, failures                 4.2:1
 }
 
--- The terminal's 16 ANSI colours. These are derived, not extracted: a terminal
--- needs red/green/blue/magenta to be distinguishable from each other (git
--- diffs, ls, yazi file types) and the wallpaper only supplies two hues. They are
--- therefore pushed toward the palette's warmth and kept desaturated, so they
--- never fight the chrome. Contrast against bg0 is 4.7:1 or better for every one
--- of them, and the two "black" slots are deliberately unreadable as text --
--- that is what they are for.
+-- The terminal's 16 ANSI colours. The accent and the neon follow the palette;
+-- green, blue and magenta are fixed, muted hues so a terminal keeps them
+-- distinguishable from each other (git diffs, ls, yazi file types). Every slot
+-- except the two "black" ones is contrast-checked against bg0, and those two are
+-- deliberately unreadable as text -- that is what they are for.
 theme.ansi = {
-    black = "#2a2426",        -- separators, not text
+    black = "#201f28",        -- separators, not text
     red = theme.red,
-    green = "#7d9b6a",        -- sage, not grass: the wallpaper has no green
-    yellow = theme.gold,      -- yellow and the accent are the same hue on purpose,
-    blue = "#5c7f93",         -- so `ls` and the chrome cannot disagree
-    magenta = "#b06a72",      -- muted rose
-    cyan = theme.teal,
+    green = "#60864d",        -- fixed hue, not from the palette
+    yellow = theme.gold,      -- the accent slot, whatever its hue
+    blue = "#56819f",         -- fixed hue
+    magenta = "#b06b77",      -- fixed muted rose
+    cyan = theme.teal,        -- the neon
     white = theme.fg0,
-    bright_black = "#4a4144", -- the usual "dim text" slot
-    bright_red = "#e0644a",
-    bright_green = "#a3c08c",
-    bright_yellow = "#f3c562", -- the raw colour extracted from the photograph
-    bright_blue = "#7fa6b8",
-    bright_magenta = "#d08a8f",
-    bright_cyan = "#95d3cd",
-    bright_white = "#f2ece0",
+    bright_black = "#3d3d4d",
+    bright_red = "#d86f5a",
+    bright_green = "#7da868",
+    bright_yellow = "#85c1d8", -- the accent, lightened
+    bright_blue = "#7b9fb7",
+    bright_magenta = "#c5939c",
+    bright_cyan = "#c6b0e0",
+    bright_white = "#e1e1e7",
 }
 
 return theme

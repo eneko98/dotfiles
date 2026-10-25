@@ -24,7 +24,7 @@ Popup {
             anchors.verticalCenter: parent.verticalCenter
             text: "Notifications"
             color: Theme.fg1
-            font.family: "Source Han Serif CN"
+            font.family: "Adwaita Sans"
             font.pixelSize: 12
         }
 

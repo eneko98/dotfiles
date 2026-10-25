@@ -175,13 +175,12 @@ ShellRoot {
                 onClicked: root.openControlCenter()
             }
 
-            // The serif's digits are proportional; "88:88" measures the widest
-            // case so the island keeps one width and does not breathe every
-            // minute. tnum helps when the font has it, the fixed width covers
-            // the case where it does not.
+            // "88:88" measures the widest case so the island keeps one width and
+            // does not breathe every minute. tnum helps when the font has it,
+            // the fixed width covers the case where it does not.
             TextMetrics {
                 id: timeMetrics
-                font.family: "Source Han Serif CN"
+                font.family: "Adwaita Sans"
                 font.pixelSize: 15
                 font.bold: true
                 font.features: ({ "tnum": 1 })
@@ -211,7 +210,7 @@ ShellRoot {
                     width: timeMetrics.width
                     horizontalAlignment: Text.AlignHCenter
                     color: Theme.fg0
-                    font.family: "Source Han Serif CN"
+                    font.family: "Adwaita Sans"
                     font.pixelSize: 15
                     font.bold: true
                     // Tabular figures: the clock must not breathe every minute.
