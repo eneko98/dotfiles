@@ -217,7 +217,7 @@ local mainMod = "SUPER"
 
 hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 -- The launcher. $HOME rather than ~, because the command goes through sh -c.
-hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("fuzzel"))
+hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/launcher"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
 -- Lock the session with the Quickshell lock (its own process, so a bar reload

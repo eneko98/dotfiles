@@ -29,6 +29,10 @@ PanelWindow {
 
     property real panelWidth: 240
 
+    // Panels that hang under the bar (the module popups, the control centre)
+    // leave this false; a launcher in the middle of the screen sets it.
+    property bool centerVertically: false
+
     // Children of a Popup land in the panel's column.
     default property alias content: column.data
 
@@ -58,9 +62,10 @@ PanelWindow {
     Rectangle {
         id: panel
 
-        anchors.top: parent.top
+        // y instead of a top anchor: the centred case needs to follow the
+        // panel's own height as the list grows or shrinks.
+        y: root.centerVertically ? Math.round((parent.height - height) / 2) : root.topMargin
         anchors.right: parent.right
-        anchors.topMargin: root.topMargin
         anchors.rightMargin: root.rightMargin
 
         implicitWidth: root.panelWidth
@@ -74,7 +79,7 @@ PanelWindow {
         // close is instant: the window is hidden the moment `visible` goes false.
         opacity: root.visible ? 1 : 0
         scale: root.visible ? 1 : 0.96
-        transformOrigin: Item.Top
+        transformOrigin: root.centerVertically ? Item.Center : Item.Top
 
         Behavior on opacity {
             NumberAnimation { duration: 150; easing.type: Easing.OutCubic }

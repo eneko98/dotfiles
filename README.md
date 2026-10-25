@@ -82,7 +82,7 @@ component.
 | Key | What it does |
 | --- | --- |
 | `SUPER + Q` | new terminal (kitty) |
-| `SUPER + Space` | application launcher (fuzzel) |
+| `SUPER + Space` | application launcher (Quickshell) |
 | `SUPER + E` | file manager (yazi) |
 | `SUPER + L` | lock the screen (Quickshell) |
 | volume keys | up / down in 5% steps, mute |
@@ -102,6 +102,11 @@ component.
 
 Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard, so
 they can be pasted straight into a chat.
+
+The launcher is our own Quickshell panel (`config/quickshell/Launcher.qml`): it
+searches `DesktopEntries` by name, generic name, comment and keywords, with
+keyboard selection. `fuzzel` stays installed and is still the dmenu behind the
+clipboard history and the session menu.
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in

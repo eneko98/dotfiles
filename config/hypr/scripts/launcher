@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Toggle the Quickshell launcher. fuzzel stays the dmenu for the clipboard and
+# session scripts; only SUPER + Space moves.
+exec qs ipc call launcher toggle

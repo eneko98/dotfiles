@@ -20,6 +20,7 @@
 
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import QtQuick
 
 ShellRoot {
@@ -54,6 +55,12 @@ ShellRoot {
     function openControlCenter() {
         controlCenter.rightMargin = (bar.width - controlCenter.panelWidth) / 2;
         controlCenter.visible = true;
+    }
+
+    // The launcher is centred too; the panel width is fixed by Launcher.qml.
+    function openLauncher() {
+        launcher.rightMargin = (bar.width - launcher.panelWidth) / 2;
+        launcher.open();
     }
 
     PanelWindow {
@@ -313,5 +320,26 @@ ShellRoot {
     // while this owns org.freedesktop.Notifications.
     NotificationCenter {
         id: notifications
+    }
+
+    // The application launcher, opened by SUPER + Space through the IPC handler
+    // below (config/hypr/scripts/launcher calls `qs ipc call launcher toggle`).
+    Launcher {
+        id: launcher
+    }
+
+    IpcHandler {
+        target: "launcher"
+
+        function toggle(): void {
+            if (launcher.visible)
+                launcher.close();
+            else
+                root.openLauncher();
+        }
+
+        function close(): void {
+            launcher.close();
+        }
     }
 }
