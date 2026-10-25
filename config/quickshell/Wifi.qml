@@ -1,4 +1,6 @@
 // The wifi module: a wifi glyph and the SSID of the connected network.
+// Clicking it opens our own popup (WifiPopup.qml): radio switch, the visible
+// networks and a password field for one we have never joined.
 //
 // Networking.devices is an ObjectModel of every network device; the wifi one
 // is found by type. Its networks model lists the visible/connected networks,
@@ -55,5 +57,17 @@ Row {
         color: Theme.fg1
         font.family: "Adwaita Sans"
         font.pixelSize: 12
+    }
+
+    WifiPopup {
+        id: popup
+    }
+
+    TapHandler {
+        onTapped: {
+            const p = root.mapToItem(null, 0, 0);
+            popup.rightMargin = root.Window.width - (p.x + root.width);
+            popup.visible = true;
+        }
     }
 }
