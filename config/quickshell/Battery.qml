@@ -49,4 +49,8 @@ Row {
         font.family: "Adwaita Sans"
         font.pixelSize: 12
     }
+
+    BatteryPopup {
+        id: popup
+    }
 }
