@@ -191,6 +191,15 @@ qt6ct
 #     systemctl --user enable --now quickshell.service
 quickshell
 
+# Bluetooth
+# The adapter was already present (hci0) but soft-blocked, and BlueZ was not
+# installed, so nothing could talk to it. bluez is the daemon, bluez-utils
+# brings bluetoothctl. Enabled as a system service and the block cleared:
+#     sudo systemctl enable --now bluetooth.service
+#     sudo rfkill unblock bluetooth
+bluez
+bluez-utils
+
 # ---------------------------------------------------------------------------
 # Everything above is in the repos and can be installed with the command at the
 # top of this file. The one exception is the AUR helper, which pacman cannot

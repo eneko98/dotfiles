@@ -214,6 +214,15 @@ repo carries one:
 systemctl --user enable --now quickshell.service
 ```
 
+**Bluetooth is a system service.** `bluez` provides the daemon, and this laptop
+had the adapter present but soft-blocked. Enable it once, and clear the block if
+it is still set:
+
+```bash
+sudo systemctl enable --now bluetooth.service
+sudo rfkill unblock bluetooth
+```
+
 **The home directories are created once**, so `~/Documents`, `~/Downloads` and
 the rest exist and every program agrees on where they are:
 
