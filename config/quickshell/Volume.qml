@@ -1,5 +1,6 @@
 // The volume module: a speaker icon and the percentage of the default audio
-// sink. Clicking it opens pavucontrol, the mixer.
+// sink. Clicking it opens our own popup (VolumePopup.qml) with a slider and a
+// mute toggle; the mixer is one click further, for per-application levels.
 //
 // Pipewire.defaultAudioSink is a live PwNode. Its audio.volume / audio.muted
 // are only valid once the node is *bound*, which is what PwObjectTracker does;
@@ -41,8 +42,17 @@ Row {
         font.pixelSize: 12
     }
 
+    VolumePopup {
+        id: popup
+    }
+
     // TapHandler is a handler, not an Item, so it does not disturb the Row.
+    // The popup hangs under the module: its right edge is the module's.
     TapHandler {
-        onTapped: Quickshell.execDetached(["pavucontrol"])
+        onTapped: {
+            const p = root.mapToItem(null, 0, 0);
+            popup.rightMargin = root.Window.width - (p.x + root.width);
+            popup.visible = true;
+        }
     }
 }
