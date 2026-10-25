@@ -102,6 +102,7 @@ ShellRoot {
             spacing: 14
 
             Volume {}
+            Wifi {}
         }
     }
 }
