@@ -45,7 +45,7 @@ ShellRoot {
             right: true
         }
 
-        implicitHeight: 34
+        implicitHeight: 38
         color: "transparent"
 
         // --- Left pill: the workspaces -------------------------------------
@@ -130,6 +130,7 @@ ShellRoot {
                 spacing: 8
 
                 Text {
+                    anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDateTime(clock.date, "hh:mm")
                     width: timeMetrics.width
                     horizontalAlignment: Text.AlignHCenter
@@ -142,6 +143,7 @@ ShellRoot {
                 }
 
                 Text {
+                    anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDateTime(clock.date, "ddd d MMM")
                     color: Theme.fg1
                     font.family: "Adwaita Sans"

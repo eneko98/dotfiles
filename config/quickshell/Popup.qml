@@ -25,7 +25,7 @@ PanelWindow {
     property real rightMargin: 14
 
     // The panel's top, just below the 34 px bar.
-    property real topMargin: 40
+    property real topMargin: 44
 
     property real panelWidth: 240
 

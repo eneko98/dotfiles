@@ -114,7 +114,7 @@ PanelWindow {
 
         anchors.top: parent.top
         anchors.right: parent.right
-        anchors.topMargin: 40
+        anchors.topMargin: 44
         anchors.rightMargin: root.rightMargin
 
         implicitWidth: 220
