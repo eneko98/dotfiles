@@ -82,6 +82,10 @@ ShellRoot {
             radius: 14
             color: root.pillColor
 
+            Behavior on width {
+                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+            }
+
             Row {
                 id: workspaces
                 anchors.centerIn: parent
@@ -140,6 +144,12 @@ ShellRoot {
 
             Behavior on color {
                 ColorAnimation { duration: 160 }
+            }
+
+            // Growing with the media section is the island's whole trick; make
+            // it a slide rather than a jump.
+            Behavior on width {
+                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
             }
 
             // Declared before the row so the play button inside Media sits
@@ -219,6 +229,10 @@ ShellRoot {
             radius: 14
             color: root.pillColor
 
+            Behavior on width {
+                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+            }
+
             Row {
                 id: modules
                 anchors.centerIn: parent
@@ -263,5 +277,4 @@ ShellRoot {
     // The volume/brightness bubble at the bottom.
     Osd {
         id: osd
-    }
-}
+    }}

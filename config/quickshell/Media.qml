@@ -66,7 +66,7 @@ Row {
         width: Math.min(implicitWidth, 200)
         text: root.label
         color: Theme.fg1
-        font.family: "Adwaita Sans"
+        font.family: "Source Han Serif CN"
         font.pixelSize: 11
         elide: Text.ElideRight
     }

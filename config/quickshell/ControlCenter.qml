@@ -171,15 +171,22 @@ Popup {
     // --- Header -----------------------------------------------------------
     Item {
         width: parent.width
-        height: 18
+        height: 22
 
-        Text {
+        Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            text: "System"
-            color: Theme.fg1
-            font.family: "Source Han Serif CN"
-            font.pixelSize: 12
+            spacing: 8
+
+            Seal {}
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "System"
+                color: Theme.fg1
+                font.family: "Source Han Serif CN"
+                font.pixelSize: 12
+            }
         }
 
         Text {
@@ -190,6 +197,13 @@ Popup {
             font.family: "Adwaita Sans"
             font.pixelSize: 10
         }
+    }
+
+    // The one hairline: gold at a third, under the header.
+    Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(Theme.gold.r, Theme.gold.g, Theme.gold.b, 0.35)
     }
 
     // --- Status cards -----------------------------------------------------
