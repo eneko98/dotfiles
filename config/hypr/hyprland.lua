@@ -139,6 +139,11 @@ hl.config({
 hl.config({
     decoration = {
         rounding = 8,
+        -- Unfocused windows get a light dark wash, so the focused one reads at a
+        -- glance without the unfocused text turning transparent. dim_strength
+        -- is 0-1; 0.12 is deliberately gentle, a hint rather than a shroud.
+        dim_inactive = true,
+        dim_strength = 0.12,
         blur = {
             enabled = true,
             size = 6,
