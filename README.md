@@ -81,10 +81,14 @@ dir. Firefox only reads them when
 `toolkit.legacyUserProfileCustomizations.stylesheets` is on, which
 `user.js` sets, so **restart Firefox once** after the first install.
 
-The cursor and icons are ready-made rather than generated: `simp1e-amber` (a gold
-cursor, in both hyprcursor and xcursor) and `Adwaita-yellow` (Adwaita with the
-folders and places recoloured to the accent). Both are AUR packages — see
-`packages.txt`.
+The cursor and icons are ready-made rather than generated: `Bibata-Modern-Ice`
+(a white, rounded pointer from the Bibata set, in both hyprcursor and xcursor)
+and `Adwaita-yellow` (Adwaita with the folders and places in a warm yellow — the
+one static colour left). The cursor is neutral on purpose: it reads on any
+palette the wallpaper generates. `XCURSOR_THEME` also goes to the systemd user
+session (`config/environment.d/cursor.conf`), because the bar and the idle
+daemon are services and would otherwise fall back to Adwaita. Both are AUR
+packages — see `packages.txt`.
 
 Wallpapers live in `images/wallpapers/`, each one with its source and licence in
 the `CREDITS.md` beside it: everything committed there is CC0 or public domain,
@@ -273,7 +277,7 @@ dconf state (a binary file), so it is set once here rather than symlinked:
 
 ```bash
 gsettings set org.gnome.desktop.interface icon-theme 'Adwaita-yellow'
-gsettings set org.gnome.desktop.interface cursor-theme 'simp1e-amber'
+gsettings set org.gnome.desktop.interface cursor-theme 'Bibata-Modern-Ice'
 gsettings set org.gnome.desktop.interface cursor-size 24
 ```
 

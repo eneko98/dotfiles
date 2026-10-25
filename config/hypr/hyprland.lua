@@ -38,11 +38,13 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1 })
 ----------------
 ---- CURSOR -----
 ----------------
--- The cursor. simp1e-amber is gold, matching the accent; the theme ships both
--- xcursor (for GTK/Qt apps) and hyprcursor (for Hyprland), so the one name
--- covers both. HYPRCURSOR_SIZE and XCURSOR_SIZE have to agree or the pointer
--- changes size crossing the compositor/app boundary.
-hl.env("XCURSOR_THEME", "simp1e-amber")
+-- The cursor. Bibata Modern Ice is a neutral white pointer with a dark edge, so
+-- it works with any palette the wallpaper generates (the accent no longer has
+-- to match it). The package ships xcursor (for GTK/Qt apps) and hyprcursor (for
+-- Hyprland) under the same name, so one variable covers both. HYPRCURSOR_SIZE
+-- and XCURSOR_SIZE have to agree or the pointer changes size crossing the
+-- compositor/app boundary.
+hl.env("XCURSOR_THEME", "Bibata-Modern-Ice")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 -- Qt apps read the palette through qt6ct only with this platform theme set.

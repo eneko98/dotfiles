@@ -31,8 +31,9 @@ hyprland
 kitty
 
 # 02 - cursor theme
-# Not cosmetic: the system had no cursor theme whatsoever, so no pointer would
-# have been drawn. Replaceable when the theme pass happens.
+# The fallback that /usr/share/icons/default inherits: a bare install had no
+# cursor theme at all. The pointer itself is Bibata Modern Ice, an AUR package
+# listed in the note at the end of this file.
 adwaita-cursors
 
 # 03 - zsh and oh-my-zsh
@@ -185,8 +186,8 @@ bat
 
 # theme pass: Qt theming
 # qt6ct is how Qt apps read the palette and the icon theme. The cursor
-# (simp1e-amber) and the icon theme (Adwaita-yellow) are AUR-only, so they are
-# listed in the note below rather than here.
+# (Bibata-Modern-Ice) and the icon theme (Adwaita-yellow) are AUR-only, so they
+# are listed in the note below rather than here.
 qt6ct
 
 # Phase 3 - our own bar
@@ -250,7 +251,8 @@ firefox
 # their own toolchains up.
 #
 # The cursor and icon themes are AUR-only too:
-#   paru -S simp1e-amber-hyprcursor adwaita-colors-icon-theme
-#   simp1e-amber:  gold cursor, ships both hyprcursor (Hyprland) and xcursor (apps)
+#   paru -S bibata-cursor-git adwaita-colors-icon-theme
+#   bibata-cursor-git: Bibata Modern Classic/Ice/Amber, hyprcursor + xcursor;
+#                      we use Bibata-Modern-Ice (neutral white, rounded)
 #   adwaita-colors: Adwaita with the folders/places recoloured; we use Adwaita-yellow
 # ---------------------------------------------------------------------------
