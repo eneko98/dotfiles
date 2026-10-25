@@ -313,4 +313,5 @@ ShellRoot {
     // while this owns org.freedesktop.Notifications.
     NotificationCenter {
         id: notifications
-    }}
+    }
+}

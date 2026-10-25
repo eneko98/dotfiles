@@ -166,7 +166,11 @@ Popup {
     // every 15 minutes while it stays open. A failed request shows a dash
     // instead of a stale promise.
     property string weatherText: "—"
-    property string weatherLocation: ""
+    // Open-Meteo needs coordinates instead of wttr.in's IP geolocation; these
+    // are Barakaldo. Change both the place and the pair below if that moves.
+    readonly property string weatherPlace: "Barakaldo"
+    readonly property real weatherLatitude: 43.296
+    readonly property real weatherLongitude: -2.988
     property string weatherGlyph: "󰖐"
     property int monthOffset: 0
 
@@ -197,22 +201,30 @@ Popup {
         return cells;
     }
 
-    function weatherIcon(condition) {
-        const c = condition.toLowerCase();
-
-        if (c.indexOf("rain") >= 0 || c.indexOf("drizzle") >= 0 || c.indexOf("shower") >= 0)
-            return "󰖗";
-        if (c.indexOf("snow") >= 0 || c.indexOf("sleet") >= 0 || c.indexOf("blizzard") >= 0)
-            return "󰖘";
-        if (c.indexOf("thunder") >= 0)
-            return "󰖓";
-        if (c.indexOf("fog") >= 0 || c.indexOf("mist") >= 0 || c.indexOf("haze") >= 0)
-            return "󰖑";
-        if (c.indexOf("cloud") >= 0 || c.indexOf("overcast") >= 0)
-            return "󰖐";
-        if (c.indexOf("sun") >= 0 || c.indexOf("clear") >= 0)
-            return "󰖙";
-        return "󰖐";
+    // WMO weather codes as Open-Meteo returns them: a label for the card and an
+    // MDI glyph. Ranges collapse to the nearest condition.
+    function weatherInfo(code) {
+        if (code === 0)
+            return { text: "Clear", glyph: "󰖙" };
+        if (code === 1 || code === 2)
+            return { text: "Partly cloudy", glyph: "󰖙" };
+        if (code === 3)
+            return { text: "Overcast", glyph: "󰖐" };
+        if (code === 45 || code === 48)
+            return { text: "Fog", glyph: "󰖑" };
+        if (code >= 51 && code <= 57)
+            return { text: "Drizzle", glyph: "󰖗" };
+        if (code >= 61 && code <= 67)
+            return { text: "Rain", glyph: "󰖗" };
+        if (code >= 71 && code <= 77)
+            return { text: "Snow", glyph: "󰖘" };
+        if (code >= 80 && code <= 82)
+            return { text: "Showers", glyph: "󰖗" };
+        if (code === 85 || code === 86)
+            return { text: "Snow showers", glyph: "󰖘" };
+        if (code >= 95)
+            return { text: "Thunderstorm", glyph: "󰖓" };
+        return { text: "—", glyph: "󰖐" };
     }
 
     function refreshWeather() {
@@ -223,30 +235,35 @@ Popup {
     Process {
         id: weatherQuery
 
-        command: ["curl", "-fsS", "--max-time", "8", "https://wttr.in/?format=%l|%t|%C"]
+        command: ["curl", "-fsS", "--max-time", "8",
+            "https://api.open-meteo.com/v1/forecast?latitude=" + root.weatherLatitude
+            + "&longitude=" + root.weatherLongitude
+            + "&current=temperature_2m,weather_code&timezone=auto"]
 
         stdout: StdioCollector {
             id: weatherOut
 
             onStreamFinished: {
-                const line = weatherOut.text.trim();
-                if (line === "")
+                let data = null;
+
+                try {
+                    data = JSON.parse(weatherOut.text);
+                } catch (e) {
+                    return;
+                }
+
+                if (data === null || !data.current)
                     return;
 
-                const parts = line.split("|");
-                if (parts.length < 3)
-                    return;
-
-                root.weatherLocation = parts[0];
-                root.weatherText = parts[1] + " · " + parts[2];
-                root.weatherGlyph = root.weatherIcon(parts[2]);
+                const info = root.weatherInfo(data.current.weather_code);
+                root.weatherText = Math.round(data.current.temperature_2m) + "°C · " + info.text;
+                root.weatherGlyph = info.glyph;
             }
         }
 
         onExited: function (exitCode) {
             if (exitCode !== 0) {
                 root.weatherText = "—";
-                root.weatherLocation = "";
                 root.weatherGlyph = "󰖐";
             }
         }
@@ -362,9 +379,7 @@ Popup {
         width: parent.width
         glyph: root.weatherGlyph
         title: "Weather"
-        detail: root.weatherLocation === ""
-            ? root.weatherText
-            : root.weatherText + " · " + root.weatherLocation
+        detail: root.weatherText + " · " + root.weatherPlace
         onClicked: root.refreshWeather()
     }
 
