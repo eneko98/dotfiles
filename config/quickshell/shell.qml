@@ -38,6 +38,17 @@ ShellRoot {
     readonly property color pillColor: Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b, 0.85)
     readonly property color pillHover: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.9)
 
+    // Clicking a workspace circle switches to it. Hyprland's IPC dispatch takes
+    // a Lua expression in 0.56 (usingLua), and the old token otherwise; keeping
+    // both means the bar does not silently break if Hyprland is ever started
+    // with a hyprlang config again.
+    function focusWorkspace(workspaceId) {
+        if (Hyprland.usingLua)
+            Hyprland.dispatch("hl.dsp.focus({ workspace = " + workspaceId + " })");
+        else
+            Hyprland.dispatch("workspace " + workspaceId);
+    }
+
     PanelWindow {
         anchors {
             top: true
@@ -76,7 +87,9 @@ ShellRoot {
                         width: 22
                         height: 22
                         radius: 11
-                        color: modelData.focused ? Theme.gold : "transparent"
+                        color: modelData.focused ? Theme.gold
+                            : workspaceHover.containsMouse ? Theme.bg2
+                            : "transparent"
 
                         Behavior on color {
                             ColorAnimation { duration: 160 }
@@ -89,6 +102,15 @@ ShellRoot {
                             font.family: "Adwaita Sans"
                             font.pixelSize: 11
                             font.bold: modelData.focused
+                        }
+
+                        MouseArea {
+                            id: workspaceHover
+
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.focusWorkspace(modelData.id)
                         }
                     }
                 }
