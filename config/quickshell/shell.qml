@@ -93,8 +93,9 @@ ShellRoot {
             }
         }
 
-        // The right group, built left to right: volume first, then wifi,
-        // bluetooth, battery and the power button. Each module is its own file.
+        // The right group, built left to right: volume, wifi, bluetooth,
+        // battery, the system tray and the power button. Each module is its own
+        // file.
         Row {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
@@ -105,6 +106,7 @@ ShellRoot {
             Wifi {}
             Bluetooth {}
             Battery {}
+            Tray {}
             Power {}
         }
     }
