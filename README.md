@@ -206,6 +206,14 @@ GTK and Qt get the same values from their tracked config files
 (`gtk-3.0/settings.ini`, `gtk-4.0/settings.ini`, `qt6ct/qt6ct.conf`), and Hyprland
 from `hyprland.lua`.
 
+**The bar is a systemd user service too.** Quickshell draws it from
+`config/quickshell/` (QML), and like mako and hypridle it ships no unit, so this
+repo carries one:
+
+```bash
+systemctl --user enable --now quickshell.service
+```
+
 **The home directories are created once**, so `~/Documents`, `~/Downloads` and
 the rest exist and every program agrees on where they are:
 

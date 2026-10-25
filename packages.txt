@@ -183,6 +183,14 @@ bat
 # listed in the note below rather than here.
 qt6ct
 
+# Phase 3 - our own bar
+# Quickshell draws the bar. It is a Qt6/QML toolkit for Wayland shells: the
+# visuals are QML (QtQuick), and it ships modules for the things a bar needs
+# (Hyprland workspaces, the system clock, MPRIS, the system tray, ...). Started
+# by the unit this repo carries:
+#     systemctl --user enable --now quickshell.service
+quickshell
+
 # ---------------------------------------------------------------------------
 # Everything above is in the repos and can be installed with the command at the
 # top of this file. The one exception is the AUR helper, which pacman cannot
