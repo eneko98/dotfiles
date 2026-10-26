@@ -193,8 +193,6 @@ Column {
                         }
                     }
                 }
-            }
-
                 // On TOP of the rows (declared last): wheel dispatch goes
                 // to the topmost item under the cursor. Clicks pass through
                 // (no buttons); the wheel scrolls from cursor or fingers.
@@ -209,6 +207,9 @@ Column {
                             Math.min(list.contentHeight - list.height,
                                      list.contentY - dy));
                     }
+                }
+            }
+
                 }
 
             Text {
