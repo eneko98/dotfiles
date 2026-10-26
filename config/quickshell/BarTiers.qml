@@ -239,9 +239,34 @@ PanelWindow {
             : clockRow.implicitWidth + 24
 
         readonly property real osdTarget: osdRow.implicitWidth + 24
-        readonly property real notifTarget: 14 + 16 + 8
-            + Math.min(notifAppMetrics.width, 120) + 8
-            + Math.min(notifSummaryMetrics.width, 220) + 14
+
+        // Notification wing measurements. The body is hidden when the summary
+        // takes more than 60% of the maximum wing (240 of 400 px).
+        readonly property bool notifHasIcon: Island.current !== null
+            && (Island.current.image !== "" || Island.current.appIcon !== "")
+        readonly property string notifIconPath: {
+            if (Island.current === null)
+                return "";
+            if (Island.current.image !== "")
+                return Island.current.image;
+            if (Island.current.appIcon !== "")
+                return Quickshell.iconPath(Island.current.appIcon);
+            return "";
+        }
+        readonly property real notifNameWidth: Math.min(notifAppMetrics.width, 120)
+        readonly property real notifSummaryWidth: Math.min(notifSummaryMetrics.width, 220)
+        readonly property real notifBodyWidth: Math.min(notifBodyMetrics.width, 160)
+        readonly property bool notifBodyVisible: Island.currentBody !== ""
+            && notifSummaryWidth <= 240
+        readonly property real notifChipWidth: Island.pendingCount > 0 ? 8 + 24 : 0
+
+        readonly property real notifTarget: Math.min(560,
+            14
+            + (notifHasIcon ? 16 : notifNameWidth)
+            + 8 + notifSummaryWidth
+            + (notifBodyVisible ? 8 + notifBodyWidth : 0)
+            + notifChipWidth
+            + 14)
 
         // Growing with the media section is the island's whole trick; make
         // it a slide rather than a jump.
@@ -297,6 +322,13 @@ PanelWindow {
             font.pixelSize: 12
             font.bold: true
             text: Island.current !== null ? Island.current.summary : ""
+        }
+
+        TextMetrics {
+            id: notifBodyMetrics
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+            text: Island.currentBody
         }
 
         // The clipped content container. It is always centred and its width
@@ -415,37 +447,75 @@ PanelWindow {
                     }
                 }
 
-                // The notification mode: app + summary, compact. Clicking it opens
-                // Today (the full interaction lives there; one action, one place).
+                // The notification mode: icon or app name, summary, body if
+                // it fits, and the queue chip. Clicking opens Today.
                 Row {
                     id: notifRow
                     visible: Island.mode === "notification"
                     anchors.centerIn: parent
                     spacing: 8
 
-                    Glyph {
+                    Image {
+                        visible: island.notifHasIcon
+                        width: visible ? 16 : 0
+                        height: 16
                         anchors.verticalCenter: parent.verticalCenter
-                        glyph: "󰂚"
-                        tone: "attention"
-                        size: 14
+                        source: island.notifIconPath
+                        sourceSize.width: 16
+                        sourceSize.height: 16
+                        fillMode: Image.PreserveAspectFit
                     }
 
                     Text {
+                        visible: !island.notifHasIcon && Island.current !== null
+                        width: visible ? island.notifNameWidth : 0
                         anchors.verticalCenter: parent.verticalCenter
                         text: Island.current !== null ? Island.current.appName : ""
                         color: Theme.fg1
                         font.family: "Adwaita Sans"
                         font.pixelSize: 11
+                        elide: Text.ElideRight
                     }
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: Math.min(implicitWidth, 220)
+                        width: island.notifSummaryWidth
                         text: Island.current !== null ? Island.current.summary : ""
                         color: Theme.fg0
                         font.family: "Adwaita Sans"
                         font.pixelSize: 12
+                        font.weight: Font.DemiBold
                         elide: Text.ElideRight
+                    }
+
+                    Text {
+                        visible: island.notifBodyVisible
+                        width: visible ? island.notifBodyWidth : 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Island.currentBody
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                    }
+
+                    Rectangle {
+                        visible: Island.pendingCount > 0
+                        width: visible ? chipLabel.implicitWidth + 10 : 0
+                        height: 18
+                        radius: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.bg2
+
+                        Text {
+                            id: chipLabel
+                            anchors.centerIn: parent
+                            text: "+" + Island.pendingCount
+                            color: Theme.fg1
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 11
+                            font.features: ({ "tnum": 1 })
+                        }
                     }
                 }
             }

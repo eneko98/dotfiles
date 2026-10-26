@@ -45,6 +45,28 @@ Singleton {
     // base. Paused while hovered.
     property real progress: 1
 
+    // The current notification's body, stripped of HTML and decoded (some apps
+    // send markup even though we do not advertise bodyMarkupSupported).
+    readonly property string currentBody: current !== null ? cleanBody(current.body) : ""
+
+    // Notifications waiting behind the one on screen.
+    readonly property int pendingCount: queue.length
+
+    function cleanBody(text) {
+        if (!text)
+            return "";
+        return text
+            .replace(/<[^>]*>/g, " ")
+            .replace(/&amp;/g, "&")
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&quot;/g, "\"")
+            .replace(/&#0?39;/g, "'")
+            .replace(/&nbsp;/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
     function showOsd(kind, value, muted) {
         if (island.systemPanelOpen)
             return;
@@ -68,15 +90,15 @@ Singleton {
         island.progress = 1;
         // Low: 3s; normal: 4s; critical: no countdown -- it stays until the
         // user opens the island (which leads to Today's list).
-        notifTimer.interval = n.urgency === 2 ? 100000
-            : (n.urgency === 0 ? 3000 : 4000);
-        notifAnim.duration = notifTimer.interval;
-        notifAnim.restart();
-        notifTimer.restart();
+        if (n.urgency !== 2) {
+            notifAnim.duration = n.urgency === 0 ? 3000 : 4000;
+            notifAnim.restart();
+        } else {
+            notifAnim.stop();
+        }
     }
 
     function dismissCurrent() {
-        notifTimer.stop();
         notifAnim.stop();
         if (island.queue.length > 0) {
             const next = island.queue[0];
@@ -97,11 +119,6 @@ Singleton {
         onTriggered: island.osdKind = ""
     }
 
-    Timer {
-        id: notifTimer
-        onTriggered: island.dismissCurrent()
-    }
-
     NumberAnimation {
         id: notifAnim
         target: island
@@ -110,19 +127,16 @@ Singleton {
         to: 0
         paused: island.hovered
         easing.type: Easing.Linear
+        onFinished: island.dismissCurrent()
     }
 
     onHoveredChanged: {
         if (island.current === null || island.current.urgency === 2)
             return;
-        // Hover pauses the countdown; leaving restarts it (full time -- the
-        // brief allows the simple version).
-        if (island.hovered) {
-            notifTimer.stop();
+        // Hover pauses the countdown; leaving resumes it from where it was.
+        if (island.hovered)
             notifAnim.pause();
-        } else {
-            notifTimer.restart();
+        else
             notifAnim.resume();
-        }
     }
 }
