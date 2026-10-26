@@ -368,4 +368,21 @@ ShellRoot {
             wallpaperPicker.close();
         }
     }
+
+    // The control centre, so it can be opened from a script (screenshots,
+    // future keybinds) without clicking the island.
+    IpcHandler {
+        target: "controlcenter"
+
+        function toggle(): void {
+            if (controlCenter.visible)
+                controlCenter.visible = false;
+            else
+                root.openControlCenter();
+        }
+
+        function close(): void {
+            controlCenter.visible = false;
+        }
+    }
 }
