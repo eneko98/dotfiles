@@ -48,15 +48,22 @@ ShellRoot {
             Hyprland.dispatch("workspace " + workspaceId);
     }
 
-    // The island opens the control centre centred under itself: the panel's
-    // right margin is half of what is left of the screen once the panel is out.
-    // The island is also the morph trigger, and it hides while the panel is
-    // up (the panel IS the island, expanded) -- it comes back when the
-    // window, and with it the return morph, is gone.
-    function openControlCenter() {
-        controlCenter.trigger = island;
-        controlCenter.rightMargin = (bar.width - controlCenter.panelWidth) / 2;
-        controlCenter.visible = true;
+    // The island opens Today, centred under itself: the panel's right margin
+    // is half of what is left of the screen once the panel is out. The island
+    // is also the morph trigger, and it hides while the panel is up (the
+    // panel IS the island, expanded) -- it comes back when the window, and
+    // with it the return morph, is gone.
+    function openToday() {
+        todayPanel.trigger = island;
+        todayPanel.rightMargin = (bar.width - todayPanel.panelWidth) / 2;
+        todayPanel.visible = true;
+    }
+
+    // The status pill opens System, its right edge aligned with the pill's.
+    function openSystem() {
+        systemPanel.trigger = statusPill;
+        systemPanel.rightMargin = bar.width - statusPill.x - statusPill.width + 14;
+        systemPanel.visible = true;
     }
 
     // The launcher is centred too; the panel width is fixed by Launcher.qml.
@@ -175,10 +182,10 @@ ShellRoot {
             level: 2
             lifted: islandArea.containsMouse
 
-            // The control centre grows out of this surface; while its window
+            // The Today panel grows out of this surface; while its window
             // is up the island hides so there are never two copies (it comes
             // back only when the return morph has finished).
-            opacity: controlCenter.visible && controlCenter.trigger === island ? 0 : 1
+            opacity: todayPanel.visible && todayPanel.trigger === island ? 0 : 1
 
             Behavior on opacity {
                 NumberAnimation { duration: Motion.fade }
@@ -207,7 +214,7 @@ ShellRoot {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.openControlCenter()
+                onClicked: root.openToday()
             }
 
             // "88:88" measures the widest case so the island keeps one width and
@@ -270,6 +277,14 @@ ShellRoot {
             id: statusPill
             level: 1
             lifted: statusPillHover.hovered
+
+            // The System panel grows out of this pill; it hides while the
+            // panel is up, same shared-element rule as the island.
+            opacity: systemPanel.visible && systemPanel.trigger === statusPill ? 0 : 1
+
+            Behavior on opacity {
+                NumberAnimation { duration: Motion.fade }
+            }
 
             anchors.right: parent.right
             anchors.top: parent.top
@@ -360,6 +375,19 @@ ShellRoot {
         }
     }
 
+    // The two panels of the new layout: the island opens Today, the status
+    // pill opens System (and SUPER+N through the IPC target below). The old
+    // ControlCenter stays instantiated for its today-toast timers until the
+    // layout switch retires it.
+    TodayPanel {
+        id: todayPanel
+        notifications: notifications
+    }
+
+    SystemPanel {
+        id: systemPanel
+    }
+
     // The volume/brightness bubble at the bottom.
     Osd {
         id: osd
@@ -413,20 +441,37 @@ ShellRoot {
         }
     }
 
-    // The control centre, so it can be opened from a script (screenshots,
-    // future keybinds) without clicking the island.
+    // The island's panel, so it can be opened from a script (screenshots,
+    // future keybinds) without clicking the island. Formerly the
+    // controlcentre target: the control centre is Today now.
     IpcHandler {
         target: "controlcenter"
 
         function toggle(): void {
-            if (controlCenter.visible)
-                controlCenter.close();
+            if (todayPanel.visible)
+                todayPanel.close();
             else
-                root.openControlCenter();
+                root.openToday();
         }
 
         function close(): void {
-            controlCenter.visible = false;
+            todayPanel.close();
+        }
+    }
+
+    // The status pill's panel; SUPER+N goes here.
+    IpcHandler {
+        target: "system"
+
+        function toggle(): void {
+            if (systemPanel.visible)
+                systemPanel.close();
+            else
+                root.openSystem();
+        }
+
+        function close(): void {
+            systemPanel.close();
         }
     }
 }

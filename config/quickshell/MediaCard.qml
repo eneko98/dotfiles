@@ -12,8 +12,9 @@ Column {
 
     property var player: null
     // The host binds this to the card's actual on-screen state: the poll
-    // (and only the poll) depends on it.
-    property bool visible: false
+    // (and only the poll) depends on it. Named onScreen: shadowing Item's
+    // visible would break the layout's include/exclude semantics.
+    property bool onScreen: false
 
     // Polled position: `player.position` is a live property but MPRIS does
     // not push ticks; a second-cadence read while visible is the deal.
@@ -23,7 +24,7 @@ Column {
 
     Timer {
         interval: 1000
-        running: root.visible && root.player !== null
+        running: root.onScreen && root.player !== null
         repeat: true
         onTriggered: root.pos = root.player.position
     }

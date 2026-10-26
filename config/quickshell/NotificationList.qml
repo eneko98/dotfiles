@@ -97,7 +97,7 @@ Column {
         model: root.cards
 
         delegate: NotificationItem {
-            required property var modelData
+            id: cardDelegate
 
             width: root.width
             server: root.server

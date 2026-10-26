@@ -14,7 +14,7 @@ Item {
     id: root
 
     property var server: null          // the NotificationCenter
-    property var modelData: null       // the Notification
+    required property var modelData    // the Notification (set by the Repeater)
     property real receivedAt: 0        // ms, from the server's stamps
 
     // The card leaves in two steps: fade+collapse (this property) and only
@@ -169,7 +169,9 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: root.relative()
+                    // A binding, not a call: relative() at creation ran
+                    // before receivedAt arrived and never re-ran.
+                    text: root.receivedAt > 0 ? root.relative() : ""
                     color: Theme.fg1
                     font.family: "Adwaita Sans"
                     font.pixelSize: 11
@@ -211,7 +213,7 @@ Item {
                         width: actionLabel.implicitWidth + Tokens.space.s * 2
                         height: 28
 
-                        onClicked: root.modelData.invoke()
+                        onClicked: modelData.invoke()
 
                         Text {
                             id: actionLabel
