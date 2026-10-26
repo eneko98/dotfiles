@@ -150,9 +150,9 @@ PanelWindow {
     }
 
     // --- Centre: the island --------------------------------------------
-    // The time is the one place the clock gets a voice; the date stays
-    // small and sans so the hierarchy is time first, date second. The
-    // island is e2: the one surface that lifts a level on hover.
+    // The arbiter decides what the island is: the clock row (media/idle),
+    // the OSD (a volume/brightness change) or a notification arrival. The
+    // width Behavior is the morph between them.
     Surface {
         id: island
         level: 2
@@ -170,7 +170,9 @@ PanelWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        width: clockRow.implicitWidth + 24
+        width: Island.mode === "osd" ? osdRow.implicitWidth + 24
+            : Island.mode === "notification" ? notifRow.implicitWidth + 24
+            : clockRow.implicitWidth + 24
         height: 30
 
         // Growing with the media section is the island's whole trick; make
@@ -183,8 +185,15 @@ PanelWindow {
             }
         }
 
-        // Declared before the row so the play button inside Media sits
-        // above it: later items win the click.
+        // The arbiter's hover input (it pauses the notification countdown).
+        Binding {
+            target: Island
+            property: "hovered"
+            value: islandArea.containsMouse
+        }
+
+        // Declared before the rows so they sit above it: later items win
+        // the click.
         MouseArea {
             id: islandArea
             anchors.fill: parent
@@ -205,8 +214,10 @@ PanelWindow {
             text: "88:88"
         }
 
+        // The normal mode: media (when a player has a track) and the clock.
         Row {
             id: clockRow
+            visible: Island.mode === "normal"
             anchors.centerIn: parent
             spacing: 8
 
@@ -246,6 +257,126 @@ PanelWindow {
             }
         }
 
+        // The OSD mode: glyph, a 120x4 bar and the percentage.
+        Row {
+            id: osdRow
+            visible: Island.mode === "osd"
+            anchors.centerIn: parent
+            spacing: 10
+
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                glyph: Island.osdKind === "brightness" ? "󰃠"
+                    : Island.osdMuted ? "󰖁"
+                    : Island.osdValue > 0.5 ? "󰕾"
+                    : Island.osdValue > 0 ? "󰖀" : "󰕿"
+                size: 15
+            }
+
+            Item {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 120
+                height: 4
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 2
+                    color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
+                }
+
+                Rectangle {
+                    width: parent.width * Math.max(0, Math.min(1, Island.osdValue))
+                    height: parent.height
+                    radius: 2
+                    color: Theme.gold
+                }
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 34
+                horizontalAlignment: Text.AlignRight
+                text: Island.osdMuted ? "Muted"
+                    : Math.round(Island.osdValue * 100) + "%"
+                color: Theme.fg1
+                font.family: "Adwaita Sans"
+                font.pixelSize: 11
+                font.features: ({ "tnum": 1 })
+            }
+        }
+
+        // The notification mode: app + summary, compact. Clicking it opens
+        // Today (the full interaction lives there; one action, one place).
+        Row {
+            id: notifRow
+            visible: Island.mode === "notification"
+            anchors.centerIn: parent
+            spacing: 8
+
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                glyph: "󰂚"
+                tone: "attention"
+                size: 14
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Island.current !== null ? Island.current.appName : ""
+                color: Theme.fg1
+                font.family: "Adwaita Sans"
+                font.pixelSize: 11
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(implicitWidth, 220)
+                text: Island.current !== null ? Island.current.summary : ""
+                color: Theme.fg0
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
+                elide: Text.ElideRight
+            }
+        }
+
+        // The countdown line: 2px fg1 at 40% along the base (not accent: it
+        // is time, not an active state).
+        Rectangle {
+            visible: Island.mode === "notification"
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.leftMargin: 14
+            anchors.right: parent.right
+            anchors.rightMargin: 14
+            height: 2
+            radius: 1
+            color: Qt.rgba(Theme.fg1.r, Theme.fg1.g, Theme.fg1.b, 0.40)
+            clip: true
+
+            Rectangle {
+                width: parent.width * Island.progress
+                height: parent.height
+                radius: 1
+                color: Theme.fg1
+            }
+        }
+
+        // The unread dot: neon, until Today opens.
+        Rectangle {
+            visible: Island.unread && Island.mode === "normal"
+            anchors.right: parent.right
+            anchors.rightMargin: 6
+            anchors.top: parent.top
+            anchors.topMargin: 4
+            width: 6
+            height: 6
+            radius: 3
+            color: Theme.teal
+
+            Behavior on opacity {
+                NumberAnimation { duration: Motion.fade }
+            }
+        }
     }
 
     // --- Right pill: the status modules --------------------------------

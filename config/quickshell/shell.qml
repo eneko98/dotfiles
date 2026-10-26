@@ -24,6 +24,7 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Services.Pipewire
 import QtQuick
 
 ShellRoot {
@@ -160,10 +161,82 @@ ShellRoot {
         }
     }
 
+    // The island's live inputs (the old bottom bubble's watchers, retired):
+    // volume changes through Pipewire's default sink -- the same node the
+    // media keys and the sliders change -- and brightness through the
+    // backlight sysfs file, which catches the keys and external writes.
+    // `armed` waits after startup so the first bindings do not flash an OSD
+    // nobody asked for. Singletons cannot reference each other here, so
+    // these producers live in the shell and push into Island.
+    PwObjectTracker {
+        objects: [Pipewire.defaultAudioSink]
+    }
+
+    readonly property var sink: Pipewire.defaultAudioSink
+    readonly property var sinkAudio: sink ? sink.audio : null
+    readonly property real sinkVolume: sinkAudio ? sinkAudio.volume : 0
+    readonly property bool sinkMuted: sinkAudio ? sinkAudio.muted : false
+    property bool islandArmed: false
+    property int lastBrightness: -1
+
+    Timer {
+        interval: 1200
+        running: true
+        onTriggered: root.islandArmed = true
+    }
+
+    onSinkVolumeChanged: {
+        if (islandArmed)
+            Island.showOsd("volume", sinkVolume, sinkMuted);
+    }
+
+    onSinkMutedChanged: {
+        if (islandArmed)
+            Island.showOsd("volume", sinkVolume, sinkMuted);
+    }
+
+    // The device node is the laptop's; a second panel needs a lookup here.
+    FileView {
+        id: maxFile
+        path: "/sys/class/backlight/amdgpu_bl1/max_brightness"
+        blockLoading: true
+    }
+
+    readonly property int maxBrightness: parseInt(maxFile.text()) || 0
+
+    FileView {
+        id: brightnessFile
+        path: "/sys/class/backlight/amdgpu_bl1/brightness"
+        watchChanges: true
+        printErrors: false
+
+        onFileChanged: reload()
+
+        onTextChanged: {
+            const raw = parseInt(text());
+            if (isNaN(raw) || root.maxBrightness <= 0)
+                return;
+
+            const pct = Math.round(raw / root.maxBrightness * 100);
+            Brightness.percent = pct;
+            if (!root.islandArmed || pct === root.lastBrightness)
+                return;
+            root.lastBrightness = pct;
+            Island.showOsd("brightness", pct / 100, false);
+        }
+    }
+
+    // The OSD never shows while the System panel is up: it owns those
+    // controls on screen.
+    Binding {
+        target: Island
+        property: "systemPanelOpen"
+        value: systemPanel.visible
+    }
+
     // The two panels of the new layout: the island opens Today, the status
-    // pill opens System (and SUPER+N through the IPC target below). The old
-    // ControlCenter stays instantiated for its today-toast timers until the
-    // layout switch retires it.
+    // pill opens System. The old bottom OSD bubble is retired: its watchers
+    // moved up into the island's producers.
     TodayPanel {
         id: todayPanel
         notifications: notifications
@@ -171,11 +244,6 @@ ShellRoot {
 
     SystemPanel {
         id: systemPanel
-    }
-
-    // The volume/brightness bubble at the bottom.
-    Osd {
-        id: osd
     }
 
     // The notification server, toasts and history. mako's service is disabled
