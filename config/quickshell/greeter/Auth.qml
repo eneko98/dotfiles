@@ -72,7 +72,7 @@ Item {
         if (Config.demo)
             quitTimer.restart();
         else
-            Greetd.launch(Config.sessionCommand);
+            Greetd.launch(Config.sessionCommand, [], true);
     }
 
     function endSession() {
