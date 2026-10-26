@@ -1,7 +1,12 @@
 // The wifi glyph: display and interactions only. The glyph follows the
 // signal strength; without the radio the module hides; without a network
 // the tooltip says so. Click opens System's network section.
+//
+// Quickshell's connected WifiNetwork entry often reports signalStrength 0 even
+// though NetworkManager knows the real value, so we probe nmcli directly on a
+// timer and use that when it answers.
 import Quickshell
+import Quickshell.Io
 import Quickshell.Networking
 import QtQuick
 
@@ -28,6 +33,49 @@ Item {
         return null;
     }
 
+    // Signal strength from nmcli (the source of truth); -1 means "not known yet
+    // or probe failed", fall back to Quickshell's value.
+    property int realSignal: -1
+
+    readonly property int signalStrength: {
+        if (root.realSignal >= 0)
+            return root.realSignal;
+        return root.network ? root.network.signalStrength : 0;
+    }
+
+    Process {
+        id: signalProbe
+
+        command: ["nmcli", "-t", "-f", "ACTIVE,SIGNAL", "dev", "wifi"]
+        running: false
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.split("\n");
+                for (let i = 0; i < lines.length; ++i) {
+                    const parts = lines[i].split(":");
+                    if (parts[0] === "yes" && parts[1] !== "") {
+                        root.realSignal = parseInt(parts[1], 10);
+                        return;
+                    }
+                }
+                root.realSignal = -1;
+            }
+        }
+    }
+
+    Timer {
+        interval: 5000
+        repeat: true
+        running: root.network !== null
+        triggeredOnStart: true
+
+        onTriggered: {
+            signalProbe.running = false;
+            signalProbe.running = true;
+        }
+    }
+
     // Without the radio: hidden (brief 14.3).
     visible: Networking.wifiEnabled
 
@@ -37,11 +85,6 @@ Item {
     function signalGlyph(strength, connected) {
         if (!connected)
             return "󰤭";
-        // Quickshell's connected network entry often reports signalStrength 0
-        // even though NM knows the real value; show a generic wifi glyph
-        // rather than the one-bar icon that reads as "no signal".
-        if (strength <= 0)
-            return "󰖩";
         return strength >= 80 ? "󰤨"
             : strength >= 60 ? "󰤥"
             : strength >= 40 ? "󰤢"
@@ -51,13 +94,14 @@ Item {
 
     Pressable {
         id: press
+
         anchors.fill: parent
 
         onClicked: root.activated("network")
 
         Glyph {
             anchors.centerIn: parent
-            glyph: root.signalGlyph(root.network ? root.network.signalStrength : 0, root.network !== null)
+            glyph: root.signalGlyph(root.signalStrength, root.network !== null)
             tone: root.network ? "normal" : "disabled"
             size: 15
         }
@@ -66,9 +110,7 @@ Item {
     Tooltip {
         hovered: press.hovered
         label: root.network
-            ? root.network.name + (root.network.signalStrength > 0
-                ? ", " + root.network.signalStrength + "%"
-                : " · Connected")
+            ? root.network.name + ", " + root.signalStrength + "%"
             : "Disconnected"
         below: false
         anchors.bottom: parent.top
