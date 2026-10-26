@@ -21,6 +21,15 @@ Popup {
     // The processes page, pushed over the sections from Resources' link.
     property bool showProcesses: false
 
+    // Escape goes back from the processes page before closing the panel.
+    function close() {
+        if (root.showProcesses) {
+            root.showProcesses = false;
+            return;
+        }
+        root.closePanel();
+    }
+
     // The battery header, at full width.
     BatterySection { width: parent.width }
 
@@ -107,10 +116,26 @@ Popup {
         }
     }
 
+    // --- Zones: connections / devices / machine / session ----------------
+    // The hairline dividers are written out three times; an inline
+    // component here made the parser choke (Expected token ':').
+
     // --- The rows ---------------------------------------------------------
+    Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
+    }
+
     SoundSection { width: parent.width }
 
     DisplaySection { width: parent.width; showNightTile: false }
+
+    Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
+    }
 
     ResourcesSection {
         width: parent.width

@@ -97,11 +97,18 @@ PanelWindow {
     }
 
     // Close through the morph when there is a trigger; instant otherwise.
-    function close() {
+    // Split from close() so a panel subclass can intercept Escape (the
+    // System panel goes back from its processes page first) and still reach
+    // the base behaviour.
+    function closePanel() {
         if (trigger !== null)
             panel.open = false;
         else
             visible = false;
+    }
+
+    function close() {
+        root.closePanel();
     }
 
     // The dim behind the panel. It fades in with the opening; the close is

@@ -14,8 +14,18 @@ Column {
     width: parent.width
     spacing: Tokens.space.xs
 
-    onVisibleChanged: Processes.active = visible
-    Component.onCompleted: Processes.active = Processes.active || visible
+    onVisibleChanged: {
+        // The first sample spawns a process and rebuilds every row; doing
+        // that mid-animation is the push/pop stutter. Both directions wait
+        // for the page to settle.
+        settle.restart();
+    }
+
+    Timer {
+        id: settle
+        interval: 350
+        onTriggered: Processes.active = root.visible
+    }
 
     property int selected: 0
 

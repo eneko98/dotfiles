@@ -73,12 +73,13 @@ Item {
         spacing: Tokens.space.s
 
         Pressable {
-            width: backText.implicitWidth + Tokens.space.s * 2
+            width: backRow.implicitWidth + Tokens.space.s * 2
             height: 24
 
             onClicked: root.back()
 
             Row {
+                id: backRow
                 anchors.centerIn: parent
                 spacing: Tokens.space.xs
 
@@ -91,6 +92,7 @@ Item {
                 }
 
                 Text {
+                    id: backTitle
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.title
                     color: Theme.fg0

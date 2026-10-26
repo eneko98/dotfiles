@@ -17,12 +17,20 @@ Column {
         width: parent.width
         height: 32
 
-        Glyph {
-            id: sun
+        // The same 28px leading slot the sound row gives its mute button,
+        // so both sliders start (and end) at the same x.
+        Item {
+            id: sunSlot
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
-            glyph: "󰃠"
-            size: 15
+            width: 28
+            height: 28
+
+            Glyph {
+                anchors.centerIn: parent
+                glyph: "󰃠"
+                size: 15
+            }
         }
 
         Text {
@@ -38,10 +46,10 @@ Column {
         }
 
         Slider {
-            anchors.left: sun.right
+            anchors.left: sunSlot.right
             anchors.leftMargin: Tokens.space.s
             anchors.right: parent.right
-            anchors.rightMargin: 42
+            anchors.rightMargin: 74
             anchors.verticalCenter: parent.verticalCenter
             value: Brightness.percent / 100
 

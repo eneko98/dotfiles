@@ -199,6 +199,11 @@ Column {
                                 glyph: root.signalGlyph(row.modelData.signalStrength)
                                 tone: row.modelData.connected ? "active" : "normal"
                                 size: 14
+                                // Fixed slot: the Nerd signal glyphs are not
+                                // all the same width, and the names would
+                                // wobble with them.
+                                width: 18
+                                horizontalAlignment: Text.AlignHCenter
                             }
 
                             Text {
