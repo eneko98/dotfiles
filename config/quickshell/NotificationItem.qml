@@ -1,12 +1,12 @@
 // One notification in the history: bg2 60% rounded interior, the app icon
-// (or nothing), app name + relative time in fg1, the summary in fg0, the
-// body clamped to two lines until clicked, and the actions as text buttons.
-// A critical notification carries a red dot by the app name.
+// (image, appIcon or an initial), app name + relative time in fg1, the
+// summary in fg0, the body clamped to two lines until clicked, and the
+// actions as text buttons. A critical notification carries a red dot; an
+// unread one carries a neon dot by the app name.
 //
 // Dismiss: the x button on hover, or a two-finger horizontal swipe -- the
 // card follows the gesture with fading opacity, commits past 35% of its
-// width or a 0.6px/ms flick, and collapses its height on the way out. The
-// same axis lock and release timing as the calendar.
+// width or a 0.6px/ms flick, and collapses its height on the way out.
 import Quickshell
 import QtQuick
 
@@ -26,9 +26,25 @@ Item {
     property real _accY: 0
     property var _samples: []
 
+    // Time refresher: relative labels update once a minute.
+    property int tick: 0
+
     readonly property bool critical: modelData ? modelData.urgency === 2 : false
+    readonly property bool unread: modelData && server ? !server.read[modelData.id] : false
     readonly property bool expandedBody: bodyLabel.maximumLineCount === Infinity
     readonly property bool hoverable: cardArea.containsMouse
+
+    readonly property string iconSource: {
+        if (!modelData)
+            return "";
+        if (modelData.image !== "")
+            return modelData.image;
+        if (modelData.appIcon !== "")
+            return Quickshell.iconPath(modelData.appIcon, true);
+        return "";
+    }
+    readonly property string appInitial: modelData && modelData.appName !== ""
+        ? modelData.appName.charAt(0).toUpperCase() : "?"
 
     signal dismissed()
 
@@ -54,13 +70,23 @@ Item {
         }
     }
 
+    Timer {
+        interval: 60000
+        running: true
+        repeat: true
+        onTriggered: root.tick++
+    }
+
     function relative() {
+        // touch `tick` so the binding re-evaluates once a minute
+        root.tick;
         if (receivedAt <= 0)
             return "";
         const s = Math.max(1, Math.round((Date.now() - receivedAt) / 1000));
         if (s < 60) return s + " s";
         if (s < 3600) return Math.round(s / 60) + " min";
         if (s < 86400) return Math.round(s / 3600) + " h";
+        if (s < 172800) return "Yesterday";
         return Math.round(s / 86400) + " d";
     }
 
@@ -91,9 +117,13 @@ Item {
         onTriggered: root.release()
     }
 
-    WheelHandler {
-        acceptedDevices: PointerDevice.TouchPad
-        target: null
+    // The gesture: WheelHandler never fires on this Wayland stack, so the
+    // wheel is read from a MouseArea with no buttons (clicks pass through).
+    MouseArea {
+        anchors.fill: parent
+        z: 1
+        acceptedButtons: Qt.NoButton
+
         onWheel: function (event) {
             const dx = event.inverted ? event.pixelDelta.x : -event.pixelDelta.x;
             const dy = event.pixelDelta.y;
@@ -150,13 +180,46 @@ Item {
                 width: parent.width
                 spacing: Tokens.space.s
 
-                Image {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: root.modelData && root.modelData.appIcon !== ""
+                // Icon: image, appIcon, or the app's initial in a bg2 circle.
+                Item {
                     width: 20
                     height: 20
-                    source: root.modelData ? root.modelData.appIcon : ""
-                    fillMode: Image.PreserveAspectFit
+                    anchors.verticalCenter: parent.verticalCenter
+
+                    Image {
+                        anchors.fill: parent
+                        visible: root.iconSource !== ""
+                        source: root.iconSource
+                        sourceSize.width: 20
+                        sourceSize.height: 20
+                        fillMode: Image.PreserveAspectFit
+                    }
+
+                    Rectangle {
+                        anchors.fill: parent
+                        visible: root.iconSource === ""
+                        radius: 10
+                        color: Theme.bg2
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: root.appInitial
+                            color: Theme.fg1
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                    }
+                }
+
+                // Unread: neon dot before the name.
+                Rectangle {
+                    visible: root.unread
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 6
+                    height: 6
+                    radius: 3
+                    color: Theme.teal
                 }
 
                 Text {
@@ -169,8 +232,6 @@ Item {
 
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    // A binding, not a call: relative() at creation ran
-                    // before receivedAt arrived and never re-ran.
                     text: root.receivedAt > 0 ? root.relative() : ""
                     color: Theme.fg1
                     font.family: "Adwaita Sans"
@@ -205,7 +266,7 @@ Item {
                 spacing: Tokens.space.s
 
                 Repeater {
-                    model: root.modelData ? root.modelData.actions.values : []
+                    model: root.modelData ? root.modelData.actions : []
 
                     delegate: Pressable {
                         required property var modelData
