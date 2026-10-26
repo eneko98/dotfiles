@@ -63,8 +63,14 @@ Popup {
                 : "Off"
 
             onToggled: {
-                if (root.adapter)
+                // The adapter object disappears while the radio is rfkill
+                // blocked (the airplane key blocks it); the way back is
+                // pkexec + polkit, which is its own confirmation dialog.
+                if (root.adapter) {
+                    console.log("BT tile toggled, enabled=", root.adapter.enabled);
                     root.adapter.enabled = !root.adapter.enabled;
+                } else
+                    Quickshell.execDetached(["pkexec", "rfkill", "unblock", "bluetooth"]);
             }
             onExpandRequested: root.expandedDetail
                 = root.expandedDetail === "bt" ? "" : "bt"
