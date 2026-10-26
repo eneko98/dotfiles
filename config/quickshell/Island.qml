@@ -99,10 +99,13 @@ Singleton {
     function show(n) {
         island.current = n;
         island.progress = 1;
-        // Low: 3s; normal: 4s; critical: no countdown -- it stays until the
-        // user opens the island (which leads to Today's list).
+        // Low: 3s; normal: 4s; the app's expireTimeout wins when it asks for
+        // one (clamped to 2-10s); critical: no countdown.
         if (n.urgency !== 2) {
-            notifAnim.duration = n.urgency === 0 ? 3000 : 4000;
+            let ms = n.urgency === 0 ? 3000 : 4000;
+            if (n.expireTimeout > 0)
+                ms = Math.max(2000, Math.min(10000, n.expireTimeout));
+            notifAnim.duration = ms;
             notifAnim.restart();
         } else {
             notifAnim.stop();
