@@ -62,7 +62,9 @@ ShellRoot {
         if (barLoader.item === null)
             return;
         todayPanel.trigger = barLoader.item.island;
-        todayPanel.rightMargin = (todayPanel.width - todayPanel.panelWidth) / 2;
+        // The bar's width, not the popup's: a hidden popup measures 0 and
+        // the centring goes negative -- off-screen to the right (measured).
+        todayPanel.rightMargin = (barLoader.item.width - todayPanel.panelWidth) / 2;
         todayPanel.visible = true;
     }
 
@@ -72,19 +74,19 @@ ShellRoot {
             return;
         const pill = barLoader.item.statusPill;
         systemPanel.trigger = pill;
-        systemPanel.rightMargin = systemPanel.width - pill.x - pill.width + 14;
+        systemPanel.rightMargin = barLoader.item.width - pill.x - pill.width + 14;
         systemPanel.visible = true;
     }
 
     // The launcher is centred too; the panel width is fixed by Launcher.qml.
     function openLauncher() {
-        launcher.rightMargin = (launcher.width - launcher.panelWidth) / 2;
+        launcher.rightMargin = (barLoader.item.width - launcher.panelWidth) / 2;
         launcher.open();
     }
 
     // The wallpaper picker is centred for the same reason.
     function openWallpaperPicker() {
-        wallpaperPicker.rightMargin = (wallpaperPicker.width - wallpaperPicker.panelWidth) / 2;
+        wallpaperPicker.rightMargin = (barLoader.item.width - wallpaperPicker.panelWidth) / 2;
         wallpaperPicker.open();
     }
 
