@@ -140,21 +140,6 @@ Column {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
 
-                // Wheel + two fingers, the same wheel-only MouseArea as the
-                // network list's.
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-
-                    onWheel: function (w) {
-                        const dy = w.pixelDelta.y !== 0
-                            ? w.pixelDelta.y : (w.angleDelta.y / 120) * 40;
-                        list.contentY = Math.max(0,
-                            Math.min(list.contentHeight - list.height,
-                                     list.contentY - dy));
-                    }
-                }
-
                 Column {
                     id: deviceColumn
                     width: parent.width
@@ -209,6 +194,22 @@ Column {
                     }
                 }
             }
+
+                // On TOP of the rows (declared last): wheel dispatch goes
+                // to the topmost item under the cursor. Clicks pass through
+                // (no buttons); the wheel scrolls from cursor or fingers.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+
+                    onWheel: function (w) {
+                        const dy = w.pixelDelta.y !== 0
+                            ? w.pixelDelta.y : (w.angleDelta.y / 120) * 40;
+                        list.contentY = Math.max(0,
+                            Math.min(list.contentHeight - list.height,
+                                     list.contentY - dy));
+                    }
+                }
 
             Text {
                 visible: root.on && root.devices.length === 0

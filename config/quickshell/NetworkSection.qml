@@ -176,22 +176,6 @@ Column {
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
 
-                // Flickable does not scroll on wheel or touchpad by itself:
-                // a wheel-only MouseArea (clicks pass through) moves the
-                // content, from the cursor or with two fingers.
-                MouseArea {
-                    anchors.fill: parent
-                    acceptedButtons: Qt.NoButton
-
-                    onWheel: function (w) {
-                        const dy = w.pixelDelta.y !== 0
-                            ? w.pixelDelta.y : (w.angleDelta.y / 120) * 40;
-                        list.contentY = Math.max(0,
-                            Math.min(list.contentHeight - list.height,
-                                     list.contentY - dy));
-                    }
-                }
-
                 Column {
                     id: networkColumn
                     width: parent.width
@@ -261,6 +245,22 @@ Column {
                     }
                 }
             }
+
+                // On TOP of the rows (declared last): wheel dispatch goes
+                // to the topmost item under the cursor. Clicks pass through
+                // (no buttons); the wheel scrolls from cursor or fingers.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+
+                    onWheel: function (w) {
+                        const dy = w.pixelDelta.y !== 0
+                            ? w.pixelDelta.y : (w.angleDelta.y / 120) * 40;
+                        list.contentY = Math.max(0,
+                            Math.min(list.contentHeight - list.height,
+                                     list.contentY - dy));
+                    }
+                }
 
             Text {
                 visible: Networking.wifiEnabled && root.pending === null
