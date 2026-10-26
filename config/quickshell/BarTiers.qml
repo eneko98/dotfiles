@@ -928,10 +928,12 @@ PanelWindow {
             clip: true
 
             Rectangle {
-                width: parent.width * Island.progress
+                width: parent.width * (Island.hasProgress
+                    ? Math.max(0, Math.min(1, Island.progressValue / 100))
+                    : Island.progress)
                 height: parent.height
                 radius: 1
-                color: Theme.fg1
+                color: Island.hasProgress ? Theme.gold : Theme.fg1
             }
         }
 

@@ -58,6 +58,15 @@ Singleton {
     // Notifications waiting behind the one on screen.
     readonly property int pendingCount: queue.length
 
+    // A `value` hint (0-100) turns the countdown line into a progress bar
+    // and stops the auto-dismiss: the notification stays until the app
+    // updates it or the user dismisses it.
+    readonly property bool hasProgress: current !== null
+        && current.hints !== undefined
+        && current.hints["value"] !== undefined
+    readonly property real progressValue: hasProgress
+        ? Number(current.hints["value"]) : 0
+
     function cleanBody(text) {
         if (!text)
             return "";
@@ -100,8 +109,11 @@ Singleton {
         island.current = n;
         island.progress = 1;
         // Low: 3s; normal: 4s; the app's expireTimeout wins when it asks for
-        // one (clamped to 2-10s); critical: no countdown.
-        if (n.urgency !== 2) {
+        // one (clamped to 2-10s); critical or progress notifications have no
+        // countdown.
+        if (island.hasProgress) {
+            notifAnim.stop();
+        } else if (n.urgency !== 2) {
             let ms = n.urgency === 0 ? 3000 : 4000;
             if (n.expireTimeout > 0)
                 ms = Math.max(2000, Math.min(10000, n.expireTimeout));
