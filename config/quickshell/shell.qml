@@ -50,7 +50,11 @@ ShellRoot {
 
     // The island opens the control centre centred under itself: the panel's
     // right margin is half of what is left of the screen once the panel is out.
+    // The island is also the morph trigger, and it hides while the panel is
+    // up (the panel IS the island, expanded) -- it comes back when the
+    // window, and with it the return morph, is gone.
     function openControlCenter() {
+        controlCenter.trigger = island;
         controlCenter.rightMargin = (bar.width - controlCenter.panelWidth) / 2;
         controlCenter.visible = true;
     }
@@ -170,6 +174,15 @@ ShellRoot {
             id: island
             level: 2
             lifted: islandArea.containsMouse
+
+            // The control centre grows out of this surface; while its window
+            // is up the island hides so there are never two copies (it comes
+            // back only when the return morph has finished).
+            opacity: controlCenter.visible && controlCenter.trigger === island ? 0 : 1
+
+            Behavior on opacity {
+                NumberAnimation { duration: Motion.fade }
+            }
 
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.top: parent.top
@@ -407,7 +420,7 @@ ShellRoot {
 
         function toggle(): void {
             if (controlCenter.visible)
-                controlCenter.visible = false;
+                controlCenter.close();
             else
                 root.openControlCenter();
         }
