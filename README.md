@@ -121,6 +121,7 @@ component.
 | `SUPER + Q` | new terminal (kitty) |
 | `SUPER + Space` | application launcher (Quickshell) |
 | `SUPER + E` | file manager (yazi) |
+| `SUPER + G` | web browser (Firefox) |
 | `SUPER + W` | wallpaper picker |
 | `SUPER + L` | lock the screen (Quickshell) |
 | volume keys | up / down in 5% steps, mute |

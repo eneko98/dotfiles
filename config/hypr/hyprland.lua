@@ -230,6 +230,8 @@ hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/launcher"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
+-- The web browser.
+hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("firefox"))
 -- Wallpaper picker. No argument opens it through the bar's IPC; the same script
 -- applies and remembers a choice, and a systemd unit re-applies it at login.
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wallpaper"))
