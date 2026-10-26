@@ -22,6 +22,11 @@ Pressable {
     // 40px icon buttons show only the glyph; the tooltip carries the label.
     property bool showLabel: true
 
+    // No press-scale: the button's hit area must stay full-size during the
+    // armed state, otherwise a second click near the edge can release outside
+    // the scaled bounds and miss the confirmation.
+    pressScale: 1.0
+
     signal confirmed()
 
     readonly property bool armed: armTimer.running

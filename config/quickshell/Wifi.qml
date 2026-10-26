@@ -34,12 +34,14 @@ Item {
     width: 20
     height: 30
 
-    function signalGlyph(strength) {
+    function signalGlyph(strength, connected) {
+        if (!connected)
+            return "󰤭";
         return strength >= 80 ? "󰤨"
             : strength >= 60 ? "󰤥"
             : strength >= 40 ? "󰤢"
             : strength >= 20 ? "󰤟"
-            : "󰤭";
+            : "󰤟";  // connected with very low signal: one bar, not the off glyph
     }
 
     Pressable {
@@ -50,7 +52,7 @@ Item {
 
         Glyph {
             anchors.centerIn: parent
-            glyph: root.signalGlyph(root.network ? root.network.signalStrength : 0)
+            glyph: root.signalGlyph(root.network ? root.network.signalStrength : 0, root.network !== null)
             tone: root.network ? "normal" : "disabled"
             size: 15
         }

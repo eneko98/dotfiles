@@ -3,6 +3,7 @@
 // Power Off are ConfirmButtons, so red only shows when the action is
 // actually about to run. The commands match the session menu's mappings.
 import QtQuick
+import Quickshell
 
 Row {
     id: root
@@ -18,6 +19,9 @@ Row {
         property string label: ""
         property string glyph: ""
         property string command: ""
+
+        // Same as ConfirmButton: keep the hit area full-size.
+        pressScale: 1.0
 
         width: 40
         height: 40

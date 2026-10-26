@@ -18,7 +18,7 @@ Item {
         || state === UPowerDeviceState.PendingCharge
     readonly property bool critical: !charging && fraction <= 0.10
 
-    width: batteryText.implicitWidth > 0 ? glyph.width + 4 + batteryText.implicitWidth : 20
+    width: batteryText.implicitWidth > 0 ? batteryGlyph.width + 4 + batteryText.implicitWidth : 20
     height: 30
 
     function duration(seconds) {
@@ -51,6 +51,7 @@ Item {
             spacing: 4
 
             Glyph {
+                id: batteryGlyph
                 anchors.verticalCenter: parent.verticalCenter
                 glyph: root.fraction >= 0.9 ? "󰁹"
                     : root.fraction >= 0.6 ? "󰂂"
