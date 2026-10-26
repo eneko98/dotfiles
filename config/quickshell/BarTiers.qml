@@ -228,10 +228,20 @@ PanelWindow {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        width: Island.mode === "osd" ? osdRow.implicitWidth + 24
-            : Island.mode === "notification" ? notifRow.implicitWidth + 24
-            : clockRow.implicitWidth + 24
+
+        // Target width is computed from the content, not bound to children's
+        // implicit width directly, to avoid circular bindings once the island
+        // starts measuring text for the notification wing.
+        width: targetWidth
         height: 30
+        readonly property real targetWidth: Island.mode === "osd" ? osdTarget
+            : Island.mode === "notification" ? notifTarget
+            : clockRow.implicitWidth + 24
+
+        readonly property real osdTarget: osdRow.implicitWidth + 24
+        readonly property real notifTarget: 14 + 16 + 8
+            + Math.min(notifAppMetrics.width, 120) + 8
+            + Math.min(notifSummaryMetrics.width, 220) + 14
 
         // Growing with the media section is the island's whole trick; make
         // it a slide rather than a jump.
@@ -272,128 +282,181 @@ PanelWindow {
             text: "88:88"
         }
 
-        // The normal mode: media (when a player has a track) and the clock.
-        Row {
-            id: clockRow
-            visible: Island.mode === "normal"
-            anchors.centerIn: parent
-            spacing: 8
-
-            // The dynamic part: shows while a player has a track.
-            Media {
-                id: media
-            }
-
-            Rectangle {
-                visible: media.active
-                width: 1
-                height: 14
-                color: Theme.bg2
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Qt.formatDateTime(clock.date, "hh:mm")
-                width: timeMetrics.width
-                horizontalAlignment: Text.AlignHCenter
-                color: Theme.fg0
-                font.family: "Adwaita Sans"
-                font.pixelSize: 15
-                font.bold: true
-                // Tabular figures: the clock must not breathe every minute.
-                font.features: ({ "tnum": 1 })
-            }
-
-            // The date steps aside while the media section is up.
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: !media.active
-                text: Qt.formatDateTime(clock.date, "ddd d MMM")
-                color: Theme.fg1
-                font.family: "Adwaita Sans"
-                font.pixelSize: 11
-            }
+        // Notification text measurements for the target width (no circular
+        // binding with the island's width).
+        TextMetrics {
+            id: notifAppMetrics
+            font.family: "Adwaita Sans"
+            font.pixelSize: 11
+            text: Island.current !== null ? Island.current.appName : ""
         }
 
-        // The OSD mode: glyph, a 120x4 bar and the percentage.
-        Row {
-            id: osdRow
-            visible: Island.mode === "osd"
-            anchors.centerIn: parent
-            spacing: 10
+        TextMetrics {
+            id: notifSummaryMetrics
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+            font.bold: true
+            text: Island.current !== null ? Island.current.summary : ""
+        }
 
-            Glyph {
-                anchors.verticalCenter: parent.verticalCenter
-                glyph: Island.osdKind === "brightness" ? "󰃠"
-                    : Island.osdMuted ? "󰖁"
-                    : Island.osdValue > 0.5 ? "󰕾"
-                    : Island.osdValue > 0 ? "󰖀" : "󰕿"
-                size: 15
+        // The clipped content container. It is always centred and its width
+        // is the target width, so as the island grows the content is revealed
+        // from the centre out. Later (fase 2) the two slots will be used for
+        // cross-fading between modes; for now slot A carries everything.
+        Item {
+            id: contentContainer
+            anchors.centerIn: parent
+            width: island.targetWidth
+            height: 30
+            clip: true
+
+            Behavior on width {
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
 
             Item {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 120
-                height: 4
+                id: slotA
+                anchors.centerIn: parent
+                width: island.targetWidth
+                height: 30
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 2
-                    color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
+                // The normal mode: media (when a player has a track) and the clock.
+                Row {
+                    id: clockRow
+                    visible: Island.mode === "normal"
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    // The dynamic part: shows while a player has a track.
+                    Media {
+                        id: media
+                    }
+
+                    Rectangle {
+                        visible: media.active
+                        width: 1
+                        height: 14
+                        color: Theme.bg2
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Qt.formatDateTime(clock.date, "hh:mm")
+                        width: timeMetrics.width
+                        horizontalAlignment: Text.AlignHCenter
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 15
+                        font.bold: true
+                        // Tabular figures: the clock must not breathe every minute.
+                        font.features: ({ "tnum": 1 })
+                    }
+
+                    // The date steps aside while the media section is up.
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !media.active
+                        text: Qt.formatDateTime(clock.date, "ddd d MMM")
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                    }
                 }
 
-                Rectangle {
-                    width: parent.width * Math.max(0, Math.min(1, Island.osdValue))
-                    height: parent.height
-                    radius: 2
-                    color: Theme.gold
+                // The OSD mode: glyph, a 120x4 bar and the percentage.
+                Row {
+                    id: osdRow
+                    visible: Island.mode === "osd"
+                    anchors.centerIn: parent
+                    spacing: 10
+
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        glyph: Island.osdKind === "brightness" ? "󰃠"
+                            : Island.osdMuted ? "󰖁"
+                            : Island.osdValue > 0.5 ? "󰕾"
+                            : Island.osdValue > 0 ? "󰖀" : "󰕿"
+                        size: 15
+                    }
+
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 120
+                        height: 4
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 2
+                            color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
+                        }
+
+                        Rectangle {
+                            width: parent.width * Math.max(0, Math.min(1, Island.osdValue))
+                            height: parent.height
+                            radius: 2
+                            color: Theme.gold
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 34
+                        horizontalAlignment: Text.AlignRight
+                        text: Island.osdMuted ? "Muted"
+                            : Math.round(Island.osdValue * 100) + "%"
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                        font.features: ({ "tnum": 1 })
+                    }
+                }
+
+                // The notification mode: app + summary, compact. Clicking it opens
+                // Today (the full interaction lives there; one action, one place).
+                Row {
+                    id: notifRow
+                    visible: Island.mode === "notification"
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        glyph: "󰂚"
+                        tone: "attention"
+                        size: 14
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Island.current !== null ? Island.current.appName : ""
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.min(implicitWidth, 220)
+                        text: Island.current !== null ? Island.current.summary : ""
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        elide: Text.ElideRight
+                    }
                 }
             }
 
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 34
-                horizontalAlignment: Text.AlignRight
-                text: Island.osdMuted ? "Muted"
-                    : Math.round(Island.osdValue * 100) + "%"
-                color: Theme.fg1
-                font.family: "Adwaita Sans"
-                font.pixelSize: 11
-                font.features: ({ "tnum": 1 })
-            }
-        }
-
-        // The notification mode: app + summary, compact. Clicking it opens
-        // Today (the full interaction lives there; one action, one place).
-        Row {
-            id: notifRow
-            visible: Island.mode === "notification"
-            anchors.centerIn: parent
-            spacing: 8
-
-            Glyph {
-                anchors.verticalCenter: parent.verticalCenter
-                glyph: "󰂚"
-                tone: "attention"
-                size: 14
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Island.current !== null ? Island.current.appName : ""
-                color: Theme.fg1
-                font.family: "Adwaita Sans"
-                font.pixelSize: 11
-            }
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(implicitWidth, 220)
-                text: Island.current !== null ? Island.current.summary : ""
-                color: Theme.fg0
-                font.family: "Adwaita Sans"
-                font.pixelSize: 12
-                elide: Text.ElideRight
+            // Slot B is reserved for cross-fading content in later phases.
+            Item {
+                id: slotB
+                anchors.centerIn: parent
+                width: island.targetWidth
+                height: 30
+                visible: false
             }
         }
 
