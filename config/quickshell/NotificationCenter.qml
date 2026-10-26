@@ -43,7 +43,18 @@ Scope {
         id: toastModel
     }
 
+    // Receive times for the history's relative timestamps (the Notification
+    // type carries no date of its own). A reload loses the stamps of
+    // notifications that arrived before it; those show as no time.
+    property var stamps: ({})
+
+    function stamp(id) {
+        return root.stamps[id];
+    }
+
     function addToast(notification) {
+        root.stamps[notification.id] = Date.now();
+
         toastModel.append({
             summary: notification.summary || "(no summary)",
             body: notification.body,
