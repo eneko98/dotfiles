@@ -100,6 +100,7 @@ Popup {
 
         ToggleTile {
             width: (parent.width - Tokens.space.s) / 2
+            expandable: false
             checked: NightLight.on
             glyph: "󰖔"
             title: "Night light"

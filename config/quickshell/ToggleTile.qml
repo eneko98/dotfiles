@@ -26,6 +26,7 @@ Pressable {
     property string busyText: "Connecting..."
     property string errorText: "Failed"
     property int tileWidth: 120
+    property bool expandable: true
 
     signal toggled()
     signal expandRequested()
@@ -37,6 +38,8 @@ Pressable {
     onClicked: root.toggled()
 
     Keys.onRightPressed: function (event) {
+        if (!root.expandable)
+            return;
         root.expandRequested();
         event.accepted = true;
     }
@@ -140,7 +143,8 @@ Pressable {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 24
+            width: root.expandable ? 24 : 0
+            visible: root.expandable
 
             Text {
                 anchors.centerIn: parent
