@@ -108,6 +108,12 @@ else
 			"$(cat "$state_theme/icon-theme")" >/dev/null 2>&1 || true
 	fi
 
+	# Seed/sync the login greeter's system copy (QML + generated theme + the
+	# regreet fallback's css and png). Only if the greeter is set up at all.
+	if [[ -d /etc/greetd ]]; then
+		"$repo_dir/config/hypr/scripts/wallpaper" sync-greeter >/dev/null 2>&1 || true
+	fi
+
 	# If the palette copies were (re)written, Theme.qml may be a new inode, and
 	# Quickshell watches the inode it loaded. Restarting the bar is cheaper than
 	# leaving it on the previous palette when install.sh runs mid-session.

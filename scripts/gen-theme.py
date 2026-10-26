@@ -21,6 +21,7 @@ copies the other consumers need:
     icon-theme             the chosen Adwaita-* variant, read by the wallpaper script
     greeter/regreet.css    the login screen's stylesheet, copied to /etc/greetd
     quickshell/Theme.qml   the palette as a QML singleton, for the bar
+    greeter/Theme.qml      the same singleton for the login greeter
     firefox/chrome/palette.css  CSS variables for the Firefox theme
 
 All of them go under $XDG_STATE_HOME/dotfiles/theme/, not into the repository:
@@ -839,6 +840,7 @@ def main(argv: list[str]) -> int:
         THEME_DIR / "icon-theme": icon_theme(roles) + "\n",
         THEME_DIR / "greeter/regreet.css": regreet_css(roles, ansi),
         THEME_DIR / "quickshell/Theme.qml": quickshell_theme(roles, ansi),
+        THEME_DIR / "greeter/Theme.qml": quickshell_theme(roles, ansi),
         THEME_DIR / "firefox/chrome/palette.css": firefox_palette(roles, ansi),
     }
 

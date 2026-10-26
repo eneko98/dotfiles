@@ -46,9 +46,10 @@ apply() {
 }
 
 # The login screen is system state too: the greeter user cannot read this home
-# (0700), so the generated stylesheet and the current wallpaper's blurred copy
-# are installed into /etc/greetd and /usr/share/backgrounds. sudo is passwordless
-# here; if it is not, the greeter simply keeps the previous theme.
+# (0700), so the greeter's QML, its generated theme, the regreet fallback CSS and
+# the current wallpaper's blurred copy are installed into /etc/greetd and
+# /usr/share/backgrounds. sudo is passwordless here; if it is not, the greeter
+# simply keeps the previous theme.
 install_greeter() {
 	css="$state_dir/theme/greeter/regreet.css"
 	if [ -f "$css" ]; then
@@ -56,6 +57,17 @@ install_greeter() {
 	fi
 	if [ -f "$lock_file" ]; then
 		sudo -n install -m 644 "$lock_file" /usr/share/backgrounds/greeter.png 2>/dev/null || true
+	fi
+	qml_dir="$repo/config/quickshell/greeter"
+	theme="$state_dir/theme/greeter/Theme.qml"
+	if [ -d "$qml_dir" ]; then
+		sudo -n rm -rf /etc/greetd/quickshell
+		sudo -n cp -r "$qml_dir" /etc/greetd/quickshell
+		if [ -f "$theme" ]; then
+			sudo -n install -m 644 "$theme" /etc/greetd/quickshell/Theme.qml 2>/dev/null || true
+		fi
+		sudo -n chmod 755 /etc/greetd/quickshell
+		sudo -n chmod 644 /etc/greetd/quickshell/* 2>/dev/null || true
 	fi
 }
 
@@ -90,6 +102,9 @@ set)
 		hyprctl reload >/dev/null 2>&1 || true
 		pkill -USR1 -x kitty 2>/dev/null || true
 	fi
+	;;
+sync-greeter)
+	install_greeter
 	;;
 restore)
 	[ -f "$state_file" ] || exit 0
