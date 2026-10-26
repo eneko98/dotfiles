@@ -224,9 +224,14 @@ vt = 1
 # Fallback: regreet. Swap the comment to go back; greetd reads the config
 # when it starts a session, so no restart is needed.
 # command = "env XKB_DEFAULT_LAYOUT=es XKB_DEFAULT_MODEL=pc105 XCURSOR_THEME=Bibata-Modern-Ice XCURSOR_SIZE=24 cage -s -- regreet"
-command = "env XKB_DEFAULT_LAYOUT=es XKB_DEFAULT_MODEL=pc105 XCURSOR_THEME=Bibata-Modern-Ice XCURSOR_SIZE=24 cage -s -- quickshell -p /etc/greetd/quickshell"
+command = "env QT_WAYLAND_DISABLE_WINDOWDECORATION=1 XKB_DEFAULT_LAYOUT=es XKB_DEFAULT_MODEL=pc105 XCURSOR_THEME=Bibata-Modern-Ice XCURSOR_SIZE=24 cage -s -- quickshell -p /etc/greetd/quickshell"
 user = "greeter"
 ```
+
+cage is a minimal kiosk compositor **without wlr-layer-shell**, so the greeter is a
+normal toplevel (cage shows its only toplevel fullscreen) and
+`QT_WAYLAND_DISABLE_WINDOWDECORATION=1` stops Qt from drawing its own CSD titlebar
+on it.
 
 The greeter is a single-step login: focus starts on the password field and Enter
 logs in. It speaks the greetd protocol through `Quickshell.Services.Greetd` (PAM
