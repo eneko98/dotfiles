@@ -1,10 +1,13 @@
 // The bar. This is the root of the Quickshell config: Quickshell looks for
 // ~/.config/quickshell/shell.qml and runs it.
 //
-// The surface is a transparent 34 px strip with three floating pills on it:
-// workspaces on the left, the clock island in the centre, the status modules on
-// the right. Nothing paints the strip itself, so the wallpaper shows between the
-// pills; the pills are bg1 at 85% so it shows through them a little too.
+// The surface is a transparent 96 px window that reserves only the top 38 px
+// (exclusiveZone): three floating pills sit in the top strip -- workspaces on
+// the left, the clock island in the centre, the status modules on the right --
+// and the extra height below them is where their drop shadows live. An input
+// mask (Region over the three pills) lets clicks fall through the transparent
+// rest, so a taller window changes nothing about hit-testing. The pills are
+// Surface items (Tokens elevation); the wallpaper shows between them.
 //
 // The island is the seed of the dynamic island: it already reacts to hover, and
 // the control centre will open from it. It is deliberately the only "chrome" in
@@ -33,11 +36,6 @@ ShellRoot {
         id: clock
         precision: SystemClock.Minutes
     }
-
-    // The pills' fill. The palette stores opaque colours; the alpha here is
-    // what makes them read as floating pills rather than three solid blocks.
-    readonly property color pillColor: Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b, 0.85)
-    readonly property color pillHover: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.9)
 
     // Clicking a workspace circle switches to it. Hyprland's IPC dispatch takes
     // a Lua expression in 0.56 (usingLua), and the old token otherwise; keeping
@@ -78,25 +76,46 @@ ShellRoot {
             right: true
         }
 
-        implicitHeight: 38
+        // 96 px of canvas for shadows and (later) the expanded island, but
+        // only the top 38 px are reserved: windows still start below 38.
+        implicitHeight: 96
+        exclusiveZone: 38
         color: "transparent"
+
+        // Input follows the pills, not the window: clicks in the transparent
+        // area (the shadow canvas) fall through to whatever is below. Each
+        // Region tracks its item, so the mask follows the island as it grows.
+        mask: Region {
+            Region { item: workspacesPill }
+            Region { item: island }
+            Region { item: statusPill }
+        }
 
         // --- Left pill: the workspaces -------------------------------------
         // One circle per existing workspace, the focused one in gold. A plain
         // Repeater: Hyprland.workspaces is a live model, and the circle's size
         // never changes, so nothing needs a layout.
-        Rectangle {
+        Surface {
+            id: workspacesPill
+            level: 1
+            lifted: workspacePillHover.hovered
+
             anchors.left: parent.left
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: Tokens.space.xs
             anchors.leftMargin: 14
 
             width: workspaces.implicitWidth + 16
-            height: 28
-            radius: 14
-            color: root.pillColor
+            height: 30
+
+            HoverHandler { id: workspacePillHover }
 
             Behavior on width {
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
 
             Row {
@@ -118,7 +137,7 @@ ShellRoot {
                             : "transparent"
 
                         Behavior on color {
-                            ColorAnimation { duration: 160 }
+                            ColorAnimation { duration: Motion.fast }
                         }
 
                         Text {
@@ -144,25 +163,28 @@ ShellRoot {
         }
 
         // --- Centre: the island --------------------------------------------
-        // The serif time is the one place the clock gets a voice; the date
-        // stays small and sans so the hierarchy is time first, date second.
-        Rectangle {
+        // The time is the one place the clock gets a voice; the date stays
+        // small and sans so the hierarchy is time first, date second. The
+        // island is e2: the one surface that lifts a level on hover.
+        Surface {
             id: island
+            level: 2
+            lifted: islandArea.containsMouse
 
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: Tokens.space.xs
             width: clockRow.implicitWidth + 24
-            height: 28
-            radius: 14
-            color: islandArea.containsMouse ? root.pillHover : root.pillColor
-
-            Behavior on color {
-                ColorAnimation { duration: 160 }
-            }
+            height: 30
 
             // Growing with the media section is the island's whole trick; make
             // it a slide rather than a jump.
             Behavior on width {
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
 
             // Declared before the row so the play button inside Media sits
@@ -231,18 +253,27 @@ ShellRoot {
         }
 
         // --- Right pill: the status modules --------------------------------
-        Rectangle {
+        Surface {
+            id: statusPill
+            level: 1
+            lifted: statusPillHover.hovered
+
             anchors.right: parent.right
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: Tokens.space.xs
             anchors.rightMargin: 14
 
             width: modules.implicitWidth + 20
-            height: 28
-            radius: 14
-            color: root.pillColor
+            height: 30
+
+            HoverHandler { id: statusPillHover }
 
             Behavior on width {
-                NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
 
             Row {

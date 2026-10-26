@@ -24,7 +24,7 @@ PanelWindow {
     // the module that opens the popup.
     property real rightMargin: 14
 
-    // The panel's top, just below the 34 px bar.
+    // The panel's top, just below the 38 px bar.
     property real topMargin: 44
 
     property real panelWidth: 240
@@ -82,11 +82,19 @@ PanelWindow {
         transformOrigin: root.centerVertically ? Item.Center : Item.Top
 
         Behavior on opacity {
-            NumberAnimation { duration: 150; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                duration: Motion.fade
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.decel
+            }
         }
 
         Behavior on scale {
-            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                duration: Motion.base
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.decel
+            }
         }
 
         focus: true
