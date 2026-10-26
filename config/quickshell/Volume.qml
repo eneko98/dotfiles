@@ -47,7 +47,9 @@ Item {
                 : root.volume > 0.5 ? "󰕾"
                 : root.volume > 0 ? "󰖀" : "󰕿"
             tone: "normal"
-            size: 15
+            // The speaker glyph's ink is small for its box; 18 brings its
+            // visual height level with the wifi/bluetooth glyphs at 15.
+            size: 18
         }
     }
 
