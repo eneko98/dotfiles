@@ -244,4 +244,48 @@ ShellRoot {
             systemPanel.close();
         }
     }
+
+    // The bar itself: layout selector, panel toggles, reduced motion
+    // (brief 17.2). setLayout refuses the layouts that are not built yet;
+    // the Loader's source binding is already ready for them.
+    IpcHandler {
+        target: "bar"
+
+        function setLayout(layout: string): void {
+            if (layout !== "tiers") {
+                console.warn("bar: layout not built yet:", layout);
+                return;
+            }
+            Config.setLayout(layout);
+        }
+
+        function toggleToday(): void {
+            if (todayPanel.visible)
+                todayPanel.close();
+            else
+                root.openToday();
+        }
+
+        function toggleSystem(section: string): void {
+            if (systemPanel.visible && (section === "" || section === undefined)) {
+                systemPanel.close();
+                return;
+            }
+            root.openSystem();
+            if (section === "network")
+                systemPanel.expandedDetail = "network";
+            else if (section === "bluetooth")
+                systemPanel.expandedDetail = "bt";
+        }
+
+        function closeSystem(): void {
+            systemPanel.close();
+        }
+
+        function reducedMotion(value: string): void {
+            const on = value === "true";
+            Motion.reduced = on;
+            Config.saveReducedMotion(on);
+        }
+    }
 }
