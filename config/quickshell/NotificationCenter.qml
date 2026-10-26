@@ -34,8 +34,10 @@ Scope {
         onNotification: function (notification) {
             notification.tracked = true;
 
-            if (!root.dnd && !notification.lastGeneration)
-                root.addToast(notification);
+            // The island is the arrival surface now (the toasts retired):
+            // DND hides arrivals unless the notification is critical.
+            if (!notification.lastGeneration && (!root.dnd || notification.urgency === 2))
+                Island.push(notification);
         }
     }
 

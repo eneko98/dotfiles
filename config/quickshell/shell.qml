@@ -62,6 +62,7 @@ ShellRoot {
     function openToday() {
         if (barLoader.item === null)
             return;
+        Island.clearUnread();
         todayPanel.trigger = barLoader.item.island;
         // The bar's width, not the popup's: a hidden popup measures 0 and
         // the centring goes negative -- off-screen to the right (measured).
