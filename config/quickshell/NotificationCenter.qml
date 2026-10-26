@@ -44,6 +44,18 @@ Scope {
     function markRead(id) {
         if (!id || root.read[id])
             return;
+        // Transient notifications are never tracked, so they have no read
+        // state to keep; check before growing the map.
+        let found = false;
+        const values = server.trackedNotifications.values;
+        for (let i = 0; i < values.length; ++i) {
+            if (values[i].id === id) {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            return;
         const next = Object.assign({}, root.read);
         next[id] = true;
         root.read = next;
@@ -69,7 +81,9 @@ Scope {
         keepOnReload: true
 
         onNotification: function (notification) {
-            notification.tracked = true;
+            // Transient notifications show on the island but never reach the
+            // history (connects, "downloaded", progress flashes...).
+            notification.tracked = !notification.transient;
             root.stamps[notification.id] = Date.now();
 
             // The island is the arrival surface; with Today open everything
