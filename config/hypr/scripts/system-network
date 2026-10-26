@@ -1,0 +1,3 @@
+#!/bin/bash
+# Open the bar's System panel on the network section.
+qs ipc call bar toggleSystem network

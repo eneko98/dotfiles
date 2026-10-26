@@ -280,17 +280,19 @@ hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"))
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"))
 hl.bind("XF86AudioStop",  hl.dsp.exec_cmd("playerctl stop"))
 
--- Wi-Fi. Not on the laptop's own key: that one is already handled by the
--- kernel's built-in rfkill-input handler, so binding it here would toggle twice.
--- See config/hypr/scripts/wifi-toggle.
-hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wifi-toggle"))
+-- Wi-Fi / network. The laptop's own radio key is handled by the kernel's
+-- rfkill-input, so we do not bind it here. SUPER + N opens the bar's System
+-- panel on the network section; the old wifi-toggle script is still in the
+-- repo if you want to bind it elsewhere.
+hl.bind(mainMod .. " + N", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/system-network"))
 
 -- Clipboard history: fuzzel over `cliphist list`. The watcher that stores
 -- copies is config/systemd/user/cliphist.service.
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/clipboard"))
 
--- Session menu: lock, log out, suspend, reboot or power off from a list.
-hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/session-menu"))
+-- Session: open the bar's System panel (session row at the bottom). If the
+-- bar is not responding, fall back to the fuzzel session menu.
+hl.bind(mainMod .. " + Escape", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/system-session"))
 
 -- Screenshots: the whole screen, an area you drag over, or the focused window.
 -- The helper script writes the file, copies it to the clipboard, and explains

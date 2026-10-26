@@ -1,0 +1,4 @@
+#!/bin/bash
+# Open the bar's System panel (session row is at the bottom). If the bar is
+# not responding, fall back to the fuzzel session menu.
+qs ipc call bar openSystem "" 2>/dev/null || exec "$HOME/.config/hypr/scripts/session-menu"

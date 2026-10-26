@@ -333,6 +333,11 @@ ShellRoot {
             root.openSystem(section);
         }
 
+        function openSystem(section: string): void {
+            if (!systemPanel.visible)
+                root.openSystem(section);
+        }
+
         function closeSystem(): void {
             systemPanel.close();
         }
