@@ -368,6 +368,11 @@ ShellRoot {
             Island.showDndOsd(notifications.dnd);
         }
 
+        function expand(value: string): void {
+            if (barLoader.item !== null)
+                barLoader.item.island.expanded = value === "true";
+        }
+
         function reducedMotion(value: string): void {
             const on = value === "true";
             Motion.reduced = on;

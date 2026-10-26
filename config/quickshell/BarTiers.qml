@@ -38,9 +38,10 @@ PanelWindow {
         right: true
     }
 
-    // 96 px of canvas for shadows and (later) the expanded island, but
-    // only the top 38 px are reserved: windows still start below 38.
-    implicitHeight: 96
+    // Canvas for shadows and the expanded notification island (hover). Only
+    // the top 38 px are reserved: windows still start below 38; the rest is
+    // transparent and outside the input mask.
+    implicitHeight: 180
     exclusiveZone: 38
     color: "transparent"
 
@@ -232,8 +233,31 @@ PanelWindow {
         // Target width is computed from the content, not bound to children's
         // implicit width directly, to avoid circular bindings once the island
         // starts measuring text for the notification wing.
+        // The island height: 30 when compact, grows downward on hover to show
+        // the full notification. The window is 150 px tall so it fits.
+        property bool expanded: false
+        readonly property real islandHeight: Island.mode === "notification" && expanded
+            ? expandedHeight : 30
+        readonly property real expandedHeight: Math.min(170,
+            30 + 6 + 16 + 4 + expandedBody.height + 10 + 26 + 10)
+
         width: targetWidth
-        height: 30
+        height: islandHeight
+        radius: 15
+
+        // Hover expands after 150 ms and collapses after 300 ms outside, so
+        // moving towards the buttons does not close the panel.
+        Timer {
+            id: expandTimer
+            interval: 150
+            onTriggered: island.expanded = true
+        }
+
+        Timer {
+            id: collapseTimer
+            interval: 300
+            onTriggered: island.expanded = false
+        }
         readonly property real targetWidth: Island.mode === "osd" ? osdTarget
             : Island.mode === "notification" ? notifTarget
             : clockRow.implicitWidth + 24
@@ -301,6 +325,16 @@ PanelWindow {
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             cursorShape: Qt.PointingHandCursor
 
+            onContainsMouseChanged: {
+                if (containsMouse) {
+                    collapseTimer.stop();
+                    expandTimer.restart();
+                } else {
+                    expandTimer.stop();
+                    collapseTimer.restart();
+                }
+            }
+
             onClicked: function (mouse) {
                 if (mouse.button === Qt.MiddleButton) {
                     Island.clearQueue();
@@ -361,9 +395,10 @@ PanelWindow {
         // cross-fading between modes; for now slot A carries everything.
         Item {
             id: contentContainer
-            anchors.centerIn: parent
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
             width: island.targetWidth
-            height: 30
+            height: island.islandHeight
             clip: true
 
             Behavior on width {
@@ -374,11 +409,20 @@ PanelWindow {
                 }
             }
 
+            Behavior on height {
+                NumberAnimation {
+                    duration: Motion.fast
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.decel
+                }
+            }
+
             Item {
                 id: slotA
-                anchors.centerIn: parent
+                anchors.top: parent.top
+                anchors.horizontalCenter: parent.horizontalCenter
                 width: island.targetWidth
-                height: 30
+                height: island.islandHeight
 
                 // The normal mode: media (when a player has a track) and the clock.
                 Row {
@@ -510,7 +554,9 @@ PanelWindow {
                 Row {
                     id: notifRow
                     visible: Island.mode === "notification"
-                    anchors.centerIn: parent
+                    anchors.top: parent.top
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    height: 30
                     spacing: 8
 
                     Image {
@@ -586,6 +632,80 @@ PanelWindow {
                         }
                     }
                 }
+
+                // The expanded detail: app name, full body (up to 4 lines) and
+                // the action row. Always laid out (opacity only) so the height
+                // animation has its final value from the first frame.
+                Column {
+                    id: notifExpanded
+                    opacity: island.expanded && Island.mode === "notification" ? 1 : 0
+                    anchors.top: notifRow.bottom
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.leftMargin: 14
+                    anchors.rightMargin: 14
+                    spacing: 4
+
+                    Text {
+                        text: Island.current !== null ? Island.current.appName : ""
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        width: parent.width
+                        elide: Text.ElideRight
+                    }
+
+                    Text {
+                        id: expandedBody
+                        text: Island.currentBody
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        maximumLineCount: 4
+                        elide: Text.ElideRight
+                    }
+
+                    Row {
+                        width: parent.width
+                        height: 26
+                        spacing: 8
+                        layoutDirection: Qt.RightToLeft
+
+                        Pressable {
+                            width: openLabel.implicitWidth + 16
+                            height: 26
+                            pressScale: 1.0
+                            onClicked: bar.todayRequested()
+
+                            Text {
+                                id: openLabel
+                                anchors.centerIn: parent
+                                text: "Open in Today"
+                                color: Theme.fg1
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 12
+                            }
+                        }
+
+                        Pressable {
+                            width: dismissLabel.implicitWidth + 16
+                            height: 26
+                            pressScale: 1.0
+                            onClicked: Island.dismissCurrent()
+
+                            Text {
+                                id: dismissLabel
+                                anchors.centerIn: parent
+                                text: "Dismiss"
+                                color: Theme.fg1
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 12
+                            }
+                        }
+                    }
+                }
             }
 
             // Slot B is reserved for cross-fading content in later phases.
@@ -619,7 +739,8 @@ PanelWindow {
             pressScale: 1.0
             anchors.right: parent.right
             anchors.rightMargin: 2
-            anchors.verticalCenter: parent.verticalCenter
+            anchors.top: parent.top
+            anchors.topMargin: 3
 
             onClicked: Island.dismissCurrent()
 
