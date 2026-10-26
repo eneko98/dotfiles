@@ -363,6 +363,24 @@ PanelWindow {
             }
         }
 
+        // Gestures on the notification wing: horizontal swipe dismisses,
+        // vertical scroll (two fingers or the mouse wheel) walks the queue.
+        SwipeTracker {
+            anchors.fill: parent
+            visible: Island.mode === "notification"
+
+            onSwiped: function (direction, velocity) {
+                Island.dismissCurrent();
+            }
+
+            onWheeled: function (direction) {
+                if (direction === "up")
+                    Island.back();
+                else
+                    Island.advance();
+            }
+        }
+
         // "88:88" measures the widest case so the island keeps one width and
         // does not breathe every minute. tnum helps when the font has it,
         // the fixed width covers the case where it does not.

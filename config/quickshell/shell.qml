@@ -373,6 +373,14 @@ ShellRoot {
                 barLoader.item.island.expanded = value === "true";
         }
 
+        function notifNext(): void {
+            Island.advance();
+        }
+
+        function notifPrev(): void {
+            Island.back();
+        }
+
         function reducedMotion(value: string): void {
             const on = value === "true";
             Motion.reduced = on;

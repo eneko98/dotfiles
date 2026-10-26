@@ -120,6 +120,29 @@ Singleton {
         }
     }
 
+    // Scroll navigation: rotate the queue without dismissing anything.
+    function advance() {
+        if (island.queue.length === 0)
+            return;
+        const cur = island.current;
+        const following = island.queue[0];
+        island.queue = island.queue.slice(1);
+        if (cur !== null)
+            island.queue = island.queue.concat([cur]);
+        island.show(following);
+    }
+
+    function back() {
+        if (island.queue.length === 0)
+            return;
+        const cur = island.current;
+        const previous = island.queue[island.queue.length - 1];
+        island.queue = island.queue.slice(0, -1);
+        if (cur !== null)
+            island.queue = [cur].concat(island.queue);
+        island.show(previous);
+    }
+
     function dismissCurrent() {
         notifAnim.stop();
         readTimer.stop();
