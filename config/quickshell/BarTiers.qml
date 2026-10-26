@@ -58,15 +58,24 @@ PanelWindow {
         precision: SystemClock.Minutes
     }
 
-    // Clicking a workspace circle switches to it. Hyprland's IPC dispatch takes
-    // a Lua expression in 0.56 (usingLua), and the old token otherwise; keeping
-    // both means the bar does not silently break if Hyprland is ever started
-    // with a hyprlang config again.
+    // Clicking a workspace cell switches to it; the wheel walks relative to
+    // the existing ones ("e-1"/"e+1" selectors). Hyprland's IPC dispatch
+    // takes a Lua expression in 0.56 (usingLua), and the old token
+    // otherwise; keeping both means the bar does not silently break if
+    // Hyprland is ever started with a hyprlang config again.
     function focusWorkspace(workspaceId) {
         if (Hyprland.usingLua)
             Hyprland.dispatch("hl.dsp.focus({ workspace = " + workspaceId + " })");
         else
             Hyprland.dispatch("workspace " + workspaceId);
+    }
+
+    function focusWorkspaceRelative(delta) {
+        const sel = delta > 0 ? "e+1" : "e-1";
+        if (Hyprland.usingLua)
+            Hyprland.dispatch("hl.dsp.focus({ workspace = \"" + sel + "\" })");
+        else
+            Hyprland.dispatch("workspace " + sel);
     }
 
     // Input follows the pills, not the window: clicks in the transparent
@@ -79,9 +88,10 @@ PanelWindow {
     }
 
     // --- Left pill: the workspaces -------------------------------------
-    // One circle per existing workspace, the focused one in gold. A plain
-    // Repeater: Hyprland.workspaces is a live model, and the circle's size
-    // never changes, so nothing needs a layout.
+    // Numbers in a row; the active one carries an accent capsule (30x22)
+    // that slides with them (medium/standard). Empty cells show nothing;
+    // hover a bg2 circle; an urgent workspace shows a neon dot. The wheel
+    // walks to the previous/next existing workspace.
     Surface {
         id: workspacesPill
         level: 1
@@ -97,11 +107,45 @@ PanelWindow {
 
         HoverHandler { id: workspacePillHover }
 
-        Behavior on width {
-            NumberAnimation {
-                duration: Motion.medium
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.standard
+        // The wheel: workspace stepping over the whole pill.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+
+            onWheel: function (w) {
+                const step = (w.pixelDelta.y !== 0 ? w.pixelDelta.y
+                            : w.angleDelta.y) > 0 ? -1 : 1;
+                bar.focusWorkspaceRelative(step);
+            }
+        }
+
+        // The active cell, for the capsule's slide. Through `.children`:
+        // a Repeater's items are the Row's children.
+        readonly property Item activeCell: {
+            const kids = workspaces.children;
+            for (let i = 0; i < kids.length; ++i)
+                if (kids[i].modelData && kids[i].modelData.focused)
+                    return kids[i];
+            return null;
+        }
+
+        // The accent capsule behind the active number: x follows it.
+        Rectangle {
+            visible: workspacesPill.activeCell !== null
+            x: workspacesPill.activeCell !== null
+                ? workspaces.x + workspacesPill.activeCell.x - 4 : 0
+            anchors.verticalCenter: parent.verticalCenter
+            width: 30
+            height: 22
+            radius: 11
+            color: Theme.gold
+
+            Behavior on x {
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
         }
 
@@ -113,36 +157,56 @@ PanelWindow {
             Repeater {
                 model: Hyprland.workspaces
 
-                delegate: Rectangle {
+                delegate: Item {
+                    id: cell
+
                     required property var modelData
 
                     width: 22
                     height: 22
-                    radius: 11
-                    color: modelData.focused ? Theme.gold
-                        : workspaceHover.containsMouse ? Theme.bg2
-                        : "transparent"
 
-                    Behavior on color {
-                        ColorAnimation { duration: Motion.fast }
+                    // Hover: a bg2 circle (under the capsule z-wise it does
+                    // not matter: the active cell is covered by the capsule
+                    // anyway).
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 11
+                        color: cell.modelData.focused
+                            ? "transparent"
+                            : (cellHover.containsMouse ? Theme.bg2 : "transparent")
+
+                        Behavior on color {
+                            ColorAnimation { duration: Motion.fast }
+                        }
                     }
 
                     Text {
                         anchors.centerIn: parent
-                        text: modelData.id
-                        color: modelData.focused ? Theme.bg0 : Theme.fg1
+                        text: cell.modelData.id
+                        color: cell.modelData.focused ? Theme.bg0 : Theme.fg1
                         font.family: "Adwaita Sans"
-                        font.pixelSize: 11
-                        font.bold: modelData.focused
+                        font.pixelSize: 12
+                        font.bold: cell.modelData.focused
+                    }
+
+                    // Urgent: a neon dot above the number.
+                    Rectangle {
+                        visible: cell.modelData.urgent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.top: parent.top
+                        width: 4
+                        height: 4
+                        radius: 2
+                        color: Theme.teal
                     }
 
                     MouseArea {
-                        id: workspaceHover
+                        id: cellHover
 
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: bar.focusWorkspace(modelData.id)
+                        onClicked: bar.focusWorkspace(cell.modelData.id)
                     }
                 }
             }
