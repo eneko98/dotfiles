@@ -62,7 +62,7 @@ ShellRoot {
     function openToday() {
         if (barLoader.item === null)
             return;
-        Island.clearUnread();
+        notifications.markAllRead();
         todayPanel.trigger = barLoader.item.island;
         // The bar's width, not the popup's: a hidden popup measures 0 and
         // the centring goes negative -- off-screen to the right (measured).
@@ -135,6 +135,27 @@ ShellRoot {
         function onSystemRequested(section) {
             root.openSystem(section);
         }
+    }
+
+    // The island's notification lifecycle: a notification seen for one second
+    // or dismissed off the island counts as read (it stays in the history).
+    Connections {
+        target: Island
+
+        function onRead(id) {
+            notifications.markRead(id);
+        }
+
+        function onDismissed(id) {
+            notifications.markRead(id);
+        }
+    }
+
+    // With Today open, arrivals go straight to the list and count as read.
+    Binding {
+        target: notifications
+        property: "todayOpen"
+        value: todayPanel.visible
     }
 
     // The island's live inputs (the old bottom bubble's watchers, retired):

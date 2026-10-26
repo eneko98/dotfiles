@@ -286,13 +286,29 @@ PanelWindow {
         }
 
         // Declared before the rows so they sit above it: later items win
-        // the click.
+        // the click. Right-click dismisses a notification (or toggles DND on
+        // the clock); middle-click clears the queue; left opens Today.
         MouseArea {
             id: islandArea
             anchors.fill: parent
             hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             cursorShape: Qt.PointingHandCursor
-            onClicked: bar.todayRequested()
+
+            onClicked: function (mouse) {
+                if (mouse.button === Qt.MiddleButton) {
+                    Island.clearQueue();
+                    return;
+                }
+                if (mouse.button === Qt.RightButton) {
+                    if (Island.mode === "notification")
+                        Island.dismissCurrent();
+                    else if (bar.notifications !== null)
+                        bar.notifications.dnd = !bar.notifications.dnd;
+                    return;
+                }
+                bar.todayRequested();
+            }
         }
 
         // "88:88" measures the widest case so the island keeps one width and
@@ -500,7 +516,7 @@ PanelWindow {
                     }
 
                     Rectangle {
-                        visible: Island.pendingCount > 0
+                        visible: Island.pendingCount > 0 && !islandArea.containsMouse
                         width: visible ? chipLabel.implicitWidth + 10 : 0
                         height: 18
                         radius: 9
@@ -530,6 +546,28 @@ PanelWindow {
             }
         }
 
+        // The dismiss button, on hover: it sits above the wing's right edge
+        // and does not change the island width.
+        Pressable {
+            id: dismissButton
+            visible: islandArea.containsMouse && Island.mode === "notification"
+            width: 24
+            height: 24
+            pressScale: 1.0
+            anchors.right: parent.right
+            anchors.rightMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+
+            onClicked: Island.dismissCurrent()
+
+            Glyph {
+                anchors.centerIn: parent
+                glyph: "󰅖"
+                size: 12
+                tone: dismissButton.hovered ? "hover" : "normal"
+            }
+        }
+
         // The countdown line: 2px fg1 at 40% along the base (not accent: it
         // is time, not an active state).
         Rectangle {
@@ -552,9 +590,10 @@ PanelWindow {
             }
         }
 
-        // The unread dot: neon, until Today opens.
+        // The unread dot: neon, until the notifications are read.
         Rectangle {
-            visible: Island.unread && Island.mode === "normal"
+            visible: bar.notifications !== null && bar.notifications.unreadCount > 0
+                && Island.mode === "normal"
             anchors.right: parent.right
             anchors.rightMargin: 6
             anchors.top: parent.top

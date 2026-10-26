@@ -26,7 +26,12 @@ Singleton {
     property var current: null
     property var queue: []
     property bool hovered: false
-    property bool unread: false
+
+    // The shell wires these to NotificationCenter (singletons cannot see
+    // each other): "read" after one second on screen, "dismissed" when the
+    // user or the countdown takes it off the island (it stays in history).
+    signal read(int id)
+    signal dismissed(int id)
 
     // Demo override for tests and captures (the `bar demo` IPC later).
     property string demoMode: ""
@@ -42,7 +47,7 @@ Singleton {
     }
 
     // The notification countdown, 1 -> 0, for the 2px line at the island's
-    // base. Paused while hovered.
+    // base. Paused while hovered or while the OSD is up.
     property real progress: 1
 
     // The current notification's body, stripped of HTML and decoded (some apps
@@ -77,7 +82,6 @@ Singleton {
     }
 
     function push(notification) {
-        island.unread = true;
         if (island.current !== null) {
             island.queue = island.queue.concat([notification]);
             return;
@@ -96,21 +100,33 @@ Singleton {
         } else {
             notifAnim.stop();
         }
+        readTimer.restart();
     }
 
-    function dismissCurrent() {
-        notifAnim.stop();
+    function next() {
         if (island.queue.length > 0) {
-            const next = island.queue[0];
+            const following = island.queue[0];
             island.queue = island.queue.slice(1);
-            island.show(next);
+            island.show(following);
         } else {
             island.current = null;
         }
     }
 
-    function clearUnread() {
-        island.unread = false;
+    function dismissCurrent() {
+        notifAnim.stop();
+        readTimer.stop();
+        if (island.current !== null)
+            island.dismissed(island.current.id);
+        island.next();
+    }
+
+    // Middle click: drop the whole queue (they stay in history as seen).
+    function clearQueue() {
+        for (let i = 0; i < island.queue.length; ++i)
+            island.dismissed(island.queue[i].id);
+        island.queue = [];
+        island.next();
     }
 
     Timer {
@@ -119,13 +135,23 @@ Singleton {
         onTriggered: island.osdKind = ""
     }
 
+    // One second on screen counts as read.
+    Timer {
+        id: readTimer
+        interval: 1000
+        onTriggered: {
+            if (island.current !== null)
+                island.read(island.current.id);
+        }
+    }
+
     NumberAnimation {
         id: notifAnim
         target: island
         property: "progress"
         from: 1
         to: 0
-        paused: island.hovered
+        paused: island.hovered || island.osdKind !== ""
         easing.type: Easing.Linear
         onFinished: island.dismissCurrent()
     }
