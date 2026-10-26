@@ -23,8 +23,11 @@ Shape {
         const pts = [];
         if (count >= 2 && width > 0 && height > 0) {
             const vals = samples.slice(Math.max(0, samples.length - max));
+            // Newest sample at the right edge; the empty left side fills as
+            // history accumulates.
+            const pad = max - count;
             for (let i = 0; i < count; i++) {
-                pts.push(Qt.point(i * width / (count - 1),
+                pts.push(Qt.point((pad + i) * width / (max - 1),
                                   height - Math.max(0, Math.min(1, vals[i])) * height));
             }
         }

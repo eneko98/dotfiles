@@ -128,6 +128,10 @@ ShellRoot {
         function onTodayRequested() {
             root.openToday();
         }
+
+        function onSystemRequested() {
+            root.openSystem();
+        }
     }
 
     // The control centre, as wide as the bar is narrow. The module cards close

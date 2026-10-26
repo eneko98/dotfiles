@@ -19,6 +19,8 @@ Pressable {
     property string glyph: ""
     property string confirmText: ""
     property int armedMs: 3000
+    // 40px icon buttons show only the glyph; the tooltip carries the label.
+    property bool showLabel: true
 
     signal confirmed()
 
@@ -78,6 +80,7 @@ Pressable {
             }
 
             Text {
+                visible: root.showLabel
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.label
                 color: root.armed ? Theme.bg0 : Theme.fg1

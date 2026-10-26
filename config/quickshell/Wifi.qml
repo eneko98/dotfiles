@@ -14,6 +14,10 @@ import QtQuick
 Row {
     id: root
 
+    // The bar routes this to the System panel; the module keeps its own
+    // popup only for the control centre's hand-offs (both are retiring).
+    signal activated()
+
     spacing: 6
 
     // A plain loop rather than Array.find: `values` is a QML list, and this is
@@ -72,6 +76,6 @@ Row {
     }
 
     TapHandler {
-        onTapped: root.openPopup()
+        onTapped: root.activated()
     }
 }

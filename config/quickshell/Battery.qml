@@ -13,6 +13,10 @@ import QtQuick
 Row {
     id: root
 
+    // The bar routes this to the System panel; the module keeps its own
+    // popup only for the control centre's hand-offs (both are retiring).
+    signal activated()
+
     spacing: 6
 
     visible: root.ready
@@ -64,6 +68,6 @@ Row {
     }
 
     TapHandler {
-        onTapped: root.openPopup()
+        onTapped: root.activated()
     }
 }

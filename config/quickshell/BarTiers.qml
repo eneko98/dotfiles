@@ -33,9 +33,10 @@ PanelWindow {
     property bool islandHidden: false
     property bool pillHidden: false
 
-    // The island asks for Today; the shell opens the panel (it owns the
-    // popup and the trigger wiring).
+    // The island asks for Today, the status modules ask for System; the
+    // shell owns the panels and the trigger wiring.
     signal todayRequested()
+    signal systemRequested()
 
     anchors {
         top: true
@@ -284,10 +285,10 @@ PanelWindow {
             anchors.centerIn: parent
             spacing: 14
 
-            Volume { id: volumeModule }
-            Wifi { id: wifiModule }
-            Bluetooth { id: bluetoothModule }
-            Battery { id: batteryModule }
+            Volume { id: volumeModule; onActivated: bar.systemRequested() }
+            Wifi { id: wifiModule; onActivated: bar.systemRequested() }
+            Bluetooth { id: bluetoothModule; onActivated: bar.systemRequested() }
+            Battery { id: batteryModule; onActivated: bar.systemRequested() }
             Tray {}
 
             // The bell: opens the notification history; the count is gold
