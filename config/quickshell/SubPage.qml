@@ -23,25 +23,30 @@ Item {
 
     onFocusChanged: if (focus && !root.active) root.active = true
 
-    // Enter: medium + decel. Leave: base + accel. Two explicit runs because a
-    // Behavior cannot switch curve by direction.
+    // Enter: medium + decel. Leave: base + accel. The `to`/duration/curve
+    // are set HERE, imperatively: as bindings they re-evaluate lazily, and
+    // start() inside this handler snapshots the STALE value -- the first
+    // activation animated to the creation-time `to` (0) and parked the page
+    // invisible (the write also breaks the property's own binding).
     NumberAnimation {
         id: xAnim
-        target: root; property: "x"; to: root.active ? 0 : 24
-        duration: root.active ? Motion.medium : Motion.base
+        target: root; property: "x"
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: root.active ? Motion.decel : Motion.accel
     }
     NumberAnimation {
         id: opacityAnim
-        target: root; property: "opacity"; to: root.active ? 1 : 0
-        duration: root.active ? Motion.medium : Motion.base
+        target: root; property: "opacity"
         easing.type: Easing.BezierSpline
-        easing.bezierCurve: root.active ? Motion.decel : Motion.accel
     }
     onActiveChanged: {
         xAnim.stop();
         opacityAnim.stop();
+        xAnim.duration = root.active ? Motion.medium : Motion.base;
+        xAnim.to = root.active ? 0 : 24;
+        xAnim.easing.bezierCurve = root.active ? Motion.decel : Motion.accel;
+        opacityAnim.duration = root.active ? Motion.medium : Motion.base;
+        opacityAnim.to = root.active ? 1 : 0;
+        opacityAnim.easing.bezierCurve = root.active ? Motion.decel : Motion.accel;
         xAnim.start();
         opacityAnim.start();
         if (root.active)

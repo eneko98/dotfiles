@@ -46,6 +46,11 @@ PanelWindow {
     // Children of a Popup land in the panel's column.
     default property alias content: column.data
 
+    // Children that must cover the panel instead of flowing in it (a
+    // SubPage pushed over the sections) go here: they land on a layer
+    // above the column, filling the MorphPanel.
+    property alias overlay: overlayLayer.data
+
     anchors {
         top: true
         bottom: true
@@ -150,6 +155,14 @@ PanelWindow {
             id: column
             width: panel.to.width - Tokens.space.l * 2
             spacing: 8
+        }
+
+        // Above the content: a layer for things that cover the panel (a
+        // SubPage pushed over the sections). Children arrive through the
+        // Popup's `overlay` alias.
+        Item {
+            id: overlayLayer
+            anchors.fill: parent
         }
     }
 }

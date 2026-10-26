@@ -116,6 +116,8 @@ Column {
             id: row
 
             required property var modelData
+            required property int index
+
             readonly property bool isSelected: index === root.selected
 
             width: root.width

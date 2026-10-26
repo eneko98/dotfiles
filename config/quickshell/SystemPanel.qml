@@ -18,6 +18,9 @@ Popup {
     // Which detail is expanded under the tile grid: "" | "network" | "bt".
     property string expandedDetail: ""
 
+    // The processes page, pushed over the sections from Resources' link.
+    property bool showProcesses: false
+
     // The battery header, at full width.
     BatterySection { width: parent.width }
 
@@ -109,7 +112,11 @@ Popup {
 
     DisplaySection { width: parent.width; showNightTile: false }
 
-    ResourcesSection { width: parent.width }
+    ResourcesSection {
+        width: parent.width
+
+        onProcessesRequested: root.showProcesses = true
+    }
 
     Rectangle {
         width: parent.width
@@ -118,6 +125,20 @@ Popup {
     }
 
     SessionRow { width: parent.width }
+
+    // The processes page: pushed over the sections (the overlay layer of
+    // the stage), back with Escape or the header.
+    overlay: SubPage {
+        anchors.fill: parent
+        active: root.showProcesses
+        title: "Processes"
+
+        onBack: root.showProcesses = false
+
+        ProcessesPage {
+            width: parent.width
+        }
+    }
 
     // --- Shared service reads --------------------------------------------
     readonly property var adapter: Bluetooth.defaultAdapter
