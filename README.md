@@ -127,9 +127,9 @@ component.
 | volume keys | up / down in 5% steps, mute |
 | brightness keys | up / down in 5% steps |
 | media keys | play / pause, next, previous (playerctl) |
-| `SUPER + N` | toggle Wi-Fi (the laptop's own Wi-Fi key also works) |
+| `SUPER + N` | open System panel on the network section |
 | `SUPER + V` | clipboard history (fuzzel over cliphist) |
-| `SUPER + Escape` | session menu: lock, log out, suspend, reboot, power off |
+| `SUPER + Escape` | open System panel (session row); fuzzel fallback |
 | `SUPER + 1..0` | switch to workspace 1-10 |
 | `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
 | `SUPER + scroll` | previous / next existing workspace |
