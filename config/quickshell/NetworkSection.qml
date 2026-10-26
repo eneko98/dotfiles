@@ -167,12 +167,30 @@ Column {
             }
 
             Flickable {
+                id: list
+
                 visible: Networking.wifiEnabled && root.pending === null
                 width: parent.width
                 height: Math.min(contentHeight, 288)
                 contentHeight: networkColumn.implicitHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
+
+                // Flickable does not scroll on wheel or touchpad by itself:
+                // a wheel-only MouseArea (clicks pass through) moves the
+                // content, from the cursor or with two fingers.
+                MouseArea {
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+
+                    onWheel: function (w) {
+                        const dy = w.pixelDelta.y !== 0
+                            ? w.pixelDelta.y : (w.angleDelta.y / 120) * 40;
+                        list.contentY = Math.max(0,
+                            Math.min(list.contentHeight - list.height,
+                                     list.contentY - dy));
+                    }
+                }
 
                 Column {
                     id: networkColumn
