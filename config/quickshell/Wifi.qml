@@ -37,11 +37,16 @@ Item {
     function signalGlyph(strength, connected) {
         if (!connected)
             return "󰤭";
+        // Quickshell's connected network entry often reports signalStrength 0
+        // even though NM knows the real value; show a generic wifi glyph
+        // rather than the one-bar icon that reads as "no signal".
+        if (strength <= 0)
+            return "󰖩";
         return strength >= 80 ? "󰤨"
             : strength >= 60 ? "󰤥"
             : strength >= 40 ? "󰤢"
             : strength >= 20 ? "󰤟"
-            : "󰤟";  // connected with very low signal: one bar, not the off glyph
+            : "󰤟";
     }
 
     Pressable {
@@ -61,7 +66,9 @@ Item {
     Tooltip {
         hovered: press.hovered
         label: root.network
-            ? root.network.name + ", " + root.network.signalStrength + "%"
+            ? root.network.name + (root.network.signalStrength > 0
+                ? ", " + root.network.signalStrength + "%"
+                : " · Connected")
             : "Disconnected"
         below: false
         anchors.bottom: parent.top
