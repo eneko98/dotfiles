@@ -244,14 +244,31 @@ Item {
         onTriggered: cal.release()
     }
 
-    WheelHandler {
-        acceptedDevices: PointerDevice.TouchPad
-        target: null
+    // The gesture, on a MouseArea (WheelHandler never fired in this stack --
+    // measured with events arriving at a sibling MouseArea but not at the
+    // handler, with and without acceptedDevices). acceptedButtons 0: the
+    // wheel is handled here and clicks pass through to the cells. Vertical
+    // gestures are released to the panel's scroll (accepted = false).
+    MouseArea {
+        anchors.fill: parent
+        // No buttons: the wheel is handled here and clicks pass through to
+        // the cells.
+        acceptedButtons: Qt.NoButton
+
         onWheel: function (event) {
+            const isWheel = event.pixelDelta.x === 0 && event.pixelDelta.y === 0;
+            if (isWheel) {
+                // Mouse wheel: vertical does not change months (it would
+                // fight the panel's scroll); Shift+wheel does (brief 10.1).
+                if (event.modifiers & Qt.ShiftModifier) {
+                    if (snap.running)
+                        snap.stop();
+                    cal.commit(event.angleDelta.y > 0 ? -1 : 1);
+                }
+                return;
+            }
             if (snap.running)
                 snap.stop();
-            // Content follows the fingers; the sign was verified once with a
-            // console.log on this touchpad (scroll natural off).
             const dx = event.inverted ? event.pixelDelta.x : -event.pixelDelta.x;
             const dy = event.pixelDelta.y;
             if (cal.axis === "") {
