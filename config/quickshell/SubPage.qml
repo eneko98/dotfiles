@@ -50,6 +50,15 @@ Item {
 
     Keys.onEscapePressed: root.back()
 
+    // The page's own backing: it must hide the content underneath while it
+    // is up. Fully opaque -- 97% lets the covered section bleed through
+    // enough to read, and a page is a page.
+    Rectangle {
+        anchors.fill: parent
+        radius: Tokens.radius.panel
+        color: Theme.bg1
+    }
+
     Column {
         id: header
         anchors.top: parent.top
