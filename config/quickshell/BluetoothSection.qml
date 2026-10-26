@@ -18,6 +18,9 @@ Column {
     id: root
 
     property bool expanded: false
+    // The System panel composes the tile itself; sections used standalone
+    // keep their tile.
+    property bool showTile: true
 
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool on: adapter ? adapter.enabled : false
@@ -87,6 +90,7 @@ Column {
     // --- The tile ---------------------------------------------------------
     ToggleTile {
         width: parent.width
+        visible: root.showTile
         checked: root.on
         glyph: "\uf293"
         title: "Bluetooth"

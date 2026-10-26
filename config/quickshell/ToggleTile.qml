@@ -66,12 +66,14 @@ Pressable {
         }
 
         Row {
+            id: contentRow
+
             anchors.left: parent.left
-            anchors.leftMargin: Tokens.space.m
+            anchors.leftMargin: 8
             anchors.right: expandZone.left
-            anchors.rightMargin: Tokens.space.s
+            anchors.rightMargin: 2
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Tokens.space.m
+            spacing: 6
 
             Glyph {
                 id: icon
@@ -84,25 +86,30 @@ Pressable {
 
             Column {
                 anchors.verticalCenter: parent.verticalCenter
+                // Explicit: the Row's width minus the glyph and spacing. A
+                // Column sized from its children while a child sizes from
+                // the Column is a binding loop -- the title elided to dots.
+                width: contentRow.width - 16 - 6
                 spacing: 2
 
                 Text {
                     text: root.title
                     color: Theme.fg0
                     font.family: "Adwaita Sans"
-                    font.pixelSize: 12
+                    font.pixelSize: 11
                     font.weight: Font.DemiBold
                     elide: Text.ElideRight
-                    width: Math.min(implicitWidth, parent.width)
+                    width: parent.width
                 }
 
                 Item {
-                    width: subtitleText.implicitWidth + (root.error ? 10 : 0)
+                    width: parent.width
                     height: 14
 
                     Text {
                         id: subtitleText
                         anchors.verticalCenter: parent.verticalCenter
+                        width: parent.width
                         text: root.error ? root.errorText
                             : root.busy ? root.busyText
                             : root.checked ? root.subtitle : "Off"
@@ -133,7 +140,7 @@ Pressable {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            width: 28
+            width: 24
 
             Text {
                 anchors.centerIn: parent

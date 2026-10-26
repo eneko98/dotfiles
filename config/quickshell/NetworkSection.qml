@@ -16,7 +16,9 @@ Column {
     id: root
 
     property bool expanded: false
-    // The network waiting for a password, and the one a failure can come from.
+    // The System panel composes the tile itself (in the tile grid) and shows
+    // only the detail; sections used standalone keep their tile.
+    property bool showTile: true
     property var pending: null
     property var connecting: null
     property string error: ""
@@ -114,6 +116,7 @@ Column {
     // --- The tile ---------------------------------------------------------
     ToggleTile {
         width: parent.width
+        visible: root.showTile
         checked: Networking.wifiEnabled
         glyph: "󰖩"
         title: "Wi-Fi"

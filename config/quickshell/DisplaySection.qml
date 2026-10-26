@@ -6,6 +6,10 @@ import QtQuick
 Column {
     id: root
 
+    // The System panel shows the night light tile in its grid instead; used
+    // standalone, the section carries it.
+    property bool showNightTile: true
+
     width: parent.width
     spacing: Tokens.space.s
 
@@ -48,6 +52,7 @@ Column {
     }
 
     ToggleTile {
+        visible: root.showNightTile
         checked: NightLight.on
         glyph: NightLight.on ? "󰖔" : "󰖔"
         title: "Night light"

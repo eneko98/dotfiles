@@ -48,7 +48,7 @@ Column {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - 96 - Tokens.space.s - 140 - Tokens.space.s - x
+            width: parent.width - x
             horizontalAlignment: Text.AlignRight
             text: metricRow.value
             color: metricRow.alarming ? Theme.red : Theme.fg0
