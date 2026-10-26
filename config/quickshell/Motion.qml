@@ -15,9 +15,9 @@
 // close of a transition is roughly 0.7x its open, which falls out of the
 // duration choice rather than a separate curve.
 //
-// `reduced` collapses every duration to 0 (instant cuts) except the fades:
-// opacity keeps a short fade, which is what the accessibility guidelines
-// recommend. It is wired to IPC and a state file in the layout-selector phase.
+// `reduced` follows Config (persisted, set through the `bar` IPC): every
+// duration here collapses to 0 (instant cuts) except the fades -- opacity
+// keeps a short fade, which is what the accessibility guidelines recommend.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -25,7 +25,7 @@ import Quickshell
 Singleton {
     id: root
 
-    property bool reduced: false
+    readonly property bool reduced: Config.reducedMotion
 
     readonly property int press: root.reduced ? 0 : 80
     readonly property int fast: root.reduced ? 0 : 120
