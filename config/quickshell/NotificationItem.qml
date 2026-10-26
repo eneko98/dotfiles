@@ -9,6 +9,7 @@
 // width or a 0.6px/ms flick, and collapses its height on the way out.
 import Quickshell
 import QtQuick
+import QtQuick.Effects
 
 Item {
     id: root
@@ -34,10 +35,14 @@ Item {
     readonly property bool expandedBody: bodyLabel.maximumLineCount === Infinity
     readonly property bool hoverable: cardArea.containsMouse
 
+    readonly property bool hasAvatar: modelData
+        && modelData.image !== ""
+        && !modelData.image.startsWith("image://icon/")
+    readonly property string avatarSource: hasAvatar ? modelData.image : ""
     readonly property string iconSource: {
         if (!modelData)
             return "";
-        if (modelData.image !== "")
+        if (!hasAvatar && modelData.image !== "")
             return modelData.image;
         if (modelData.appIcon !== "")
             return Quickshell.iconPath(modelData.appIcon, true);
@@ -180,15 +185,22 @@ Item {
                 width: parent.width
                 spacing: Tokens.space.s
 
-                // Icon: image, appIcon, or the app's initial in a bg2 circle.
+                // Icon: avatar, image, appIcon, or the app's initial.
                 Item {
-                    width: 20
-                    height: 20
+                    width: root.hasAvatar ? 24 : 20
+                    height: root.hasAvatar ? 24 : 20
                     anchors.verticalCenter: parent.verticalCenter
+
+                    Avatar {
+                        anchors.fill: parent
+                        visible: root.hasAvatar
+                        size: 24
+                        source: root.avatarSource
+                    }
 
                     Image {
                         anchors.fill: parent
-                        visible: root.iconSource !== ""
+                        visible: !root.hasAvatar && root.iconSource !== ""
                         source: root.iconSource
                         sourceSize.width: 20
                         sourceSize.height: 20
@@ -197,8 +209,8 @@ Item {
 
                     Rectangle {
                         anchors.fill: parent
-                        visible: root.iconSource === ""
-                        radius: 10
+                        visible: !root.hasAvatar && root.iconSource === ""
+                        radius: width / 2
                         color: Theme.bg2
 
                         Text {

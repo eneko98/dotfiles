@@ -76,7 +76,7 @@ Scope {
 
         bodySupported: true
         bodyMarkupSupported: false
-        imageSupported: false
+        imageSupported: true
         actionsSupported: true
         keepOnReload: true
 

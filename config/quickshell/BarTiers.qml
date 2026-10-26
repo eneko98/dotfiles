@@ -11,6 +11,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
+import QtQuick.Effects
 
 PanelWindow {
     id: bar
@@ -299,12 +300,18 @@ PanelWindow {
 
         // Notification wing measurements. The body is hidden when the summary
         // takes more than 60% of the maximum wing (240 of 400 px).
+        readonly property bool notifHasAvatar: Island.current !== null
+            && Island.current.image !== ""
+            && !Island.current.image.startsWith("image://icon/")
+        readonly property string notifAvatarPath: notifHasAvatar
+            ? Island.current.image : ""
         readonly property bool notifHasIcon: Island.current !== null
+            && !notifHasAvatar
             && (Island.current.image !== "" || Island.current.appIcon !== "")
         readonly property string notifIconPath: {
             if (Island.current === null)
                 return "";
-            if (Island.current.image !== "")
+            if (Island.current.image !== "" && !notifHasAvatar)
                 return Island.current.image;
             if (Island.current.appIcon !== "")
                 return Quickshell.iconPath(Island.current.appIcon);
@@ -322,7 +329,7 @@ PanelWindow {
 
         readonly property real notifTarget: Math.min(560,
             14
-            + (notifHasIcon ? 16 : notifNameWidth)
+            + (notifHasIcon || notifHasAvatar ? 16 : notifNameWidth)
             + 8 + notifSummaryWidth
             + (notifBodyVisible ? 8 + notifBodyWidth : 0)
             + (notifCritical ? 6 + 8 : 0)
@@ -651,6 +658,16 @@ PanelWindow {
                     height: 30
                     spacing: 8
 
+                    // Avatar (chat image): clipped to a circle by Avatar.qml.
+                    Avatar {
+                        visible: island.notifHasAvatar
+                        width: visible ? 16 : 0
+                        height: 16
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 16
+                        source: island.notifAvatarPath
+                    }
+
                     Image {
                         visible: island.notifHasIcon
                         width: visible ? 16 : 0
@@ -663,7 +680,8 @@ PanelWindow {
                     }
 
                     Text {
-                        visible: !island.notifHasIcon && Island.current !== null
+                        visible: !island.notifHasIcon && !island.notifHasAvatar
+                            && Island.current !== null
                         width: visible ? island.notifNameWidth : 0
                         anchors.verticalCenter: parent.verticalCenter
                         text: Island.current !== null ? Island.current.appName : ""
