@@ -3,9 +3,9 @@
 // not config -- the repo carries no copy), written by the JsonAdapter
 // automatically and read back on the next start.
 //
-// Motion binds its `reduced` to `reducedMotion`, so the IPC and the
-// persisted value land on every animation in this process -- the lock runs
-// its own Quickshell instance and picks it up through the same file.
+// Motion.reduced is wired to this from shell.qml (singletons cannot
+// reference each other by name in this engine -- measured); the lock's own
+// Quickshell instance picks reduced motion up through the same file.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -52,7 +52,7 @@ Singleton {
         return true;
     }
 
-    function setReducedMotion(on) {
+    function saveReducedMotion(on) {
         root.reducedMotion = on;
         adapter.reducedMotion = on;
         stateFile.writeAdapter();

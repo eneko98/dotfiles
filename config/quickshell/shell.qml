@@ -29,6 +29,11 @@ import QtQuick
 ShellRoot {
     id: root
 
+    // Singletons cannot see each other by name (measured), so the shell
+    // wires the persisted reduced-motion switch into Motion once, and the
+    // `bar` IPC keeps them in step on changes.
+    Component.onCompleted: Motion.reduced = Config.reducedMotion
+
     // A view into the system clock. Minutes precision is enough for a bar and
     // cheaper than Seconds: QML only recomputes the bound text when the minute
     // changes, with no timer and no process of our own.
@@ -54,299 +59,64 @@ ShellRoot {
     // panel IS the island, expanded) -- it comes back when the window, and
     // with it the return morph, is gone.
     function openToday() {
-        todayPanel.trigger = island;
-        todayPanel.rightMargin = (bar.width - todayPanel.panelWidth) / 2;
+        if (barLoader.item === null)
+            return;
+        todayPanel.trigger = barLoader.item.island;
+        todayPanel.rightMargin = (todayPanel.width - todayPanel.panelWidth) / 2;
         todayPanel.visible = true;
     }
 
     // The status pill opens System, its right edge aligned with the pill's.
     function openSystem() {
-        systemPanel.trigger = statusPill;
-        systemPanel.rightMargin = bar.width - statusPill.x - statusPill.width + 14;
+        if (barLoader.item === null)
+            return;
+        const pill = barLoader.item.statusPill;
+        systemPanel.trigger = pill;
+        systemPanel.rightMargin = systemPanel.width - pill.x - pill.width + 14;
         systemPanel.visible = true;
     }
 
     // The launcher is centred too; the panel width is fixed by Launcher.qml.
     function openLauncher() {
-        launcher.rightMargin = (bar.width - launcher.panelWidth) / 2;
+        launcher.rightMargin = (launcher.width - launcher.panelWidth) / 2;
         launcher.open();
     }
 
     // The wallpaper picker is centred for the same reason.
     function openWallpaperPicker() {
-        wallpaperPicker.rightMargin = (bar.width - wallpaperPicker.panelWidth) / 2;
+        wallpaperPicker.rightMargin = (wallpaperPicker.width - wallpaperPicker.panelWidth) / 2;
         wallpaperPicker.open();
     }
 
-    PanelWindow {
-        id: bar
+    // The bar, extracted to a layout component so the selector (the `bar`
+    // IPC, Config.barLayout) can swap it without touching the rest. Only
+    // tiers exists today; the binding is already layout-shaped.
+    Loader {
+        id: barLoader
 
-        anchors {
-            top: true
-            left: true
-            right: true
-        }
+        source: Config.barLayout === "island" ? "BarIsland.qml"
+            : Config.barLayout === "frame" ? "BarFrame.qml"
+            : "BarTiers.qml"
+    }
 
-        // 96 px of canvas for shadows and (later) the expanded island, but
-        // only the top 38 px are reserved: windows still start below 38.
-        implicitHeight: 96
-        exclusiveZone: 38
-        color: "transparent"
+    Binding {
+        target: barLoader.item
+        property: "notifications"
+        value: notifications
+    }
 
-        // Input follows the pills, not the window: clicks in the transparent
-        // area (the shadow canvas) fall through to whatever is below. Each
-        // Region tracks its item, so the mask follows the island as it grows.
-        mask: Region {
-            Region { item: workspacesPill }
-            Region { item: island }
-            Region { item: statusPill }
-        }
+    Binding {
+        target: barLoader.item
+        property: "islandHidden"
+        value: todayPanel.visible && todayPanel.trigger !== null
+            && barLoader.item !== null && todayPanel.trigger === barLoader.item.island
+    }
 
-        // --- Left pill: the workspaces -------------------------------------
-        // One circle per existing workspace, the focused one in gold. A plain
-        // Repeater: Hyprland.workspaces is a live model, and the circle's size
-        // never changes, so nothing needs a layout.
-        Surface {
-            id: workspacesPill
-            level: 1
-            lifted: workspacePillHover.hovered
-
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.topMargin: Tokens.space.xs
-            anchors.leftMargin: 14
-
-            width: workspaces.implicitWidth + 16
-            height: 30
-
-            HoverHandler { id: workspacePillHover }
-
-            Behavior on width {
-                NumberAnimation {
-                    duration: Motion.medium
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Motion.standard
-                }
-            }
-
-            Row {
-                id: workspaces
-                anchors.centerIn: parent
-                spacing: 2
-
-                Repeater {
-                    model: Hyprland.workspaces
-
-                    delegate: Rectangle {
-                        required property var modelData
-
-                        width: 22
-                        height: 22
-                        radius: 11
-                        color: modelData.focused ? Theme.gold
-                            : workspaceHover.containsMouse ? Theme.bg2
-                            : "transparent"
-
-                        Behavior on color {
-                            ColorAnimation { duration: Motion.fast }
-                        }
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: modelData.id
-                            color: modelData.focused ? Theme.bg0 : Theme.fg1
-                            font.family: "Adwaita Sans"
-                            font.pixelSize: 11
-                            font.bold: modelData.focused
-                        }
-
-                        MouseArea {
-                            id: workspaceHover
-
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.focusWorkspace(modelData.id)
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Centre: the island --------------------------------------------
-        // The time is the one place the clock gets a voice; the date stays
-        // small and sans so the hierarchy is time first, date second. The
-        // island is e2: the one surface that lifts a level on hover.
-        Surface {
-            id: island
-            level: 2
-            lifted: islandArea.containsMouse
-
-            // The Today panel grows out of this surface; while its window
-            // is up the island hides so there are never two copies (it comes
-            // back only when the return morph has finished).
-            opacity: todayPanel.visible && todayPanel.trigger === island ? 0 : 1
-
-            Behavior on opacity {
-                NumberAnimation { duration: Motion.fade }
-            }
-
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.top: parent.top
-            anchors.topMargin: Tokens.space.xs
-            width: clockRow.implicitWidth + 24
-            height: 30
-
-            // Growing with the media section is the island's whole trick; make
-            // it a slide rather than a jump.
-            Behavior on width {
-                NumberAnimation {
-                    duration: Motion.medium
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Motion.standard
-                }
-            }
-
-            // Declared before the row so the play button inside Media sits
-            // above it: later items win the click.
-            MouseArea {
-                id: islandArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.openToday()
-            }
-
-            // "88:88" measures the widest case so the island keeps one width and
-            // does not breathe every minute. tnum helps when the font has it,
-            // the fixed width covers the case where it does not.
-            TextMetrics {
-                id: timeMetrics
-                font.family: "Adwaita Sans"
-                font.pixelSize: 15
-                font.bold: true
-                font.features: ({ "tnum": 1 })
-                text: "88:88"
-            }
-
-            Row {
-                id: clockRow
-                anchors.centerIn: parent
-                spacing: 8
-
-                // The dynamic part: shows while a player has a track.
-                Media {
-                    id: media
-                }
-
-                Rectangle {
-                    visible: media.active
-                    width: 1
-                    height: 14
-                    color: Theme.bg2
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: Qt.formatDateTime(clock.date, "hh:mm")
-                    width: timeMetrics.width
-                    horizontalAlignment: Text.AlignHCenter
-                    color: Theme.fg0
-                    font.family: "Adwaita Sans"
-                    font.pixelSize: 15
-                    font.bold: true
-                    // Tabular figures: the clock must not breathe every minute.
-                    font.features: ({ "tnum": 1 })
-                }
-
-                // The date steps aside while the media section is up.
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: !media.active
-                    text: Qt.formatDateTime(clock.date, "ddd d MMM")
-                    color: Theme.fg1
-                    font.family: "Adwaita Sans"
-                    font.pixelSize: 11
-                }
-            }
-
-        }
-
-        // --- Right pill: the status modules --------------------------------
-        Surface {
-            id: statusPill
-            level: 1
-            lifted: statusPillHover.hovered
-
-            // The System panel grows out of this pill; it hides while the
-            // panel is up, same shared-element rule as the island.
-            opacity: systemPanel.visible && systemPanel.trigger === statusPill ? 0 : 1
-
-            Behavior on opacity {
-                NumberAnimation { duration: Motion.fade }
-            }
-
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.topMargin: Tokens.space.xs
-            anchors.rightMargin: 14
-
-            width: modules.implicitWidth + 20
-            height: 30
-
-            HoverHandler { id: statusPillHover }
-
-            Behavior on width {
-                NumberAnimation {
-                    duration: Motion.medium
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Motion.standard
-                }
-            }
-
-            Row {
-                id: modules
-                anchors.centerIn: parent
-                spacing: 14
-
-                Volume { id: volumeModule }
-                Wifi { id: wifiModule }
-                Bluetooth { id: bluetoothModule }
-                Battery { id: batteryModule }
-                Tray {}
-
-                // The bell: opens the notification history; the count is gold
-                // only when there is something to read.
-                Row {
-                    spacing: 4
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "󰂚"
-                        color: notifications.count > 0 ? Theme.fg0 : Theme.fg1
-                        font.family: "JetBrainsMono Nerd Font"
-                        font.pixelSize: 14
-
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: notifications.openHistory()
-                        }
-                    }
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        visible: notifications.count > 0
-                        text: notifications.count
-                        color: Theme.gold
-                        font.family: "Adwaita Sans"
-                        font.pixelSize: 10
-                    }
-                }
-
-                Power {}
-            }
-        }
+    Binding {
+        target: barLoader.item
+        property: "pillHidden"
+        value: systemPanel.visible && systemPanel.trigger !== null
+            && barLoader.item !== null && systemPanel.trigger === barLoader.item.statusPill
     }
 
     // The control centre, as wide as the bar is narrow. The module cards close
@@ -356,17 +126,17 @@ ShellRoot {
 
         onNetworkRequested: {
             controlCenter.visible = false;
-            wifiModule.openPopup();
+            barLoader.item.wifiModule.openPopup();
         }
 
         onBluetoothRequested: {
             controlCenter.visible = false;
-            bluetoothModule.openPopup();
+            barLoader.item.bluetoothModule.openPopup();
         }
 
         onBatteryRequested: {
             controlCenter.visible = false;
-            batteryModule.openPopup();
+            barLoader.item.batteryModule.openPopup();
         }
 
         onSessionRequested: {

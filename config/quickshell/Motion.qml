@@ -25,7 +25,7 @@ import Quickshell
 Singleton {
     id: root
 
-    readonly property bool reduced: Config.reducedMotion
+    property bool reduced: false
 
     readonly property int press: root.reduced ? 0 : 80
     readonly property int fast: root.reduced ? 0 : 120
