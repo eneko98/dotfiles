@@ -112,6 +112,7 @@ Popup {
                     id: cal
                     width: 340
                     today: clock.date
+                    notifyToday: true
                 },
                 AgendaList {
                     width: 340

@@ -137,18 +137,6 @@ ShellRoot {
         }
     }
 
-    // The control centre: unreachable since the island opens Today (it
-    // stays instantiated only for its "Today" toast timers until the
-    // cleanup commit deletes it).
-    ControlCenter {
-        id: controlCenter
-
-        onSessionRequested: {
-            controlCenter.visible = false;
-            Quickshell.execDetached(["sh", "-c", "$HOME/.config/hypr/scripts/session-menu"]);
-        }
-    }
-
     // The island's live inputs (the old bottom bubble's watchers, retired):
     // volume changes through Pipewire's default sink -- the same node the
     // media keys and the sliders change -- and brightness through the

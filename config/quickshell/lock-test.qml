@@ -1,18 +1,22 @@
-// The same lock surface in a normal window, for testing the layout and PAM
-// without locking the session. Run it with:
-//
+// The lock's test harness: the same LockSurface + LockContext the real
+// lock uses, in a FloatingWindow -- the layout and the PAM flow can be
+// tried with the real password while the session is NOT locked. A correct
+// password logs "LOCK TEST: unlocked" and quits the window; a wrong one
+// shows the failure line. Run:
 //   quickshell -p ~/.config/quickshell/lock-test.qml
-//
-// A correct password closes the window (Qt.quit) and writes to the log; a wrong
-// one shows the failure line. No lock is taken, so a bad PAM config cannot leave
-// the session stuck.
-
 import Quickshell
 import QtQuick
 
-ShellRoot {
+FloatingWindow {
+    id: win
+
+    title: "lock test"
+    color: Theme.bg0
+    implicitWidth: 800
+    implicitHeight: 500
+
     LockContext {
-        id: lockContext
+        id: ctx
 
         onUnlocked: {
             console.log("LOCK TEST: unlocked");
@@ -20,13 +24,8 @@ ShellRoot {
         }
     }
 
-    FloatingWindow {
-        implicitWidth: 900
-        implicitHeight: 600
-
-        LockSurface {
-            anchors.fill: parent
-            context: lockContext
-        }
+    LockSurface {
+        anchors.fill: parent
+        context: ctx
     }
 }

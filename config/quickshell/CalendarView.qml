@@ -330,6 +330,39 @@ Item {
         event.accepted = true;
     }
 
+    // The "Today" toast: once per day (per session), through notify-send so
+    // it goes through our own notification server and lands in the island
+    // and the history. The host that wants it sets notifyToday.
+    property bool notifyToday: false
+    property string lastNotifiedKey: ""
+
+    function maybeNotifyToday() {
+        if (!root.notifyToday)
+            return;
+        const key = root.dateKey(root.today);
+        if (root.lastNotifiedKey === key)
+            return;
+        const events = root.eventsFor(root.today);
+        if (events.length === 0)
+            return;
+        root.lastNotifiedKey = key;
+        Quickshell.execDetached(["notify-send", "-a", "Calendar", "-i", "x-office-calendar",
+            "Today", events.join(" · ")]);
+    }
+
+    Timer {
+        interval: 5000
+        running: root.notifyToday
+        onTriggered: root.maybeNotifyToday()
+    }
+
+    Timer {
+        interval: 60000
+        repeat: true
+        running: root.notifyToday
+        onTriggered: root.maybeNotifyToday()
+    }
+
     // The month header floats above the sliding grids: title centred, arrows
     // on the right (the fallback when there are no fingers on the pad).
     Item {
