@@ -58,11 +58,11 @@ Popup {
     // --- The tile grid ----------------------------------------------------
     Grid {
         width: parent.width
-        columns: 3
+        columns: 2
         spacing: Tokens.space.s
 
         ToggleTile {
-            width: (parent.width - Tokens.space.s * 2) / 3
+            width: (parent.width - Tokens.space.s) / 2
             checked: Networking.wifiEnabled
             glyph: "󰖩"
             title: "Wi-Fi"
@@ -76,7 +76,7 @@ Popup {
         }
 
         ToggleTile {
-            width: (parent.width - Tokens.space.s * 2) / 3
+            width: (parent.width - Tokens.space.s) / 2
             checked: root.adapter ? root.adapter.enabled : false
             glyph: "\uf293"
             title: "Bluetooth"
@@ -99,13 +99,19 @@ Popup {
         }
 
         ToggleTile {
-            width: (parent.width - Tokens.space.s * 2) / 3
+            width: (parent.width - Tokens.space.s) / 2
             checked: NightLight.on
             glyph: "󰖔"
             title: "Night light"
             subtitle: NightLight.on ? "4000 K" : "Off"
 
             onToggled: NightLight.toggle()
+        }
+
+        CaffeineTile {
+            width: (parent.width - Tokens.space.s) / 2
+            checked: Caffeine.active
+            onCheckedChanged: Caffeine.active = checked
         }
     }
 
