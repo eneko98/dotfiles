@@ -1,6 +1,8 @@
 import QtQuick
 import Quickshell.Io
 
+// Reboot / Power Off. Quiet ghost pills in the accent's family, not red: the
+// alarm colour is reserved for errors. Accent shows up on hover/press/focus.
 Item {
     id: button
 
@@ -43,7 +45,7 @@ Item {
         radius: height / 2
         color: "transparent"
         border.width: 2
-        border.color: Qt.alpha(Theme.red, 0.55)
+        border.color: Theme.gold
         visible: button.focusRing
     }
 
@@ -52,14 +54,14 @@ Item {
         radius: height / 2
 
         color: !button.enabled ? Qt.alpha(Theme.bg1, 0.70)
-             : mouse.pressed ? Theme.red
-             : mouse.containsMouse ? Qt.alpha(Theme.red, 0.22)
+             : mouse.pressed ? Theme.gold
+             : mouse.containsMouse ? Qt.alpha(Theme.gold, 0.16)
              : Qt.alpha(Theme.bg1, 0.70)
 
         border.width: 1
-        border.color: !button.enabled ? Qt.alpha(Theme.red, 0.15)
-                    : mouse.pressed || mouse.containsMouse || button.focusRing ? Theme.red
-                    : Qt.alpha(Theme.red, 0.35)
+        border.color: !button.enabled ? Qt.alpha(Theme.gold, 0.12)
+                    : mouse.pressed || mouse.containsMouse || button.focusRing ? Theme.gold
+                    : Qt.alpha(Theme.gold, 0.30)
     }
 
     Text {
