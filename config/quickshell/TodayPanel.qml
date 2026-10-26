@@ -74,13 +74,38 @@ Popup {
         // --- Right: the date and the calendar ---------------------------
         ColumnScroll {
             content: [
-                Text {
+                Row {
                     width: 340
-                    text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
-                    color: Theme.fg0
-                    font.family: "Adwaita Sans"
-                    font.pixelSize: 15
-                    font.weight: Font.DemiBold
+                    spacing: Tokens.space.m
+
+                    // The analog clock the user asked for: it ticks only
+                    // while the panel is open.
+                    AnalogClock {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: 44
+                        running: root.visible
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 1
+
+                        Text {
+                            text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
+                            color: Theme.fg0
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 15
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: Qt.formatDateTime(clock.date, "hh:mm")
+                            color: Theme.fg1
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 12
+                            font.features: ({ "tnum": 1 })
+                        }
+                    }
                 },
                 WeatherLine { width: 340 },
                 CalendarView {
