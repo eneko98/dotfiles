@@ -1,26 +1,18 @@
-// The bluetooth module: a glyph that dims when the adapter is off, the name of
-// the connected device when there is one, and a click that opens our popup
-// (BluetoothPopup.qml) with the adapter switch and the device list.
-//
-// Bluetooth.defaultAdapter is the adapter (usually one). Its `devices` model
-// holds the devices it knows, and the one with connected === true is the one to
-// show. `enabled` is writable, which is what the popup's switch toggles.
-
+// The bluetooth glyph: hidden while the radio is off (brief 14.3); the
+// connected device's name in the tooltip. Click opens System's bluetooth
+// section.
 import Quickshell
 import Quickshell.Bluetooth
 import QtQuick
 
-Row {
+Item {
     id: root
 
-    // The bar routes this to the System panel; the module keeps its own
-    // popup only for the control centre's hand-offs (both are retiring).
-    signal activated()
-
-    spacing: 6
+    signal activated(string section)
 
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool on: adapter ? adapter.enabled : false
+
     readonly property var device: {
         if (!adapter)
             return null;
@@ -31,36 +23,33 @@ Row {
         return null;
     }
 
-    Text {
-        anchors.verticalCenter: parent.verticalCenter
-        text: ""
-        color: root.on ? Theme.fg1 : Theme.fg2
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 14
+    // Off: hidden.
+    visible: root.on
+
+    width: 20
+    height: 30
+
+    Pressable {
+        id: press
+        anchors.fill: parent
+
+        onClicked: root.activated("bluetooth")
+
+        Glyph {
+            anchors.centerIn: parent
+            glyph: "\uf293"
+            // Connected: bright fg0; on without a connection: fg1.
+            tone: root.device ? "bright" : "normal"
+            size: 15
+        }
     }
 
-    Text {
-        anchors.verticalCenter: parent.verticalCenter
-        visible: root.device !== null
-        text: root.device ? root.device.name : ""
-        color: Theme.fg1
-        font.family: "Adwaita Sans"
-        font.pixelSize: 12
-    }
-
-    BluetoothPopup {
-        id: popup
-    }
-
-    // Also called by the control centre: the popup opens under the module no
-    // matter where the request came from.
-    function openPopup() {
-        const p = root.mapToItem(null, 0, 0);
-        popup.rightMargin = root.Window.width - (p.x + root.width);
-        popup.visible = true;
-    }
-
-    TapHandler {
-        onTapped: root.activated()
+    Tooltip {
+        hovered: press.hovered
+        label: root.device ? root.device.name : "On"
+        below: false
+        anchors.bottom: parent.top
+        anchors.bottomMargin: Tokens.space.xs
+        anchors.horizontalCenter: parent.horizontalCenter
     }
 }

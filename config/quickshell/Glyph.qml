@@ -2,6 +2,7 @@
 // palette slot, so no caller ever picks a colour for an icon.
 //   normal    fg1   at rest
 //   hover     fg0   under the pointer (bind `tone` to a hover state)
+//   bright    fg0   a highlighted state at rest (connected, low battery)
 //   active    gold  the thing it represents is on / engaged
 //   attention teal  the neon: something wants a look (playing, connecting)
 //   alarm     red   something is wrong
@@ -20,6 +21,7 @@ Text {
     readonly property var tones: ({
         normal: Theme.fg1,
         hover: Theme.fg0,
+        bright: Theme.fg0,
         active: Theme.gold,
         attention: Theme.teal,
         alarm: Theme.red,

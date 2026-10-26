@@ -21,6 +21,25 @@ Popup {
     // The processes page, pushed over the sections from Resources' link.
     property bool showProcesses: false
 
+    // The section to open/expand: "" | "sound" | "network" | "bluetooth" |
+    // "battery" | "resources". Set by the shell from the status pill's
+    // glyphs.
+    property string section: ""
+
+    onSectionChanged: applySection()
+    Component.onCompleted: applySection()
+
+    function applySection() {
+        if (root.section === "network")
+            root.expandedDetail = "network";
+        else if (root.section === "bluetooth")
+            root.expandedDetail = "bt";
+        else if (root.section === "sound")
+            soundSection.expanded = true;
+        else if (root.section === "battery")
+            batterySection.expanded = true;
+    }
+
     // Escape goes back from the processes page before closing the panel.
     function close() {
         if (root.showProcesses) {
@@ -31,7 +50,10 @@ Popup {
     }
 
     // The battery header, at full width.
-    BatterySection { width: parent.width }
+    BatterySection {
+        id: batterySection
+        width: parent.width
+    }
 
     // --- The tile grid ----------------------------------------------------
     Grid {
@@ -87,7 +109,7 @@ Popup {
         }
     }
 
-    // --- The one detail ---------------------------------------------------
+    // --- The one detail --------------------------------------------------
     // Both sections stay alive: their expanded handlers own the scanner and
     // the bt-agent lifecycle, and a destroyed section would leave them on.
     Item {
@@ -133,7 +155,10 @@ Popup {
         color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
     }
 
-    SoundSection { width: parent.width }
+    SoundSection {
+        id: soundSection
+        width: parent.width
+    }
 
     DisplaySection { width: parent.width; showNightTile: false }
 

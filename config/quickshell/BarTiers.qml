@@ -19,13 +19,6 @@ PanelWindow {
     readonly property alias island: island
     readonly property alias statusPill: statusPill
 
-    // The module popups, for the control centre's hand-offs (until the
-    // layout switch retires them).
-    readonly property alias volumeModule: volumeModule
-    readonly property alias wifiModule: wifiModule
-    readonly property alias bluetoothModule: bluetoothModule
-    readonly property alias batteryModule: batteryModule
-
     // The notification centre, for the bell's counter and open action.
     property var notifications: null
 
@@ -33,10 +26,11 @@ PanelWindow {
     property bool islandHidden: false
     property bool pillHidden: false
 
-    // The island asks for Today, the status modules ask for System; the
-    // shell owns the panels and the trigger wiring.
+    // The island asks for Today, the status modules ask for System (with
+    // the section to open); the shell owns the panels and the trigger
+    // wiring.
     signal todayRequested()
-    signal systemRequested()
+    signal systemRequested(string section)
 
     anchors {
         top: true
@@ -443,14 +437,16 @@ PanelWindow {
         }
     }
 
-    // --- Right pill: the status modules --------------------------------
+    // --- Right: the status pill + the tray pill -------------------------
+    // Status: the resource alert when it applies, then volume, wifi,
+    // bluetooth (only when on) and battery -- no SSID, no volume %, no
+    // power glyph: the machine's controls live in the System panel. The
+    // tray is its own pill, only when there are icons.
     Surface {
         id: statusPill
         level: 1
         lifted: statusPillHover.hovered
 
-        // The System panel grows out of this pill; it hides while the
-        // panel is up, same shared-element rule as the island.
         opacity: bar.pillHidden ? 0 : 1
 
         Behavior on opacity {
@@ -460,67 +456,64 @@ PanelWindow {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: 14
+        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
 
-        width: modules.implicitWidth + 20
+        width: modules.implicitWidth + 28
         height: 30
 
         HoverHandler { id: statusPillHover }
 
-        Behavior on width {
-            NumberAnimation {
-                duration: Motion.medium
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.standard
-            }
+        // The pill's padding is clickable too: it opens System.
+        MouseArea {
+            anchors.fill: parent
+            z: -1
+            cursorShape: Qt.PointingHandCursor
+            onClicked: bar.systemRequested("")
         }
 
         Row {
             id: modules
             anchors.centerIn: parent
-            spacing: 14
+            spacing: 12
 
-            Volume { id: volumeModule; onActivated: bar.systemRequested() }
-            Wifi { id: wifiModule; onActivated: bar.systemRequested() }
-            Bluetooth { id: bluetoothModule; onActivated: bar.systemRequested() }
-            Battery { id: batteryModule; onActivated: bar.systemRequested() }
-            Tray {}
-
-            // The bell: opens the notification history; the count is gold
-            // only when there is something to read.
-            Row {
-                spacing: 4
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "󰂚"
-                    color: bar.notifications !== null && bar.notifications.count > 0
-                        ? Theme.fg0 : Theme.fg1
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 14
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-
-                        onClicked: {
-                            if (bar.notifications !== null)
-                                bar.notifications.openHistory();
-                        }
-                    }
-                }
-
-                Text {
-                    anchors.verticalCenter: parent.verticalCenter
-                    visible: bar.notifications !== null && bar.notifications.count > 0
-                    text: bar.notifications !== null ? bar.notifications.count : 0
-                    color: Theme.gold
-                    font.family: "Adwaita Sans"
-                    font.pixelSize: 10
-                }
+            ResourcesAlert {
+                onActivated: function (section) { bar.systemRequested(section); }
             }
 
-            Power {}
+            Volume {
+                onActivated: function (section) { bar.systemRequested(section); }
+            }
+
+            Wifi {
+                onActivated: function (section) { bar.systemRequested(section); }
+            }
+
+            Bluetooth {
+                onActivated: function (section) { bar.systemRequested(section); }
+            }
+
+            Battery {
+                onActivated: function (section) { bar.systemRequested(section); }
+            }
+        }
+    }
+
+    Surface {
+        id: trayPill
+        level: 1
+
+        visible: tray.implicitWidth > 0
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: Tokens.space.xs
+        anchors.rightMargin: 14
+
+        width: tray.implicitWidth + 16
+        height: 30
+
+        Tray {
+            id: tray
+            anchors.centerIn: parent
         }
     }
 }

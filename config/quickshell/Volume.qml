@@ -1,66 +1,62 @@
-// The volume module: a speaker icon and the percentage of the default audio
-// sink. Clicking it opens our own popup (VolumePopup.qml) with a slider and a
-// mute toggle; the mixer is one click further, for per-application levels.
-//
-// Pipewire.defaultAudioSink is a live PwNode. Its audio.volume / audio.muted
-// are only valid once the node is *bound*, which is what PwObjectTracker does;
-// without it those properties read as invalid. The bindings below then update
-// on their own when the volume changes, from this bar or from the keys.
-
+// The volume glyph in the status pill: display and interactions only -- the
+// System panel owns the controls. Click opens System's sound section;
+// right-click mutes; the wheel steps +-5% (the island surfaces the change);
+// the hover tooltip carries the number the bar no longer shows.
 import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
 
-Row {
+Item {
     id: root
 
-    // The bar routes this to the System panel; the module keeps its own
-    // popup only for the control centre's hand-offs (both are retiring).
-    signal activated()
+    signal activated(string section)
 
-    spacing: 6
+    PwObjectTracker {
+        objects: [Pipewire.defaultAudioSink]
+    }
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var audio: sink ? sink.audio : null
     readonly property real volume: audio ? audio.volume : 0
     readonly property bool muted: audio ? audio.muted : false
 
-    // Bind the default sink so its audio properties are usable.
-    PwObjectTracker {
-        objects: [Pipewire.defaultAudioSink]
+    width: 20
+    height: 30
+
+    Pressable {
+        id: press
+
+        anchors.fill: parent
+
+        onClicked: root.activated("sound")
+        onSecondaryClicked: {
+            if (root.audio)
+                root.audio.muted = !root.audio.muted;
+        }
+        // Pressable exposes the wheel as scrolled(dy) (dy = angleDelta.y):
+        // the touchpad populates it too, so this covers both.
+        onScrolled: function (dy) {
+            const step = dy > 0 ? 0.05 : -0.05;
+            if (root.audio)
+                root.audio.volume = Math.max(0, Math.min(1, root.audio.volume + step));
+        }
+
+        Glyph {
+            anchors.centerIn: parent
+            glyph: root.muted ? "󰖁"
+                : root.volume > 0.5 ? "󰕾"
+                : root.volume > 0 ? "󰖀" : "󰕿"
+            tone: "normal"
+            size: 15
+        }
     }
 
-    Text {
-        anchors.verticalCenter: parent.verticalCenter
-        text: root.muted ? "󰖁" : root.volume > 0.5 ? "󰕾" : root.volume > 0 ? "󰖀" : "󰕿"
-        color: root.muted ? Theme.fg2 : Theme.fg1
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 14
-    }
-
-    Text {
-        anchors.verticalCenter: parent.verticalCenter
-        text: Math.round(root.volume * 100) + "%"
-        color: Theme.fg1
-        font.family: "Adwaita Sans"
-        font.pixelSize: 12
-    }
-
-    VolumePopup {
-        id: popup
-    }
-
-    // TapHandler is a handler, not an Item, so it does not disturb the Row.
-    // The popup hangs under the module: its right edge is the module's.
-    // Also called by the control centre: the popup opens under the module no
-    // matter where the request came from.
-    function openPopup() {
-        const p = root.mapToItem(null, 0, 0);
-        popup.rightMargin = root.Window.width - (p.x + root.width);
-        popup.visible = true;
-    }
-
-    TapHandler {
-        onTapped: root.activated()
+    Tooltip {
+        hovered: press.hovered
+        label: root.muted ? "Muted" : "Volume " + Math.round(root.volume * 100) + "%"
+        below: false
+        anchors.bottom: parent.top
+        anchors.bottomMargin: Tokens.space.xs
+        anchors.horizontalCenter: parent.horizontalCenter
     }
 }

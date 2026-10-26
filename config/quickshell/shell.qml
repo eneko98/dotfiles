@@ -71,12 +71,13 @@ ShellRoot {
     }
 
     // The status pill opens System, its right edge aligned with the pill's.
-    function openSystem() {
+    function openSystem(section) {
         if (barLoader.item === null)
             return;
         const pill = barLoader.item.statusPill;
         systemPanel.trigger = pill;
         systemPanel.rightMargin = barLoader.item.width - pill.x - pill.width + 14;
+        systemPanel.section = section || "";
         systemPanel.visible = true;
     }
 
@@ -131,30 +132,16 @@ ShellRoot {
             root.openToday();
         }
 
-        function onSystemRequested() {
-            root.openSystem();
+        function onSystemRequested(section) {
+            root.openSystem(section);
         }
     }
 
-    // The control centre, as wide as the bar is narrow. The module cards close
-    // it first, then open the module's own popup, so two backdrops never stack.
+    // The control centre: unreachable since the island opens Today (it
+    // stays instantiated only for its "Today" toast timers until the
+    // cleanup commit deletes it).
     ControlCenter {
         id: controlCenter
-
-        onNetworkRequested: {
-            controlCenter.visible = false;
-            barLoader.item.wifiModule.openPopup();
-        }
-
-        onBluetoothRequested: {
-            controlCenter.visible = false;
-            barLoader.item.bluetoothModule.openPopup();
-        }
-
-        onBatteryRequested: {
-            controlCenter.visible = false;
-            barLoader.item.batteryModule.openPopup();
-        }
 
         onSessionRequested: {
             controlCenter.visible = false;
@@ -321,7 +308,7 @@ ShellRoot {
             if (systemPanel.visible)
                 systemPanel.close();
             else
-                root.openSystem();
+                root.openSystem("");
         }
 
         function close(): void {
@@ -355,11 +342,7 @@ ShellRoot {
                 systemPanel.close();
                 return;
             }
-            root.openSystem();
-            if (section === "network")
-                systemPanel.expandedDetail = "network";
-            else if (section === "bluetooth")
-                systemPanel.expandedDetail = "bt";
+            root.openSystem(section);
         }
 
         function closeSystem(): void {
