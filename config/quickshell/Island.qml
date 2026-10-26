@@ -17,9 +17,10 @@ Singleton {
     id: island
 
     // --- OSD ---
-    property string osdKind: ""     // "" | "volume" | "brightness"
+    property string osdKind: ""     // "" | "volume" | "brightness" | "dnd"
     property real osdValue: 0       // 0..1
     property bool osdMuted: false
+    property string osdText: ""     // for the DND OSD
     property bool systemPanelOpen: false
 
     // --- Notification ---
@@ -78,6 +79,12 @@ Singleton {
         island.osdKind = kind;
         island.osdValue = value;
         island.osdMuted = muted;
+        osdTimer.restart();
+    }
+
+    function showDndOsd(on) {
+        island.osdKind = "dnd";
+        island.osdText = on ? "Do not disturb on" : "Do not disturb off";
         osdTimer.restart();
     }
 

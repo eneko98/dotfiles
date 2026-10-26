@@ -363,6 +363,11 @@ ShellRoot {
             systemPanel.close();
         }
 
+        function dnd(value: string): void {
+            notifications.dnd = value === "true";
+            Island.showDndOsd(notifications.dnd);
+        }
+
         function reducedMotion(value: string): void {
             const on = value === "true";
             Motion.reduced = on;

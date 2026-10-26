@@ -238,7 +238,9 @@ PanelWindow {
             : Island.mode === "notification" ? notifTarget
             : clockRow.implicitWidth + 24
 
-        readonly property real osdTarget: osdRow.implicitWidth + 24
+        readonly property real osdTarget: Island.osdKind === "dnd"
+            ? dndOsdRow.implicitWidth + 24
+            : osdRow.implicitWidth + 24
 
         // Notification wing measurements. The body is hidden when the summary
         // takes more than 60% of the maximum wing (240 of 400 px).
@@ -260,11 +262,15 @@ PanelWindow {
             && notifSummaryWidth <= 240
         readonly property real notifChipWidth: Island.pendingCount > 0 ? 8 + 24 : 0
 
+        readonly property bool notifCritical: Island.current !== null
+            && Island.current.urgency === 2
+
         readonly property real notifTarget: Math.min(560,
             14
             + (notifHasIcon ? 16 : notifNameWidth)
             + 8 + notifSummaryWidth
             + (notifBodyVisible ? 8 + notifBodyWidth : 0)
+            + (notifCritical ? 6 + 8 : 0)
             + notifChipWidth
             + 14)
 
@@ -303,8 +309,10 @@ PanelWindow {
                 if (mouse.button === Qt.RightButton) {
                     if (Island.mode === "notification")
                         Island.dismissCurrent();
-                    else if (bar.notifications !== null)
+                    else if (bar.notifications !== null) {
                         bar.notifications.dnd = !bar.notifications.dnd;
+                        Island.showDndOsd(bar.notifications.dnd);
+                    }
                     return;
                 }
                 bar.todayRequested();
@@ -413,12 +421,21 @@ PanelWindow {
                         font.family: "Adwaita Sans"
                         font.pixelSize: 11
                     }
+
+                    // DND: a bell-off glyph while it is on (neon: it wants a look).
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: bar.notifications !== null && bar.notifications.dnd
+                        glyph: "󰂛"
+                        size: 12
+                        tone: "attention"
+                    }
                 }
 
                 // The OSD mode: glyph, a 120x4 bar and the percentage.
                 Row {
                     id: osdRow
-                    visible: Island.mode === "osd"
+                    visible: Island.mode === "osd" && Island.osdKind !== "dnd"
                     anchors.centerIn: parent
                     spacing: 10
 
@@ -463,6 +480,31 @@ PanelWindow {
                     }
                 }
 
+                // The DND OSD: bell glyph + text.
+                Row {
+                    id: dndOsdRow
+                    visible: Island.mode === "osd" && Island.osdKind === "dnd"
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        glyph: bar.notifications !== null && bar.notifications.dnd
+                            ? "󰂛" : "󰂚"
+                        size: 15
+                        tone: bar.notifications !== null && bar.notifications.dnd
+                            ? "active" : "normal"
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Island.osdText
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                    }
+                }
+
                 // The notification mode: icon or app name, summary, body if
                 // it fits, and the queue chip. Clicking opens Today.
                 Row {
@@ -491,6 +533,16 @@ PanelWindow {
                         font.family: "Adwaita Sans"
                         font.pixelSize: 11
                         elide: Text.ElideRight
+                    }
+
+                    // Critical: a 6 px red dot before the summary.
+                    Rectangle {
+                        visible: Island.current !== null && Island.current.urgency === 2
+                        width: visible ? 6 : 0
+                        height: 6
+                        radius: 3
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.red
                     }
 
                     Text {
@@ -544,6 +596,17 @@ PanelWindow {
                 height: 30
                 visible: false
             }
+        }
+
+        // Critical notifications: a red border while they are on screen
+        // (red keeps its single meaning: something is wrong).
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: "transparent"
+            border.width: 1
+            border.color: Theme.red
+            visible: Island.current !== null && Island.current.urgency === 2
         }
 
         // The dismiss button, on hover: it sits above the wing's right edge
