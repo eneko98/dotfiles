@@ -83,8 +83,12 @@ PanelWindow {
         // panel goes through close(); a direct visible=false still resets
         // the state (the closeAnim runs hidden, harmless).
         panel.open = visible;
-        if (visible)
+        if (visible) {
             panel.forceActiveFocus();
+            Panels.open(root);
+        } else {
+            Panels.closed(root);
+        }
     }
 
     // Close through the morph when there is a trigger; instant otherwise.
