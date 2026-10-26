@@ -390,6 +390,19 @@ PanelWindow {
                     }
                     return;
                 }
+
+                // Left click: the notification's default action when it has
+                // one, otherwise Today.
+                if (Island.mode === "notification" && Island.current !== null) {
+                    const actions = Island.current.actions;
+                    if (actions && actions.length > 0) {
+                        bar.notifications.invokeAction(Island.current,
+                            actions[0].identifier);
+                        if (!Island.current.resident)
+                            Island.dismissCurrent();
+                        return;
+                    }
+                }
                 bar.todayRequested();
             }
         }
@@ -760,16 +773,59 @@ PanelWindow {
                         spacing: 8
                         layoutDirection: Qt.RightToLeft
 
+                        Repeater {
+                            model: (Island.current !== null && Island.current.actions)
+                                ? Math.min(2, Island.current.actions.length) : 0
+
+                            delegate: Pressable {
+                                id: actionButton
+                                width: actionLabel.implicitWidth + 16
+                                height: 26
+                                pressScale: 1.0
+
+                                readonly property var action: Island.current !== null
+                                    ? Island.current.actions[index] : null
+
+                                onClicked: {
+                                    if (actionButton.action === null)
+                                        return;
+                                    bar.notifications.invokeAction(Island.current,
+                                        actionButton.action.identifier);
+                                    if (!Island.current.resident)
+                                        Island.dismissCurrent();
+                                }
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: height / 2
+                                    color: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b,
+                                        actionButton.hovered ? 0.90 : 0.60)
+                                }
+
+                                Text {
+                                    id: actionLabel
+                                    anchors.centerIn: parent
+                                    text: actionButton.action !== null
+                                        ? actionButton.action.text : ""
+                                    color: Theme.fg0
+                                    font.family: "Adwaita Sans"
+                                    font.pixelSize: 12
+                                }
+                            }
+                        }
+
                         Pressable {
-                            width: openLabel.implicitWidth + 16
+                            visible: Island.current !== null && Island.current.actions
+                                && Island.current.actions.length > 2
+                            width: moreLabel.implicitWidth + 16
                             height: 26
                             pressScale: 1.0
                             onClicked: bar.todayRequested()
 
                             Text {
-                                id: openLabel
+                                id: moreLabel
                                 anchors.centerIn: parent
-                                text: "Open in Today"
+                                text: "More…"
                                 color: Theme.fg1
                                 font.family: "Adwaita Sans"
                                 font.pixelSize: 12

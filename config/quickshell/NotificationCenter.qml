@@ -65,7 +65,7 @@ Scope {
         bodySupported: true
         bodyMarkupSupported: false
         imageSupported: false
-        actionsSupported: false
+        actionsSupported: true
         keepOnReload: true
 
         onNotification: function (notification) {
@@ -98,6 +98,18 @@ Scope {
 
     function dismiss(notification) {
         notification.dismiss();
+    }
+
+    function invokeAction(notification, identifier) {
+        if (!notification)
+            return;
+        const actions = notification.actions;
+        for (let i = 0; i < actions.length; ++i) {
+            if (actions[i].identifier === identifier) {
+                actions[i].invoke();
+                return;
+            }
+        }
     }
 
     function clearAll() {
