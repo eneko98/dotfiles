@@ -210,8 +210,6 @@ Column {
                 }
             }
 
-                }
-
             Text {
                 visible: root.on && root.devices.length === 0
                 text: "Searching…"

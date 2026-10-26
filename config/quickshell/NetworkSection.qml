@@ -261,8 +261,6 @@ Column {
                 }
             }
 
-                }
-
             Text {
                 visible: Networking.wifiEnabled && root.pending === null
                          && root.networks.length === 0
