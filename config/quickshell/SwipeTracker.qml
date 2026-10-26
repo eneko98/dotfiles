@@ -31,6 +31,7 @@ Item {
     signal swiped(string direction, real velocity)
     signal released(string axis)
     signal wheeled(string direction)
+    signal moved(real offset)
 
     function reset() {
         root.axis = "";
@@ -109,6 +110,7 @@ Item {
             }
 
             root.offset += dx;
+            root.moved(root.offset);
             root._samples = root._samples.concat([{ t: Date.now(), dx: root.offset }])
                 .slice(-8);
             idle.restart();

@@ -241,6 +241,37 @@ PanelWindow {
         readonly property real expandedHeight: Math.min(170,
             30 + 6 + 16 + 4 + expandedBody.height + 10 + 26 + 10)
 
+        // Horizontal swipe: the wing follows the fingers and fades, then
+        // either leaves or springs back.
+        property real swipeOffset: 0
+        property real swipeAlpha: 1
+
+        Behavior on swipeAlpha {
+            NumberAnimation { duration: Motion.fast }
+        }
+
+        NumberAnimation {
+            id: swipeOutAnim
+            target: island
+            property: "swipeOffset"
+            duration: 160
+            easing.type: Easing.InCubic
+            onFinished: {
+                Island.dismissCurrent();
+                island.swipeOffset = 0;
+                island.swipeAlpha = 1;
+            }
+        }
+
+        NumberAnimation {
+            id: swipeBackAnim
+            target: island
+            property: "swipeOffset"
+            to: 0
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+
         width: targetWidth
         height: islandHeight
         radius: 15
@@ -366,11 +397,29 @@ PanelWindow {
         // Gestures on the notification wing: horizontal swipe dismisses,
         // vertical scroll (two fingers or the mouse wheel) walks the queue.
         SwipeTracker {
+            id: swipeGesture
             anchors.fill: parent
             visible: Island.mode === "notification"
 
+            onMoved: function (offset) {
+                if (swipeGesture.axis === "x") {
+                    island.swipeOffset = offset;
+                    island.swipeAlpha = Math.max(0.15,
+                        1 - Math.abs(offset) / (island.width * 1.2));
+                }
+            }
+
             onSwiped: function (direction, velocity) {
-                Island.dismissCurrent();
+                swipeOutAnim.stop();
+                swipeOutAnim.to = direction === "left" ? -island.width : island.width;
+                swipeOutAnim.start();
+            }
+
+            onReleased: function (axis) {
+                if (axis === "x") {
+                    island.swipeAlpha = 1;
+                    swipeBackAnim.start();
+                }
             }
 
             onWheeled: function (direction) {
@@ -449,8 +498,10 @@ PanelWindow {
                 id: slotA
                 anchors.top: parent.top
                 anchors.horizontalCenter: parent.horizontalCenter
+                anchors.horizontalCenterOffset: island.swipeOffset
                 width: island.targetWidth
                 height: island.islandHeight
+                opacity: island.swipeAlpha
 
                 // The normal mode: media (when a player has a track) and the clock.
                 Row {
