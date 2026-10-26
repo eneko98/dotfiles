@@ -308,6 +308,16 @@ PanelWindow {
             }
         }
 
+        // The hover expansion: same idea on the height (the container has a
+        // matching Behavior so the content is clipped in step).
+        Behavior on height {
+            NumberAnimation {
+                duration: Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.decel
+            }
+        }
+
         // The arbiter's hover input (it pauses the notification countdown).
         Binding {
             target: Island
@@ -645,6 +655,14 @@ PanelWindow {
                     anchors.leftMargin: 14
                     anchors.rightMargin: 14
                     spacing: 4
+
+                    Behavior on opacity {
+                        NumberAnimation {
+                            duration: Motion.fast
+                            easing.type: Easing.BezierSpline
+                            easing.bezierCurve: Motion.decel
+                        }
+                    }
 
                     Text {
                         text: Island.current !== null ? Island.current.appName : ""
