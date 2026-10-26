@@ -119,6 +119,15 @@ ShellRoot {
             && barLoader.item !== null && systemPanel.trigger === barLoader.item.statusPill
     }
 
+    // The bar asks; the shell owns the panels.
+    Connections {
+        target: barLoader.item
+
+        function onTodayRequested() {
+            root.openToday();
+        }
+    }
+
     // The control centre, as wide as the bar is narrow. The module cards close
     // it first, then open the module's own popup, so two backdrops never stack.
     ControlCenter {
