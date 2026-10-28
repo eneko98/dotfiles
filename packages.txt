@@ -265,3 +265,9 @@ greetd
 greetd-regreet
 cage
 gtk4-layer-shell
+
+# Music: spotify-player, a TUI Spotify client in Rust (~27 MiB installed).
+# MPRIS is what the island and the Today card read; librespot does the
+# streaming. Requires Spotify Premium. The OAuth token and the cache live in
+# ~/.cache/spotify-player, never in this repo.
+spotify-player

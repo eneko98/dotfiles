@@ -1,0 +1,11 @@
+# spotify-player: MPRIS stays on (the island and the Today music card read
+# it); notifications are off because the panel is the surface. Streaming is
+# always on so librespot plays locally. The OAuth credentials and the cache
+# live in ~/.cache/spotify-player, never in this repo.
+theme = "default"
+enable_media_control = true
+enable_notify = false
+enable_streaming = "Always"
+
+[device]
+name = "eneko98"
