@@ -1,7 +1,8 @@
-// A notification avatar. A true circular clip would need either
-// Qt5Compat.GraphicalEffects (not available inside Quickshell) or a
-// precompiled .qsb shader (Qt 6 dropped inline shader strings), so this is a
-// rounded square: the design's circle is the one concession left open.
+// A notification avatar. A true circular clip is not achievable here:
+// QML's clip ignores radius, Qt5Compat.GraphicalEffects is not available
+// inside Quickshell, MultiEffect's maskSource does not render, and a custom
+// .qsb shader is not drawn either (all measured). The result is a rounded
+// square; the design's circle is the one concession left open.
 import QtQuick
 
 Rectangle {
