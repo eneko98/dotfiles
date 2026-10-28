@@ -26,6 +26,11 @@ Popup {
 
     property int current: 0
 
+    // Live two-finger drag offset, in pixels: the cards follow the fingers
+    // while SwipeTracker reports movement and snap on release.
+    property real drag: 0
+    property bool dragging: false
+
     function syncCurrent() {
         for (let i = 0; i < workspaces.length; i++) {
             if (workspaces[i].focused) {
@@ -131,7 +136,7 @@ Popup {
 
                     width: 420
                     height: 260
-                    x: cards.width / 2 - width / 2 + distance * 300
+                    x: cards.width / 2 - width / 2 + distance * 300 + root.drag
                     scale: 1 - Math.min(2, Math.abs(distance)) * 0.12
                     opacity: 1 - Math.min(2, Math.abs(distance)) * 0.2
                     z: 20 - Math.abs(distance)
@@ -152,6 +157,8 @@ Popup {
                     }
 
                     Behavior on x {
+                        enabled: !root.dragging
+
                         NumberAnimation {
                             duration: Motion.medium
                             easing.type: Easing.BezierSpline
@@ -283,8 +290,33 @@ Popup {
         // leaves the card clicks to the cards underneath.
         SwipeTracker {
             anchors.fill: parent
-            onSwiped: function (direction) { root.step(direction === "left" ? 1 : -1); }
-            onWheeled: function (direction) { root.step(direction === "up" ? 1 : -1); }
+
+            // The shared tracker defaults to a full-width workspace swipe;
+            // one card is much shorter, so the threshold follows the gesture.
+            threshold: 0.06
+            velocityThreshold: 0.2
+
+            onMoved: function (offset) {
+                root.dragging = true;
+                root.drag = offset;
+            }
+
+            onSwiped: function (direction) {
+                root.dragging = false;
+                root.drag = 0;
+                root.step(direction === "left" ? 1 : -1);
+            }
+
+            onReleased: function (axis) {
+                if (axis === "x") {
+                    root.dragging = false;
+                    root.drag = 0;
+                }
+            }
+
+            onWheeled: function (direction) {
+                root.step(direction === "up" ? 1 : -1);
+            }
         }
     }
 }

@@ -152,10 +152,10 @@ clipboard history and the session menu.
 **Workspace carousel.** `SUPER + Tab` (or a three-finger vertical swipe) opens
 a Cover Flow of the existing workspaces (`config/quickshell/Overview.qml`). The
 centre card previews the workspace's active window, the gold border marks the
-selection, and a gold dot marks the workspace you are actually on. Arrow keys
-or the wheel move it; Enter or a click jumps to the centre workspace; Escape or
-a click outside closes it. The three-finger horizontal swipe still switches
-workspaces.
+selection, and a gold dot marks the workspace you are actually on. Arrow keys,
+the wheel or a two-finger swipe move it; Enter or a click jumps to the centre
+workspace; Escape or a click outside closes it. The three-finger horizontal
+swipe still switches workspaces.
 
 **System dashboard.** The chart zone on the right of the status pill (inside
 the same surface, after a hairline) opens a dedicated dashboard
