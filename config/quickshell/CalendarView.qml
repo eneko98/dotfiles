@@ -4,10 +4,11 @@
 // the width, or a fast flick) or back to place. One swipe, one month.
 //
 // Axis lock: the first 8 px decide horizontal vs vertical; vertical is
-// released to the panel's scroll. Shift+wheel changes months; plain wheel
-// does not (it would fight the scroll). Fallbacks: the title's arrows, click
-// the title for today, and the keyboard (arrows move the selection across
-// months, PageUp/PageDown commit, Home returns to today).
+// released to the panel's scroll. The gesture itself is the shared
+// SwipeTracker (same one the notification wing uses). Shift+wheel changes
+// months; plain wheel does not (it would fight the scroll). Fallbacks: the
+// title's arrows, click the title for today, and the keyboard (arrows move
+// the selection across months, PageUp/PageDown commit, Home returns to today).
 //
 // The events service lives here: Spain's national holidays are computed
 // (fixed dates + Good Friday from the Easter algorithm); everything else is
@@ -24,10 +25,6 @@ Item {
     property date base: new Date()
     property date today: new Date()
     property real offset: 0
-    property string axis: ""
-    property real _accX: 0
-    property real _accY: 0
-    property var _samples: []
 
     readonly property real cellHeight: 34
     readonly property real headerHeight: 24
@@ -156,28 +153,6 @@ Item {
         snap.start();
     }
 
-    function release() {
-        const now = Date.now();
-        const recent = cal._samples.filter(s => now - s.t < 80);
-        const v = recent.length > 1
-            ? (recent[recent.length - 1].dx - recent[0].dx)
-              / Math.max(1, recent[recent.length - 1].t - recent[0].t)
-            : 0;
-        cal._samples = [];
-        cal.axis = "";
-        cal._accX = 0;
-        cal._accY = 0;
-        const far = Math.abs(cal.offset) > cal.width * 0.22;
-        const fast = Math.abs(v) > 0.6 && Math.abs(cal.offset) > 12;
-        if (far || fast)
-            cal.commit(cal.offset < 0 ? 1 : -1);
-        else {
-            snap.to = 0;
-            snap.direction = 0;
-            snap.start();
-        }
-    }
-
     function goToday() {
         cal.selected = new Date();
         cal.base = new Date(cal.selected.getFullYear(), cal.selected.getMonth(), 1);
@@ -236,58 +211,38 @@ Item {
         }
     }
 
-    // Gesture end: no events for 90 ms (libinput sends no kinetic scroll on
-    // Wayland, so after the fingers lift nothing more arrives).
-    Timer {
-        id: idle
-        interval: 90
-        onTriggered: cal.release()
-    }
-
-    // The gesture, on a MouseArea (WheelHandler never fired in this stack --
-    // measured with events arriving at a sibling MouseArea but not at the
-    // handler, with and without acceptedDevices). acceptedButtons 0: the
-    // wheel is handled here and clicks pass through to the cells. Vertical
-    // gestures are released to the panel's scroll (accepted = false).
-    MouseArea {
+    // The gesture is the shared SwipeTracker: axis lock, samples and release
+    // live there now. Shift+wheel changes months; a plain wheel does nothing
+    // because vertical scroll belongs to the panel.
+    SwipeTracker {
+        id: swipe
         anchors.fill: parent
-        // No buttons: the wheel is handled here and clicks pass through to
-        // the cells.
-        acceptedButtons: Qt.NoButton
+        threshold: 0.22
 
-        onWheel: function (event) {
-            const isWheel = event.pixelDelta.x === 0 && event.pixelDelta.y === 0;
-            if (isWheel) {
-                // Mouse wheel: vertical does not change months (it would
-                // fight the panel's scroll); Shift+wheel does (brief 10.1).
-                if (event.modifiers & Qt.ShiftModifier) {
-                    if (snap.running)
-                        snap.stop();
-                    cal.commit(event.angleDelta.y > 0 ? -1 : 1);
-                }
-                return;
-            }
+        onMoved: function (offset) {
             if (snap.running)
                 snap.stop();
-            const dx = event.inverted ? event.pixelDelta.x : -event.pixelDelta.x;
-            const dy = event.pixelDelta.y;
-            if (cal.axis === "") {
-                cal._accX += Math.abs(dx);
-                cal._accY += Math.abs(dy);
-                if (cal._accX + cal._accY < 8) {
-                    idle.restart();
-                    return;
-                }
-                cal.axis = cal._accX >= cal._accY ? "x" : "y";
-            }
-            if (cal.axis === "y") {
-                event.accepted = false;
-                idle.restart();
+            cal.offset = Math.max(-cal.width, Math.min(cal.width, offset));
+        }
+
+        onSwiped: function (direction, velocity) {
+            cal.commit(direction === "left" ? 1 : -1);
+        }
+
+        onReleased: function (axis) {
+            if (axis !== "x")
                 return;
-            }
-            cal.offset = Math.max(-cal.width, Math.min(cal.width, cal.offset + dx));
-            cal._samples = cal._samples.concat([{ t: Date.now(), dx: cal.offset }]).slice(-8);
-            idle.restart();
+            snap.to = 0;
+            snap.direction = 0;
+            snap.start();
+        }
+
+        onWheeled: function (direction, modifiers) {
+            if (!(modifiers & Qt.ShiftModifier))
+                return;
+            if (snap.running)
+                snap.stop();
+            cal.commit(direction === "up" ? -1 : 1);
         }
     }
 

@@ -30,7 +30,7 @@ Item {
 
     signal swiped(string direction, real velocity)
     signal released(string axis)
-    signal wheeled(string direction)
+    signal wheeled(string direction, int modifiers)
     signal moved(real offset)
 
     function reset() {
@@ -69,7 +69,7 @@ Item {
             }
         } else {
             if (Math.abs(root._sumY) > 20)
-                root.wheeled(root._sumY > 0 ? "down" : "up");
+                root.wheeled(root._sumY > 0 ? "down" : "up", 0);
             root.released("y");
         }
         root.reset();
@@ -85,7 +85,7 @@ Item {
             // A real mouse wheel: discrete, vertical, used for navigation.
             if (noPixel) {
                 if (event.angleDelta.y !== 0)
-                    root.wheeled(event.angleDelta.y > 0 ? "up" : "down");
+                    root.wheeled(event.angleDelta.y > 0 ? "up" : "down", event.modifiers);
                 return;
             }
 
