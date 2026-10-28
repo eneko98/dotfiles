@@ -86,7 +86,6 @@ PanelWindow {
         Region { item: island }
         Region { item: statusPill }
         Region { item: dashboardPill }
-        Region { item: trayPill }
     }
 
     // --- Left pill: the workspaces -------------------------------------
@@ -962,12 +961,12 @@ PanelWindow {
         }
     }
 
-    // --- Right: the status + dashboard pill, and the tray pill -----------
+    // --- Right: the status + dashboard pill ------------------------------
     // One surface for the system controls: the resource alert when it
-    // applies, volume, wifi, bluetooth (only when on), battery, and the
-    // dashboard, separated by a hairline so the chart reads as its own
-    // control. The pill's padding opens System; the chart opens the
-    // dashboard. The tray is its own pill, only when there are icons.
+    // applies, volume, wifi, bluetooth (only when on), battery, the tray
+    // icons when an application registers one, and the dashboard, separated
+    // by a hairline so the chart reads as its own control. The pill's padding
+    // opens System; the chart opens the dashboard.
     Surface {
         id: statusPill
         level: 1
@@ -979,10 +978,14 @@ PanelWindow {
             NumberAnimation { duration: Motion.fade }
         }
 
+        Behavior on width {
+            NumberAnimation { duration: Motion.medium; easing.type: Easing.OutCubic }
+        }
+
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
+        anchors.rightMargin: 14
 
         width: content.implicitWidth + 24
         height: 30
@@ -1026,6 +1029,22 @@ PanelWindow {
 
                 Battery {
                     onActivated: function (section) { bar.systemRequested(section); }
+                }
+
+                // Tray icons live inside the pill. The slot collapses to zero
+                // when no application registers one, so the pill only grows
+                // when there is something to show.
+                Item {
+                    id: traySlot
+
+                    visible: tray.implicitWidth > 0
+                    width: tray.implicitWidth
+                    height: 30
+
+                    Tray {
+                        id: tray
+                        anchors.centerIn: parent
+                    }
                 }
             }
 
@@ -1084,22 +1103,5 @@ PanelWindow {
         }
     }
 
-    Surface {
-        id: trayPill
-        level: 1
 
-        visible: tray.implicitWidth > 0
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: 14
-
-        width: tray.implicitWidth + 16
-        height: 30
-
-        Tray {
-            id: tray
-            anchors.centerIn: parent
-        }
-    }
 }
