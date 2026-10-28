@@ -161,9 +161,10 @@ Disk, network and process sampling runs only while the panel is open.
 island shows the current track and the Today panel carries the full card:
 large art, title/artist/album, a seekable progress bar and the transport
 controls, plus shuffle and loop when the player supports them. The first run
-downloads the client and asks for the login. `spotify-player` stays installed
-as a TUI alternative, but its ncspot fallback OAuth is currently rejected by
-Spotify.
+downloads the client and asks for the login. TUI clients were tried and
+dropped: `spotify-player` requires a second OAuth client that Spotify rejects,
+and `ncspot`'s shared client hits the API rate limit, so browsing was worse
+than the app.
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in

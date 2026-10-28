@@ -268,7 +268,7 @@ gtk4-layer-shell
 
 # Music: the official Spotify app through spotify-launcher is the client (the
 # launcher downloads Spotify's own build). MPRIS is what the island and the
-# Today card read. spotify-player (TUI, Rust) is kept as an alternative, but
-# its ncspot fallback OAuth is currently rejected by Spotify.
+# Today card read. The TUI clients (spotify-player, ncspot) were tried and
+# dropped: Spotify's shared OAuth client for them is either rejected or rate
+# limited, and browsing in a terminal was worse than the app.
 spotify-launcher
-spotify-player
