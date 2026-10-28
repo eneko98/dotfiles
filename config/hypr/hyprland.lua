@@ -232,6 +232,9 @@ hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/launc
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
 -- The web browser.
 hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("firefox"))
+-- The system dashboard, through the bar's IPC: the same toggle the chart zone
+-- in the status pill uses. `qs` is on PATH and the command runs through a shell.
+hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("qs ipc call dashboard toggle"))
 -- Wallpaper picker. No argument opens it through the bar's IPC; the same script
 -- applies and remembers a choice, and a systemd unit re-applies it at login.
 hl.bind(mainMod .. " + W", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/wallpaper"))
