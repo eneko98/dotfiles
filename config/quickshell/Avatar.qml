@@ -1,11 +1,10 @@
-// A notification avatar. A true circular clip is not achievable here:
-// QML's clip ignores radius, Qt5Compat.GraphicalEffects is not available
-// inside Quickshell, MultiEffect's maskSource does not render, and a custom
-// .qsb shader is not drawn either (all measured). The result is a rounded
-// square; the design's circle is the one concession left open.
+// A circular avatar drawn with Canvas 2D. QML's clip ignores radius and the
+// shader/effect routes do not render inside Quickshell, so this clips a
+// circular path and paints the image into it. The canvas reloads and repaints
+// whenever the source URL changes.
 import QtQuick
 
-Rectangle {
+Item {
     id: root
 
     property string source: ""
@@ -13,15 +12,38 @@ Rectangle {
 
     width: size
     height: size
-    radius: 4
-    color: Theme.bg2
-    clip: true
 
-    Image {
+    Canvas {
+        id: canvas
         anchors.fill: parent
-        source: root.source
-        sourceSize.width: Math.round(root.size * 2)
-        sourceSize.height: Math.round(root.size * 2)
-        fillMode: Image.PreserveAspectCrop
+
+        property string imageUrl: root.source
+
+        onImageUrlChanged: {
+            if (imageUrl.length > 0)
+                loadImage(imageUrl);
+        }
+
+        onPaint: {
+            const ctx = getContext("2d");
+            ctx.clearRect(0, 0, width, height);
+            if (imageUrl.length === 0)
+                return;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(width / 2, height / 2, width / 2, 0, 2 * Math.PI);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(imageUrl, 0, 0, width, height);
+            ctx.restore();
+        }
+
+        Component.onCompleted: {
+            if (imageUrl.length > 0)
+                loadImage(imageUrl);
+        }
+
+        onImageLoaded: requestPaint()
     }
 }
