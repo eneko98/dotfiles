@@ -11,6 +11,9 @@ Column {
     // The panel opens the processes SubPage when this fires.
     signal processesRequested()
 
+    // The shell opens the dedicated dashboard panel.
+    signal dashboardRequested()
+
     width: parent.width
     spacing: Tokens.space.xs
 
@@ -96,19 +99,39 @@ Column {
         font.pixelSize: 12
     }
 
-    Pressable {
-        width: processesText.implicitWidth + Tokens.space.s * 2
-        height: 26
+    Row {
+        spacing: Tokens.space.s
 
-        onClicked: root.processesRequested()
+        Pressable {
+            width: processesText.implicitWidth + Tokens.space.s * 2
+            height: 26
 
-        Text {
-            id: processesText
-            anchors.centerIn: parent
-            text: "Processes ›"
-            color: parent.hovered ? Theme.gold : Theme.fg1
-            font.family: "Adwaita Sans"
-            font.pixelSize: 12
+            onClicked: root.processesRequested()
+
+            Text {
+                id: processesText
+                anchors.centerIn: parent
+                text: "Processes ›"
+                color: parent.hovered ? Theme.gold : Theme.fg1
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
+            }
+        }
+
+        Pressable {
+            width: dashboardText.implicitWidth + Tokens.space.s * 2
+            height: 26
+
+            onClicked: root.dashboardRequested()
+
+            Text {
+                id: dashboardText
+                anchors.centerIn: parent
+                text: "Dashboard ›"
+                color: parent.hovered ? Theme.gold : Theme.fg1
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
+            }
         }
     }
 }

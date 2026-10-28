@@ -81,6 +81,17 @@ ShellRoot {
         systemPanel.visible = true;
     }
 
+    // The dedicated system dashboard (Resources' link and the `dashboard`
+    // IPC). Centred, so the margin is whatever is left on both sides.
+    function openDashboard() {
+        if (barLoader.item === null)
+            return;
+        if (systemPanel.visible)
+            systemPanel.close();
+        dashboardPanel.rightMargin = (barLoader.item.width - dashboardPanel.panelWidth) / 2;
+        dashboardPanel.visible = true;
+    }
+
     // The launcher is centred too; the panel width is fixed by Launcher.qml.
     function openLauncher() {
         launcher.rightMargin = (barLoader.item.width - launcher.panelWidth) / 2;
@@ -241,6 +252,11 @@ ShellRoot {
 
     SystemPanel {
         id: systemPanel
+        onDashboardRequested: root.openDashboard()
+    }
+
+    DashboardPanel {
+        id: dashboardPanel
     }
 
     // The notification server, toasts and history. mako's service is disabled
@@ -322,6 +338,23 @@ ShellRoot {
 
         function close(): void {
             systemPanel.close();
+        }
+    }
+
+    // The dedicated dashboard, opened from Resources' link or a script
+    // (`qs ipc call dashboard toggle`).
+    IpcHandler {
+        target: "dashboard"
+
+        function toggle(): void {
+            if (dashboardPanel.visible)
+                dashboardPanel.close();
+            else
+                root.openDashboard();
+        }
+
+        function close(): void {
+            dashboardPanel.close();
         }
     }
 
