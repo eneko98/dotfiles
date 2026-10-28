@@ -83,8 +83,100 @@ Column {
             device.disconnect();
         else if (device.paired)
             device.connect();
-        else
+        else {
             device.pair();
+            root.requestConnectAfterPair(device);
+        }
+    }
+
+    // --- Pair then connect ------------------------------------------------
+    // The delegate's Connections died when the model recreated the device on
+    // `paired`, so the connect after pairing is tracked by ADDRESS on the
+    // section, not by object. A timer resolves it while there are pending
+    // addresses and gives up after 30 s.
+    property var pendingConnect: ({})
+    property double pendingSince: 0
+
+    function requestConnectAfterPair(device) {
+        const next = Object.assign({}, root.pendingConnect);
+        next[device.address] = true;
+        root.pendingConnect = next;
+        if (root.pendingSince === 0)
+            root.pendingSince = Date.now();
+    }
+
+    function resolvePending() {
+        if (Date.now() - root.pendingSince > 30000) {
+            root.pendingConnect = ({});
+            root.pendingSince = 0;
+            return;
+        }
+        const devices = root.adapter ? root.adapter.devices.values : [];
+        let next = Object.assign({}, root.pendingConnect);
+        let changed = false;
+        for (let i = 0; i < devices.length; ++i) {
+            const d = devices[i];
+            if (next[d.address] && d.paired) {
+                delete next[d.address];
+                changed = true;
+                d.connect();
+            }
+        }
+        if (changed) {
+            root.pendingConnect = next;
+            if (Object.keys(next).length === 0)
+                root.pendingSince = 0;
+        }
+    }
+
+    Timer {
+        interval: 500
+        repeat: true
+        running: Object.keys(root.pendingConnect).length > 0
+        onTriggered: root.resolvePending()
+    }
+
+    // --- Connection notifications -----------------------------------------
+    // A one-second diff of the connected set is simpler and sturdier than
+    // connecting to signals on objects that the model recreates. The first
+    // tick only records the baseline, so startup does not spam.
+    property var lastConnected: ({})
+    property bool notificationsArmed: false
+
+    function notify(title, body) {
+        Quickshell.execDetached(["notify-send", "-a", "Bluetooth",
+            "-i", "bluetooth", title, body]);
+    }
+
+    function checkConnections() {
+        const devices = root.adapter ? root.adapter.devices.values : [];
+        let now = {};
+        for (let i = 0; i < devices.length; ++i) {
+            const d = devices[i];
+            if (d.connected)
+                now[d.address] = d.name;
+        }
+        if (!root.notificationsArmed) {
+            root.notificationsArmed = true;
+            root.lastConnected = now;
+            return;
+        }
+        for (const addr in now) {
+            if (!root.lastConnected[addr])
+                root.notify("Connected", now[addr]);
+        }
+        for (const addr in root.lastConnected) {
+            if (!now[addr])
+                root.notify("Disconnected", root.lastConnected[addr]);
+        }
+        root.lastConnected = now;
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: root.on
+        onTriggered: root.checkConnections()
     }
 
     // --- The tile ---------------------------------------------------------
