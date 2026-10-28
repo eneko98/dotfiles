@@ -49,6 +49,16 @@ Popup {
         root.closePanel();
     }
 
+    // The session actions, at the top: lock, suspend, log out, reboot and
+    // power off are the most consequential controls, so they lead.
+    SessionRow { width: parent.width }
+
+    Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
+    }
+
     // The battery header, at full width.
     BatterySection {
         id: batterySection
@@ -180,14 +190,6 @@ Popup {
 
         onProcessesRequested: root.showProcesses = true
     }
-
-    Rectangle {
-        width: parent.width
-        height: 1
-        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
-    }
-
-    SessionRow { width: parent.width }
 
     // The processes page: pushed over the sections (the overlay layer of
     // the stage), back with Escape or the header.
