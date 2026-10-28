@@ -27,7 +27,8 @@ PanelWindow {
     // Shared-element dips: the panel that grew out of a pill is up.
     property bool islandHidden: false
     property bool pillHidden: false
-    property bool dashboardHidden: false
+    // The panel that grew out of the dashboard zone is up.
+    property bool dashboardActive: false
 
     // The island asks for Today, the status modules ask for System (with
     // the section to open); the shell owns the panels and the trigger
@@ -961,11 +962,12 @@ PanelWindow {
         }
     }
 
-    // --- Right: the status pill + the tray pill -------------------------
-    // Status: the resource alert when it applies, then volume, wifi,
-    // bluetooth (only when on) and battery -- no SSID, no volume %, no
-    // power glyph: the machine's controls live in the System panel. The
-    // tray is its own pill, only when there are icons.
+    // --- Right: the status + dashboard pill, and the tray pill -----------
+    // One surface for the system controls: the resource alert when it
+    // applies, volume, wifi, bluetooth (only when on), battery, and the
+    // dashboard, separated by a hairline so the chart reads as its own
+    // control. The pill's padding opens System; the chart opens the
+    // dashboard. The tray is its own pill, only when there are icons.
     Surface {
         id: statusPill
         level: 1
@@ -980,15 +982,15 @@ PanelWindow {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: (trayPill.visible ? 14 + trayPill.width + 8 : 14)
-            + dashboardPill.width + 8
+        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
 
-        width: modules.implicitWidth + 28
+        width: content.implicitWidth + 24
         height: 30
 
         HoverHandler { id: statusPillHover }
 
-        // The pill's padding is clickable too: it opens System.
+        // The pill's padding is clickable too: it opens System. The chart
+        // sits above, so its own click wins there.
         MouseArea {
             anchors.fill: parent
             z: -1
@@ -997,69 +999,88 @@ PanelWindow {
         }
 
         Row {
-            id: modules
+            id: content
             anchors.centerIn: parent
-            spacing: 12
+            spacing: 0
 
-            ResourcesAlert {
-                onActivated: function (section) { bar.systemRequested(section); }
+            Row {
+                id: modules
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 12
+
+                ResourcesAlert {
+                    onActivated: function (section) { bar.systemRequested(section); }
+                }
+
+                Volume {
+                    onActivated: function (section) { bar.systemRequested(section); }
+                }
+
+                Wifi {
+                    onActivated: function (section) { bar.systemRequested(section); }
+                }
+
+                Bluetooth {
+                    onActivated: function (section) { bar.systemRequested(section); }
+                }
+
+                Battery {
+                    onActivated: function (section) { bar.systemRequested(section); }
+                }
             }
 
-            Volume {
-                onActivated: function (section) { bar.systemRequested(section); }
+            // The hairline between the status modules and the dashboard.
+            Item {
+                width: 1 + 2 * 9
+                height: 30
+                anchors.verticalCenter: parent.verticalCenter
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 1
+                    height: 14
+                    color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.12)
+                }
             }
 
-            Wifi {
-                onActivated: function (section) { bar.systemRequested(section); }
+            // The dashboard zone: its own hover and click inside the shared
+            // pill. It stays visible (and turns gold) while the panel is up:
+            // the panel does not duplicate it, so there is no shared-element
+            // hole to fill.
+            Item {
+                id: dashboardPill
+                anchors.verticalCenter: parent.verticalCenter
+                width: 26
+                height: 30
+
+                HoverHandler { id: dashboardHover }
+
+                MouseArea {
+                    anchors.fill: parent
+                    z: -1
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: bar.dashboardRequested()
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 22
+                    height: 22
+                    radius: 11
+                    color: dashboardHover.hovered
+                        ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.8)
+                        : "transparent"
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰄨"
+                    color: dashboardHover.hovered || bar.dashboardActive
+                        ? Theme.gold : Theme.fg1
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 14
+                }
             }
-
-            Bluetooth {
-                onActivated: function (section) { bar.systemRequested(section); }
-            }
-
-            Battery {
-                onActivated: function (section) { bar.systemRequested(section); }
-            }
-        }
-    }
-
-    // The dashboard pill: its own surface, so it reads as a separate control
-    // rather than another status glyph. It opens the dashboard and fades out
-    // while the panel is up (the shared-element rule).
-    Surface {
-        id: dashboardPill
-        level: 1
-        lifted: dashboardPillHover.hovered
-
-        opacity: bar.dashboardHidden ? 0 : 1
-
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.fade }
-        }
-
-        anchors.right: parent.right
-        anchors.top: parent.top
-        anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
-
-        width: 30
-        height: 30
-
-        HoverHandler { id: dashboardPillHover }
-
-        MouseArea {
-            anchors.fill: parent
-            z: -1
-            cursorShape: Qt.PointingHandCursor
-            onClicked: bar.dashboardRequested()
-        }
-
-        Text {
-            anchors.centerIn: parent
-            text: "󰄨"
-            color: dashboardPillHover.hovered ? Theme.gold : Theme.fg1
-            font.family: "JetBrainsMono Nerd Font"
-            font.pixelSize: 14
         }
     }
 

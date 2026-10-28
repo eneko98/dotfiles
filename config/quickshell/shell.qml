@@ -138,7 +138,7 @@ ShellRoot {
 
     Binding {
         target: barLoader.item
-        property: "dashboardHidden"
+        property: "dashboardActive"
         value: dashboardPanel.visible && dashboardPanel.trigger !== null
             && barLoader.item !== null
             && dashboardPanel.trigger === barLoader.item.dashboardPill
