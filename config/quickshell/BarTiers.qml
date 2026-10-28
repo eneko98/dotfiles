@@ -1011,6 +1011,23 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 12
 
+                // Tray icons lead the pill: the applications' own icons sit
+                // to the left of the system controls. The slot collapses to
+                // zero when no application registers one, so the pill only
+                // grows when there is something to show.
+                Item {
+                    id: traySlot
+
+                    visible: tray.implicitWidth > 0
+                    width: tray.implicitWidth
+                    height: 30
+
+                    Tray {
+                        id: tray
+                        anchors.centerIn: parent
+                    }
+                }
+
                 ResourcesAlert {
                     onActivated: function (section) { bar.systemRequested(section); }
                 }
@@ -1031,21 +1048,6 @@ PanelWindow {
                     onActivated: function (section) { bar.systemRequested(section); }
                 }
 
-                // Tray icons live inside the pill. The slot collapses to zero
-                // when no application registers one, so the pill only grows
-                // when there is something to show.
-                Item {
-                    id: traySlot
-
-                    visible: tray.implicitWidth > 0
-                    width: tray.implicitWidth
-                    height: 30
-
-                    Tray {
-                        id: tray
-                        anchors.centerIn: parent
-                    }
-                }
             }
 
             // The hairline between the status modules and the dashboard.
