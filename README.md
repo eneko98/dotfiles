@@ -156,13 +156,14 @@ the active network interface with RX/TX rates; and the top five processes. It
 is read-only — the processes page and the session row still hold the actions.
 Disk, network and process sampling runs only while the panel is open.
 
-**Music.** `spotify-player` is the Spotify client: a TUI in Rust, ~27 MiB,
-with librespot doing the streaming. It speaks MPRIS, so the island shows the
-current track and the Today panel carries the full card: large art,
-title/artist/album, a seekable progress bar and the transport controls, plus
-shuffle and loop when the player supports them. The config lives in
-`config/spotify-player/app.toml`; the OAuth token and the cache stay in
-`~/.cache/spotify-player`, outside the repo. The first run asks for the login.
+**Music.** The client is the official Spotify app through `spotify-launcher`
+(the launcher downloads and runs Spotify's own build). It speaks MPRIS, so the
+island shows the current track and the Today panel carries the full card:
+large art, title/artist/album, a seekable progress bar and the transport
+controls, plus shuffle and loop when the player supports them. The first run
+downloads the client and asks for the login. `spotify-player` stays installed
+as a TUI alternative, but its ncspot fallback OAuth is currently rejected by
+Spotify.
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in
