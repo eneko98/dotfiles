@@ -1,0 +1,13 @@
+#!/bin/sh
+# SUPER+C: close the focused window. Spotify is the exception: the official
+# Linux client exits when its window closes (there is no close-to-tray), which
+# also removes its tray icon. Moving the window to a special workspace keeps
+# the process, the playback and the icon alive while the window is out of the
+# way. `hi` (a Hyprland helper installed here) is not assumed; hyprctl is.
+class=$(hyprctl activewindow -j | jq -r '.class // ""' | tr '[:upper:]' '[:lower:]')
+
+if [ "$class" = "spotify" ]; then
+    hyprctl dispatch 'hl.dsp.window.move({ workspace = "special:spotify", follow = false })'
+else
+    hyprctl dispatch 'hl.dsp.window.close()'
+fi

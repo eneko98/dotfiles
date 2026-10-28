@@ -146,7 +146,12 @@ Row {
 
                 onClicked: function(mouse) {
                     if (mouse.button === Qt.LeftButton) {
-                        if (entry.modelData.onlyMenu)
+                        // The official Spotify client has no close-to-tray:
+                        // SUPER+C hides its window in `special:spotify` (see
+                        // close-active), so the icon is the way back.
+                        if (entry.modelData.id === "spotify-client")
+                            Quickshell.execDetached(["sh", "-c", "$HOME/.config/hypr/scripts/spotify-toggle"]);
+                        else if (entry.modelData.onlyMenu)
                             entry.openMenu();
                         else
                             entry.modelData.activate();

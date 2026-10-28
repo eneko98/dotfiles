@@ -137,7 +137,8 @@ component.
 | `Print` | screenshot the whole screen |
 | `SUPER + Shift + A` | screenshot an area you drag over |
 | `SUPER + Shift + W` | screenshot the focused window |
-| `SUPER + C` | close the focused window |
+| `SUPER + C` | close the focused window (Spotify is hidden, not closed) |
+| `SUPER + Shift + S` | show / hide Spotify |
 | `SUPER + M` | log out and return to the login screen |
 
 Screenshots are saved to `~/Pictures/Screenshots` and copied to the clipboard, so
@@ -164,7 +165,9 @@ controls, plus shuffle and loop when the player supports them. The first run
 downloads the client and asks for the login. TUI clients were tried and
 dropped: `spotify-player` requires a second OAuth client that Spotify rejects,
 and `ncspot`'s shared client hits the API rate limit, so browsing was worse
-than the app.
+than the app. The official app has no close-to-tray on Linux, so `SUPER + C`
+on its window moves it to `special:spotify` instead of closing it; the tray
+icon or `SUPER + Shift + S` brings it back.
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in

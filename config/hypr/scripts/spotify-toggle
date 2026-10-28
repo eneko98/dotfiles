@@ -1,0 +1,15 @@
+#!/bin/sh
+# Bring Spotify back from `special:spotify` (where SUPER+C hides it), focus it
+# if it is on a normal workspace, or launch it if it is not running. Used by
+# the tray icon and by SUPER+Shift+S.
+clients=$(hyprctl clients -j)
+
+if printf '%s' "$clients" | jq -e '.[] | select(.class == "Spotify")' >/dev/null 2>&1; then
+    if printf '%s' "$clients" | jq -e '.[] | select(.class == "Spotify" and ((.workspace.name // "") | startswith("special:spotify")))' >/dev/null 2>&1; then
+        hyprctl dispatch 'hl.dsp.workspace.toggle_special("spotify")'
+    else
+        hyprctl dispatch 'hl.dsp.focus({ window = "class:Spotify" })'
+    fi
+else
+    spotify-launcher --skip-update >/dev/null 2>&1 &
+fi

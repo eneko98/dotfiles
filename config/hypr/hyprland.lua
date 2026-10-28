@@ -306,7 +306,10 @@ local screenshot = "$HOME/.config/hypr/scripts/screenshot"
 hl.bind("Print", hl.dsp.exec_cmd(screenshot))
 hl.bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd(screenshot .. " area"))
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd(screenshot .. " window"))
-hl.bind(mainMod .. " + C", hl.dsp.window.close())
+hl.bind(mainMod .. " + C", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/close-active"))
+-- Spotify has no close-to-tray: SUPER+C hides its window in `special:spotify`,
+-- and this (or a left click on its tray icon) brings it back.
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/spotify-toggle"))
 -- Escape hatch back to the TTY. This goes through uwsm on purpose: the session
 -- is no longer just a compositor, it is a set of systemd units, and killing the
 -- compositor directly would yank it out from under its clients and skip the
