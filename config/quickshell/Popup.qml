@@ -35,6 +35,10 @@ PanelWindow {
 
     property real panelWidth: 240
 
+    // Extra fill alpha for panels that should read more solid than the
+    // default translucent stage (the workspace overview). 0 is the norm.
+    property real panelExtra: 0
+
     // Panels that hang under the bar (the module popups, the control centre)
     // leave this false; a launcher in the middle of the screen sets it.
     property bool centerVertically: false
@@ -151,6 +155,7 @@ PanelWindow {
         from: root.fromRect
         to: root.finalRect
         fromRadius: root.trigger !== null ? root.trigger.height / 2 : -1
+        extra: root.panelExtra
         open: false
 
         focus: true

@@ -23,6 +23,10 @@ Item {
     property int fromLevel: 2
     property bool open: false
 
+    // Extra fill alpha for surfaces that need to read more solid than the
+    // shared pill/card (the workspace overview). 0 keeps the old behaviour.
+    property real extra: 0
+
     signal closed()
 
     default property alias content: contentItem.data
@@ -76,6 +80,7 @@ Item {
         anchors.fill: parent
         level: morph.t > 0.5 ? 3 : morph.fromLevel
         radius: morph.radiusNow
+        extra: morph.extra
     }
 
     Item {

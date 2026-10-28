@@ -93,6 +93,15 @@ ShellRoot {
         dashboardPanel.visible = true;
     }
 
+    // The workspace carousel, centred. It has no trigger: the gesture and the
+    // keybind open it from anywhere, so it fades in place.
+    function openOverview() {
+        if (barLoader.item === null)
+            return;
+        overview.rightMargin = (barLoader.item.width - overview.panelWidth) / 2;
+        overview.visible = true;
+    }
+
     // The launcher is centred too; the panel width is fixed by Launcher.qml.
     function openLauncher() {
         launcher.rightMargin = (barLoader.item.width - launcher.panelWidth) / 2;
@@ -271,6 +280,10 @@ ShellRoot {
         id: dashboardPanel
     }
 
+    Overview {
+        id: overview
+    }
+
     // The notification server, toasts and history. mako's service is disabled
     // while this owns org.freedesktop.Notifications.
     NotificationCenter {
@@ -367,6 +380,39 @@ ShellRoot {
 
         function close(): void {
             dashboardPanel.close();
+        }
+    }
+
+    // The workspace carousel, opened by the three-finger vertical gesture or
+    // SUPER+Tab (`qs ipc call overview toggle`).
+    IpcHandler {
+        target: "overview"
+
+        function toggle(): void {
+            if (overview.visible)
+                overview.close();
+            else
+                root.openOverview();
+        }
+
+        function close(): void {
+            overview.close();
+        }
+
+        function next(): void {
+            overview.step(1);
+        }
+
+        function prev(): void {
+            overview.step(-1);
+        }
+
+        function select(): void {
+            overview.select();
+        }
+
+        function state(): string {
+            return overview.current + "/" + overview.count;
         }
     }
 

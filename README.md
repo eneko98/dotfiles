@@ -134,6 +134,7 @@ component.
 | `SUPER + 1..0` | switch to workspace 1-10 |
 | `SUPER + Shift + 1..0` | move the focused window to workspace 1-10 |
 | `SUPER + scroll` | previous / next existing workspace |
+| `SUPER + Tab` | workspace carousel (Cover Flow) |
 | `Print` | screenshot the whole screen |
 | `SUPER + Shift + A` | screenshot an area you drag over |
 | `SUPER + Shift + W` | screenshot the focused window |
@@ -147,6 +148,14 @@ The launcher is our own Quickshell panel (`config/quickshell/Launcher.qml`): it
 searches `DesktopEntries` by name, generic name, comment and keywords, with
 keyboard selection. `fuzzel` stays installed and is still the dmenu behind the
 clipboard history and the session menu.
+
+**Workspace carousel.** `SUPER + Tab` (or a three-finger vertical swipe) opens
+a Cover Flow of the existing workspaces (`config/quickshell/Overview.qml`). The
+centre card previews the workspace's active window, the gold border marks the
+selection, and a gold dot marks the workspace you are actually on. Arrow keys
+or the wheel move it; Enter or a click jumps to the centre workspace; Escape or
+a click outside closes it. The three-finger horizontal swipe still switches
+workspaces.
 
 **System dashboard.** The chart zone on the right of the status pill (inside
 the same surface, after a hairline) opens a dedicated dashboard
