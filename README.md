@@ -148,7 +148,7 @@ keyboard selection. `fuzzel` stays installed and is still the dmenu behind the
 clipboard history and the session menu.
 
 **System dashboard.** The chart pill on the right of the bar (the separate
-`󰧑` surface next to the status pill, before the tray) opens a dedicated
+`󰄨` surface next to the status pill, before the tray) opens a dedicated
 dashboard (`config/quickshell/DashboardPanel.qml`): CPU with its sparkline,
 frequency and load; memory and zram; disk usage for `/`, `/home` and `/boot`;
 the active network interface with RX/TX rates; and the top five processes. It

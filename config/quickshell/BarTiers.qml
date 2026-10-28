@@ -1056,7 +1056,7 @@ PanelWindow {
 
         Text {
             anchors.centerIn: parent
-            text: "󰧑"
+            text: "󰄨"
             color: dashboardPillHover.hovered ? Theme.gold : Theme.fg1
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 14
