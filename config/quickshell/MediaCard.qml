@@ -32,10 +32,10 @@ Column {
 
     readonly property real length: player ? player.length : 0
 
-    function fmt(us) {
-        if (!us || us <= 0)
+    function fmt(s) {
+        if (!s || s <= 0)
             return "0:00";
-        const total = Math.floor(us / 1000000);
+        const total = Math.floor(s);
         return Math.floor(total / 60) + ":" + ("0" + total % 60).slice(-2);
     }
 
