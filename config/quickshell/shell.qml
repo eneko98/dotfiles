@@ -81,13 +81,14 @@ ShellRoot {
         systemPanel.visible = true;
     }
 
-    // The dedicated system dashboard (Resources' link and the `dashboard`
-    // IPC). Centred, so the margin is whatever is left on both sides.
-    function openDashboard() {
+    // The dedicated system dashboard: the dashboard pill (with a morph) or
+    // the IPC (centred, no trigger).
+    function openDashboard(fromPill) {
         if (barLoader.item === null)
             return;
         if (systemPanel.visible)
             systemPanel.close();
+        dashboardPanel.trigger = fromPill ? barLoader.item.dashboardPill : null;
         dashboardPanel.rightMargin = (barLoader.item.width - dashboardPanel.panelWidth) / 2;
         dashboardPanel.visible = true;
     }
@@ -135,6 +136,14 @@ ShellRoot {
             && barLoader.item !== null && systemPanel.trigger === barLoader.item.statusPill
     }
 
+    Binding {
+        target: barLoader.item
+        property: "dashboardHidden"
+        value: dashboardPanel.visible && dashboardPanel.trigger !== null
+            && barLoader.item !== null
+            && dashboardPanel.trigger === barLoader.item.dashboardPill
+    }
+
     // The bar asks; the shell owns the panels.
     Connections {
         target: barLoader.item
@@ -145,6 +154,10 @@ ShellRoot {
 
         function onSystemRequested(section) {
             root.openSystem(section);
+        }
+
+        function onDashboardRequested() {
+            root.openDashboard(true);
         }
     }
 
@@ -252,7 +265,6 @@ ShellRoot {
 
     SystemPanel {
         id: systemPanel
-        onDashboardRequested: root.openDashboard()
     }
 
     DashboardPanel {
@@ -350,7 +362,7 @@ ShellRoot {
             if (dashboardPanel.visible)
                 dashboardPanel.close();
             else
-                root.openDashboard();
+                root.openDashboard(true);
         }
 
         function close(): void {

@@ -19,6 +19,7 @@ PanelWindow {
     // The morph triggers, for the panels that grow out of them.
     readonly property alias island: island
     readonly property alias statusPill: statusPill
+    readonly property alias dashboardPill: dashboardPill
 
     // The notification centre, for the bell's counter and open action.
     property var notifications: null
@@ -26,12 +27,14 @@ PanelWindow {
     // Shared-element dips: the panel that grew out of a pill is up.
     property bool islandHidden: false
     property bool pillHidden: false
+    property bool dashboardHidden: false
 
     // The island asks for Today, the status modules ask for System (with
     // the section to open); the shell owns the panels and the trigger
-    // wiring.
+    // wiring. The dashboard pill asks for the dedicated dashboard.
     signal todayRequested()
     signal systemRequested(string section)
+    signal dashboardRequested()
 
     anchors {
         top: true
@@ -81,6 +84,8 @@ PanelWindow {
         Region { item: workspacesPill }
         Region { item: island }
         Region { item: statusPill }
+        Region { item: dashboardPill }
+        Region { item: trayPill }
     }
 
     // --- Left pill: the workspaces -------------------------------------
@@ -975,7 +980,8 @@ PanelWindow {
         anchors.right: parent.right
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
-        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
+        anchors.rightMargin: (trayPill.visible ? 14 + trayPill.width + 8 : 14)
+            + dashboardPill.width + 8
 
         width: modules.implicitWidth + 28
         height: 30
@@ -1014,6 +1020,46 @@ PanelWindow {
             Battery {
                 onActivated: function (section) { bar.systemRequested(section); }
             }
+        }
+    }
+
+    // The dashboard pill: its own surface, so it reads as a separate control
+    // rather than another status glyph. It opens the dashboard and fades out
+    // while the panel is up (the shared-element rule).
+    Surface {
+        id: dashboardPill
+        level: 1
+        lifted: dashboardPillHover.hovered
+
+        opacity: bar.dashboardHidden ? 0 : 1
+
+        Behavior on opacity {
+            NumberAnimation { duration: Motion.fade }
+        }
+
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: Tokens.space.xs
+        anchors.rightMargin: trayPill.visible ? 14 + trayPill.width + 8 : 14
+
+        width: 30
+        height: 30
+
+        HoverHandler { id: dashboardPillHover }
+
+        MouseArea {
+            anchors.fill: parent
+            z: -1
+            cursorShape: Qt.PointingHandCursor
+            onClicked: bar.dashboardRequested()
+        }
+
+        Text {
+            anchors.centerIn: parent
+            text: "󰧑"
+            color: dashboardPillHover.hovered ? Theme.gold : Theme.fg1
+            font.family: "JetBrainsMono Nerd Font"
+            font.pixelSize: 14
         }
     }
 

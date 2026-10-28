@@ -21,9 +21,6 @@ Popup {
     // The processes page, pushed over the sections from Resources' link.
     property bool showProcesses: false
 
-    // The shell opens the dedicated dashboard panel from Resources' link.
-    signal dashboardRequested()
-
     // The section to open/expand: "" | "sound" | "network" | "bluetooth" |
     // "battery" | "resources". Set by the shell from the status pill's
     // glyphs.
@@ -192,7 +189,6 @@ Popup {
         width: parent.width
 
         onProcessesRequested: root.showProcesses = true
-        onDashboardRequested: root.dashboardRequested()
     }
 
     // The processes page: pushed over the sections (the overlay layer of

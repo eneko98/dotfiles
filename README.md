@@ -147,13 +147,13 @@ searches `DesktopEntries` by name, generic name, comment and keywords, with
 keyboard selection. `fuzzel` stays installed and is still the dmenu behind the
 clipboard history and the session menu.
 
-**System dashboard.** The resources section of the System panel links to a
-dedicated dashboard (`config/quickshell/DashboardPanel.qml`): CPU with its
-sparkline, frequency and load; memory and zram; disk usage for `/`, `/home`
-and `/boot`; the active network interface with RX/TX rates; and the top five
-processes. It is read-only — the processes page and the session row still hold
-the actions. Disk, network and process sampling runs only while the panel is
-open.
+**System dashboard.** The chart pill on the right of the bar (the separate
+`󰧑` surface next to the status pill, before the tray) opens a dedicated
+dashboard (`config/quickshell/DashboardPanel.qml`): CPU with its sparkline,
+frequency and load; memory and zram; disk usage for `/`, `/home` and `/boot`;
+the active network interface with RX/TX rates; and the top five processes. It
+is read-only — the processes page and the session row still hold the actions.
+Disk, network and process sampling runs only while the panel is open.
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in

@@ -292,30 +292,30 @@ Item {
     property string lastNotifiedKey: ""
 
     function maybeNotifyToday() {
-        if (!root.notifyToday)
+        if (!cal.notifyToday)
             return;
-        const key = root.dateKey(root.today);
-        if (root.lastNotifiedKey === key)
+        const key = cal.dateKey(cal.today);
+        if (cal.lastNotifiedKey === key)
             return;
-        const events = root.eventsFor(root.today);
+        const events = cal.eventsFor(cal.today);
         if (events.length === 0)
             return;
-        root.lastNotifiedKey = key;
+        cal.lastNotifiedKey = key;
         Quickshell.execDetached(["notify-send", "-a", "Calendar", "-i", "x-office-calendar",
             "Today", events.join(" · ")]);
     }
 
     Timer {
         interval: 5000
-        running: root.notifyToday
-        onTriggered: root.maybeNotifyToday()
+        running: cal.notifyToday
+        onTriggered: cal.maybeNotifyToday()
     }
 
     Timer {
         interval: 60000
         repeat: true
-        running: root.notifyToday
-        onTriggered: root.maybeNotifyToday()
+        running: cal.notifyToday
+        onTriggered: cal.maybeNotifyToday()
     }
 
     // The month header floats above the sliding grids: title centred, arrows
