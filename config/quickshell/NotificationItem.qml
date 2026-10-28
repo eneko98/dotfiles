@@ -31,7 +31,7 @@ Item {
     property int tick: 0
 
     readonly property bool critical: modelData ? modelData.urgency === 2 : false
-    readonly property bool unread: modelData && server ? !server.read[modelData.id] : false
+    readonly property bool unread: modelData && server ? !server.isRead(modelData) : false
     readonly property bool expandedBody: bodyLabel.maximumLineCount === Infinity
     readonly property bool hoverable: cardArea.containsMouse
 
@@ -278,7 +278,8 @@ Item {
                 spacing: Tokens.space.s
 
                 Repeater {
-                    model: root.modelData ? root.modelData.actions : []
+                    model: root.modelData && root.modelData.actions
+                        ? root.modelData.actions : []
 
                     delegate: Pressable {
                         required property var modelData

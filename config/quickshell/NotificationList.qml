@@ -24,8 +24,16 @@ Column {
     function groups() {
         // `expandedGroups` is read so the binding re-evaluates on toggle.
         const expanded = root.expandedGroups;
-        const values = server ? server.tracked.values.slice() : [];
-        values.reverse();
+        const live = server ? server.tracked.values.slice() : [];
+        const liveIds = {};
+        for (let i = 0; i < live.length; ++i)
+            liveIds["n:" + live[i].id] = true;
+        const restored = server && server.restored
+            ? server.restored.filter(function (n) { return !liveIds[n.uid]; })
+            : [];
+        // Oldest first, then reverse: live arrivals stay on top and the
+        // previous session's entries fall below.
+        const values = restored.concat(live).reverse();
         const map = {};
         const order = [];
         for (let i = 0; i < values.length; ++i) {
@@ -57,8 +65,12 @@ Column {
         return result;
     }
 
-    function stampMs(id) {
-        const stamp = server ? server.stamp(id) : 0;
+    function stampMs(n) {
+        if (!n)
+            return 0;
+        if (n.restored)
+            return n.receivedAt || 0;
+        const stamp = server ? server.stamp(n.id) : 0;
         return stamp === undefined || stamp === null ? 0 : stamp;
     }
 
@@ -229,7 +241,7 @@ Column {
                 delegate: NotificationItem {
                     width: root.width
                     server: root.server
-                    receivedAt: root.stampMs(modelData.id)
+                    receivedAt: root.stampMs(modelData)
 
                     onDismissed: {
                         if (root.server)
