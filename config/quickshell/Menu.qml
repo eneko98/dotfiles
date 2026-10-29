@@ -29,6 +29,8 @@ import QtQuick
 PanelWindow {
     id: root
 
+    WlrLayershell.namespace: Tokens.ns.menu
+
     // One QsMenuOpener per level, root first, current last.
     property var openers: []
 

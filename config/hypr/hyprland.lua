@@ -21,6 +21,21 @@ local function rgba(hex, alpha)
     return "rgba(" .. hex:gsub("#", "") .. (alpha or "ff") .. ")"
 end
 
+-- Reduced motion is persisted by the shell in bar-state.json. Hyprland reads
+-- it at config load so movement/resizing/sliding leaves can be disabled; only
+-- short fades survive.
+local function reduced_motion()
+    local state_home = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
+    local f = io.open(state_home .. "/dotfiles/bar-state.json", "r")
+    if not f then
+        return false
+    end
+    local content = f:read("*a")
+    f:close()
+    return content:match('"reducedMotion"%s*:%s*true') ~= nil
+end
+local reduced = reduced_motion()
+
 -----------------
 ---- MONITOR -----
 -----------------
@@ -177,34 +192,61 @@ hl.config({
 hl.layer_rule({ match = { namespace = "launcher" }, blur = true, animation = "popin" })
 hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
 
+-- Quickshell surfaces animate themselves in QML; Hyprland layer animations on
+-- top would double them. Disable them for the shell's own namespaces. The lock
+-- is an ext-session-lock surface, not a layer, so it does not need a rule.
+hl.layer_rule({ match = { namespace = "quickshell-bar" },   no_anim = true })
+hl.layer_rule({ match = { namespace = "quickshell-stage" },  no_anim = true })
+hl.layer_rule({ match = { namespace = "quickshell-menu" },   no_anim = true })
+
 ------------------
 --- ANIMATIONS ---
 ------------------
--- Subtle motion: beziers, no springs, so nothing bounces. `open` is an ease-out
--- (starts, then settles) for anything appearing, `close` a soft ease-in-out that
--- never lingers, and `glide` is nearly linear for workspaces. The launcher pops
--- in (style popin) rather than fading, so it feels like it appears at once.
--- Curves are declared with hl.curve; there is no hl.bezier.
-hl.curve("open",  { type = "bezier", points = { {0.22, 1}, {0.36, 1} } })
-hl.curve("close", { type = "bezier", points = { {0.4, 0},  {0.2, 1}  } })
-hl.curve("glide", { type = "bezier", points = { {0.5, 0.5}, {0.75, 1} } })
+-- Motion design is shared with the shell: the curves below are the same as
+-- Motion.qml (open = decel, close = accel, glide = standard) and speeds are
+-- duration_ms / 10. With reduced motion, windows/layers/workspaces/special
+-- are disabled and the remaining fades shorten to 80 ms.
+hl.curve("open",  { type = "bezier", points = { {0.05, 0.7}, {0.1, 1.0} } })
+hl.curve("close", { type = "bezier", points = { {0.3, 0.0}, {0.8, 0.15} } })
+hl.curve("glide", { type = "bezier", points = { {0.2, 0.0}, {0.0, 1.0} } })
 
-hl.animation({ leaf = "windows",       enabled = true, speed = 3.0, bezier = "open" })
-hl.animation({ leaf = "windowsIn",     enabled = true, speed = 2.8, bezier = "open" })
-hl.animation({ leaf = "windowsOut",    enabled = true, speed = 2.2, bezier = "close" })
-hl.animation({ leaf = "border",        enabled = true, speed = 3.0, bezier = "open" })
-hl.animation({ leaf = "fade",          enabled = true, speed = 2.5, bezier = "glide" })
-hl.animation({ leaf = "fadeIn",        enabled = true, speed = 2.5, bezier = "open" })
-hl.animation({ leaf = "fadeOut",       enabled = true, speed = 2.0, bezier = "close" })
-hl.animation({ leaf = "layers",        enabled = true, speed = 3.0, bezier = "open",  style = "fade" })
-hl.animation({ leaf = "layersIn",      enabled = true, speed = 3.0, bezier = "open",  style = "fade" })
-hl.animation({ leaf = "layersOut",     enabled = true, speed = 2.0, bezier = "close", style = "fade" })
-hl.animation({ leaf = "fadeLayersIn",  enabled = true, speed = 2.5, bezier = "open" })
-hl.animation({ leaf = "fadeLayersOut", enabled = true, speed = 2.0, bezier = "close" })
-hl.animation({ leaf = "workspaces",    enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
-hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
-hl.animation({ leaf = "workspacesOut", enabled = true, speed = 2.2, bezier = "glide", style = "fade" })
-hl.animation({ leaf = "zoomFactor",    enabled = true, speed = 4.0, bezier = "open" })
+local anim = {
+    { "windows",          true,  2.4, "glide" },
+    { "windowsIn",        true,  2.4, "open",  "popin 94%" },
+    { "windowsOut",       true,  1.8, "close", "popin 96%" },
+    { "windowsMove",      true,  2.4, "glide" },
+    { "layers",           true,  1.8, "open" },
+    { "layersIn",         true,  1.8, "open",  "fade" },
+    { "layersOut",        true,  1.2, "close", "fade" },
+    { "fade",             true,  1.8, "glide" },
+    { "fadeIn",           true,  1.8, "glide" },
+    { "fadeOut",          true,  1.2, "close" },
+    { "fadeSwitch",       true,  1.2, "glide" },
+    { "fadeDim",          true,  2.4, "glide" },
+    { "fadeLayersIn",     true,  1.8, "open" },
+    { "fadeLayersOut",    true,  1.2, "close" },
+    { "fadeShadow",       false },
+    { "border",           true,  1.2, "glide" },
+    { "borderangle",      false },
+    { "workspaces",       true,  2.4, "glide", "slide" },
+    { "specialWorkspace", true,  2.4, "open",  "slidevert" },
+}
+
+for _, a in ipairs(anim) do
+    local leaf = a[1]
+    local enabled = a[2]
+    if reduced and (leaf:match("^windows") or leaf:match("^layers")
+                    or leaf:match("^workspaces") or leaf:match("^specialWorkspace")) then
+        enabled = false
+    end
+    if enabled then
+        local spec = { leaf = leaf, enabled = true, speed = reduced and 0.8 or a[3], bezier = a[4] }
+        if a[5] then spec.style = a[5] end
+        hl.animation(spec)
+    else
+        hl.animation({ leaf = leaf, enabled = false })
+    end
+end
 
 ------------------
 ---- GESTURES ----

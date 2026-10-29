@@ -32,7 +32,7 @@ Singleton {
 
     // Hyprland applies blur per layer namespace; these are the ones the shell
     // uses, so the layer rules and the QML stay in sync by construction.
-    readonly property var ns: ({ bar: "quickshell-bar", stage: "quickshell-stage", osd: "quickshell-osd" })
+    readonly property var ns: ({ bar: "quickshell-bar", stage: "quickshell-stage", menu: "quickshell-menu", osd: "quickshell-osd" })
 
     function level(n, hovered) {
         if (n >= 3) return e3;

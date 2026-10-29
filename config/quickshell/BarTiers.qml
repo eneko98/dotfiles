@@ -10,11 +10,14 @@
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
 
 PanelWindow {
     id: bar
+
+    WlrLayershell.namespace: Tokens.ns.bar
 
     // The morph triggers, for the panels that grow out of them.
     readonly property alias island: island
