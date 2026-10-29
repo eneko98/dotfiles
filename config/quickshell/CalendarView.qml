@@ -147,8 +147,18 @@ Item {
 
     readonly property string monthLabel: Qt.formatDateTime(cal.base, "MMMM yyyy")
 
-    function commit(direction) {
-        snap.to = -direction * cal.width;
+    function commit(direction, velocity) {
+        const target = -direction * cal.width;
+        if (velocity === undefined) {
+            snap.duration = Motion.medium;
+            snap.easing.bezierCurve = Motion.decel;
+        } else {
+            const distance = Math.abs(target - cal.offset);
+            snap.duration = Motion.release(distance, velocity,
+                                            Motion.flingSlope, 160, 240);
+            snap.easing.bezierCurve = Motion.fling;
+        }
+        snap.to = target;
         snap.direction = direction;
         snap.start();
     }
@@ -226,12 +236,16 @@ Item {
         }
 
         onSwiped: function (direction, velocity) {
-            cal.commit(direction === "left" ? 1 : -1);
+            cal.commit(direction === "left" ? 1 : -1, velocity);
         }
 
-        onReleased: function (axis) {
+        onReleased: function (axis, velocity) {
             if (axis !== "x")
                 return;
+            const distance = Math.abs(cal.offset);
+            snap.duration = Motion.release(distance, velocity,
+                                            Motion.flingSlope, 160, 240);
+            snap.easing.bezierCurve = Motion.fling;
             snap.to = 0;
             snap.direction = 0;
             snap.start();

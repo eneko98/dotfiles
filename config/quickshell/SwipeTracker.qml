@@ -4,8 +4,11 @@
 // It accumulates pixelDelta, locks to an axis after `axisLock` px, and on
 // release (idleMs without events) decides: a swipe past the threshold or a
 // fast flick emits `swiped(direction, velocity)`; anything else emits
-// `released(axis)`. Mouse wheels (angleDelta without pixelDelta) are reported
-// through `wheeled(direction)` and never count as swipes.
+// `released(axis, velocity)`. Mouse wheels (angleDelta without pixelDelta) are
+// reported through `wheeled(direction)` and never count as swipes.
+//
+// Velocity is the slope of the samples in the last `sampleMs` milliseconds, so
+// the release animation starts at the finger's speed (see Motion.release()).
 //
 // It is not visual: put it over the area, anchored to fill.
 import QtQuick
@@ -29,7 +32,7 @@ Item {
     property var _samples: []
 
     signal swiped(string direction, real velocity)
-    signal released(string axis)
+    signal released(string axis, real velocity)
     signal wheeled(string direction, int modifiers)
     signal moved(real offset)
 
@@ -42,11 +45,14 @@ Item {
         root._samples = [];
     }
 
+    // Velocity from the samples within the last `sampleMs` milliseconds.
     function velocity() {
-        if (root._samples.length < 2)
+        const now = Date.now();
+        const recent = root._samples.filter(s => now - s.t <= root.sampleMs);
+        if (recent.length < 2)
             return 0;
-        const first = root._samples[0];
-        const last = root._samples[root._samples.length - 1];
+        const first = recent[0];
+        const last = recent[recent.length - 1];
         const dt = last.t - first.t;
         if (dt <= 0)
             return 0;
@@ -58,19 +64,19 @@ Item {
             root.reset();
             return;
         }
+        const v = root.velocity();
         if (root.axis === "x") {
-            const v = root.velocity();
             const width = root.width;
             if (Math.abs(root.offset) > width * root.threshold
-                || Math.abs(v) > root.velocityThreshold) {
+                || (Math.abs(v) > root.velocityThreshold && Math.abs(root.offset) >= 12)) {
                 root.swiped(root.offset < 0 || v < 0 ? "left" : "right", v);
             } else {
-                root.released("x");
+                root.released("x", v);
             }
         } else {
             if (Math.abs(root._sumY) > 20)
                 root.wheeled(root._sumY > 0 ? "down" : "up", 0);
-            root.released("y");
+            root.released("y", 0);
         }
         root.reset();
     }
@@ -112,7 +118,7 @@ Item {
             root.offset += dx;
             root.moved(root.offset);
             root._samples = root._samples.concat([{ t: Date.now(), dx: root.offset }])
-                .slice(-8);
+                .slice(-16);
             idle.restart();
         }
     }

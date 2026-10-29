@@ -435,18 +435,26 @@ PanelWindow {
                 if (swipeGesture.axis === "x") {
                     island.swipeOffset = offset;
                     island.swipeAlpha = Math.max(0.15,
-                        1 - Math.abs(offset) / (island.width * 1.2));
+                        1 - Math.abs(offset) / (island.width * 0.6));
                 }
             }
 
             onSwiped: function (direction, velocity) {
-                swipeOutAnim.stop();
-                swipeOutAnim.to = direction === "left" ? -island.width : island.width;
+                const target = direction === "left" ? -island.width : island.width;
+                const distance = Math.abs(target - island.swipeOffset);
+                swipeOutAnim.to = target;
+                swipeOutAnim.duration = Motion.release(distance, velocity,
+                                                        Motion.flingSlope, 120, 240);
+                swipeOutAnim.easing.bezierCurve = Motion.fling;
                 swipeOutAnim.start();
             }
 
-            onReleased: function (axis) {
+            onReleased: function (axis, velocity) {
                 if (axis === "x") {
+                    const distance = Math.abs(island.swipeOffset);
+                    swipeBackAnim.duration = Motion.release(distance, velocity,
+                                                             Motion.flingSlope, 160, 240);
+                    swipeBackAnim.easing.bezierCurve = Motion.fling;
                     island.swipeAlpha = 1;
                     swipeBackAnim.start();
                 }

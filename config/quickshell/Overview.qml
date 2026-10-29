@@ -23,12 +23,13 @@ Popup {
     // not part of the carousel.
     readonly property var workspaces: Hyprland.workspaces.values.filter(w => w.id >= 0)
     readonly property int count: workspaces.length
+    readonly property real cardWidth: 420
 
     property int current: 0
-
-    // Live two-finger drag offset, in pixels: the cards follow the fingers
-    // while SwipeTracker reports movement and snap on release.
-    property real drag: 0
+    // Continuous carousel position in cards (0 = current workspace centred).
+    // Keyboard/step changes animate this; the drag sets it 1:1 with the finger.
+    property real p: 0
+    property real dragStartP: 0
     property bool dragging: false
 
     function syncCurrent() {
@@ -44,7 +45,15 @@ Popup {
     function step(delta) {
         if (count === 0)
             return;
-        current = Math.max(0, Math.min(count - 1, current + delta));
+        const base = snap.running ? snap.to : current;
+        const target = Math.max(0, Math.min(count - 1, base + delta));
+        if (target === base)
+            return;
+        snap.stop();
+        snap.duration = Motion.fast;
+        snap.easing.bezierCurve = Motion.standard;
+        snap.to = target;
+        snap.start();
     }
 
     function select() {
@@ -52,6 +61,16 @@ Popup {
             workspaces[current].activate();
             close();
         }
+    }
+
+    NumberAnimation {
+        id: snap
+        target: root
+        property: "p"
+        duration: Motion.medium
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Motion.decel
+        onFinished: root.current = Math.round(root.p)
     }
 
     // The base Popup already owns onVisibleChanged (it arms the morph and
@@ -64,6 +83,7 @@ Popup {
         function onVisibleChanged() {
             if (root.visible) {
                 root.syncCurrent();
+                root.p = root.current;
                 Qt.callLater(function () { carousel.forceActiveFocus(); });
             }
         }
@@ -124,7 +144,7 @@ Popup {
                     required property HyprlandWorkspace modelData
                     required property int index
 
-                    readonly property int distance: index - root.current
+                    readonly property real distance: index - root.p
                     readonly property var preview: {
                         const list = modelData.toplevels.values;
                         for (let i = 0; i < list.length; i++) {
@@ -134,51 +154,38 @@ Popup {
                         return list.length > 0 ? list[0] : null;
                     }
 
-                    width: 420
+                    width: root.cardWidth
                     height: 260
-                    x: cards.width / 2 - width / 2 + distance * 300 + root.drag
-                    scale: 1 - Math.min(2, Math.abs(distance)) * 0.12
-                    opacity: 1 - Math.min(2, Math.abs(distance)) * 0.2
-                    z: 20 - Math.abs(distance)
+                    x: {
+                        const center = cards.width / 2 - root.cardWidth / 2;
+                        const d = index - root.p;
+                        let offset;
+                        if (Math.abs(d) <= 1) {
+                            offset = d * 0.55 * root.cardWidth;
+                        } else {
+                            offset = Math.sign(d) * (0.55 * root.cardWidth
+                                + (Math.abs(d) - 1) * 0.25 * root.cardWidth);
+                        }
+                        return center + offset;
+                    }
+                    scale: {
+                        const d = Math.abs(index - root.p);
+                        return 1 - 0.16 * Math.min(d, 1)
+                                 - 0.06 * Math.max(0, Math.min(d - 1, 1));
+                    }
+                    opacity: {
+                        const d = Math.abs(index - root.p);
+                        return 1 - 0.3 * Math.min(d, 2) / 2;
+                    }
+                    z: -Math.abs(index - root.p)
 
                     transform: Rotation {
                         origin.x: cardItem.width / 2
                         origin.y: cardItem.height / 2
                         axis { x: 0; y: 1; z: 0 }
-                        angle: Math.max(-28, Math.min(28, -distance * 18))
-
-                        Behavior on angle {
-                            NumberAnimation {
-                                duration: Motion.medium
-                                easing.type: Easing.BezierSpline
-                                easing.bezierCurve: Motion.decel
-                            }
-                        }
-                    }
-
-                    Behavior on x {
-                        enabled: !root.dragging
-
-                        NumberAnimation {
-                            duration: Motion.medium
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: Motion.decel
-                        }
-                    }
-
-                    Behavior on scale {
-                        NumberAnimation {
-                            duration: Motion.medium
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: Motion.decel
-                        }
-                    }
-
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Motion.medium
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: Motion.decel
+                        angle: {
+                            const d = index - root.p;
+                            return -Math.sign(d) * 30 * Math.min(Math.abs(d), 1);
                         }
                     }
 
@@ -278,6 +285,7 @@ Popup {
                         cursorShape: Qt.PointingHandCursor
 
                         onClicked: {
+                            root.p = cardItem.index;
                             root.current = cardItem.index;
                             root.select();
                         }
@@ -297,20 +305,36 @@ Popup {
             velocityThreshold: 0.2
 
             onMoved: function (offset) {
-                root.dragging = true;
-                root.drag = offset;
+                if (!root.dragging) {
+                    root.dragStartP = root.p;
+                    root.dragging = true;
+                }
+                root.p = root.dragStartP - offset / root.cardWidth;
             }
 
-            onSwiped: function (direction) {
+            onSwiped: function (direction, velocity) {
                 root.dragging = false;
-                root.drag = 0;
-                root.step(direction === "left" ? 1 : -1);
+                const target = Math.max(0, Math.min(root.count - 1,
+                    root.current + (direction === "left" ? 1 : -1)));
+                const distance = Math.abs(target - root.p) * root.cardWidth;
+                snap.duration = Motion.release(distance, velocity,
+                                                Motion.snapSlope, 160, 320);
+                snap.easing.bezierCurve = Motion.snap;
+                snap.to = target;
+                snap.start();
             }
 
-            onReleased: function (axis) {
+            onReleased: function (axis, velocity) {
                 if (axis === "x") {
                     root.dragging = false;
-                    root.drag = 0;
+                    const target = Math.max(0, Math.min(root.count - 1,
+                                                        Math.round(root.p)));
+                    const distance = Math.abs(target - root.p) * root.cardWidth;
+                    snap.duration = Motion.release(distance, velocity,
+                                                    Motion.snapSlope, 160, 320);
+                    snap.easing.bezierCurve = Motion.snap;
+                    snap.to = target;
+                    snap.start();
                 }
             }
 
