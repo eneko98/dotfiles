@@ -35,7 +35,7 @@ Item {
         NumberAnimation {
             duration: Motion.fast
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.decel
+            easing.bezierCurve: Motion.standard
         }
     }
 
@@ -83,7 +83,11 @@ Item {
         color: root.enabled ? Theme.fg0 : Theme.fg2
 
         Behavior on width {
-            NumberAnimation { duration: Motion.fast }
+            NumberAnimation {
+                duration: Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
         }
 
         RectangularShadow {

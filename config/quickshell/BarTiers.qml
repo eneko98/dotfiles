@@ -235,14 +235,6 @@ PanelWindow {
         // back only when the return morph has finished).
         opacity: bar.islandHidden ? 0 : 1
 
-        Behavior on opacity {
-            NumberAnimation {
-                duration: Motion.fade
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.standard
-            }
-        }
-
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
@@ -990,14 +982,6 @@ PanelWindow {
         lifted: statusPillHover.hovered
 
         opacity: bar.pillHidden ? 0 : 1
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: Motion.fade
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.standard
-            }
-        }
 
         Behavior on width {
             NumberAnimation {

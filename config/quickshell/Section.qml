@@ -74,6 +74,7 @@ Column {
                         easing.bezierCurve: Motion.standard
                     }
                 }
+
             }
         }
     }
@@ -85,16 +86,31 @@ Column {
         clip: true
 
         Behavior on height {
-            NumberAnimation {
-                duration: Motion.medium
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.standard
+            SequentialAnimation {
+                PauseAnimation { duration: root.expanded ? 0 : 60 }
+                NumberAnimation {
+                    duration: root.expanded ? Motion.medium : Motion.base
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
         }
 
         Column {
             id: contentCol
             width: parent.width
+            opacity: root.expanded ? 1 : 0
+
+            Behavior on opacity {
+                SequentialAnimation {
+                    PauseAnimation { duration: root.expanded ? 60 : 0 }
+                    NumberAnimation {
+                        duration: root.expanded ? Motion.base : Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: root.expanded ? Motion.decel : Motion.accel
+                    }
+                }
+            }
         }
     }
 }

@@ -29,6 +29,31 @@ Item {
 
     signal closed()
 
+    // Popups without a trigger (launcher, picker, overview) fade/scale in place
+    // instead of morphing out of a bar pill.
+    transformOrigin: Item.Center
+    scale: morph.fromRadius < 0 ? (morph.open ? 1 : 0.98) : 1
+    Behavior on scale {
+        NumberAnimation {
+            duration: morph.open ? Motion.medium : Motion.fast
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: morph.open ? Motion.decel : Motion.accel
+        }
+    }
+
+    transform: Translate {
+        id: noTriggerLift
+        y: morph.fromRadius < 0 ? (morph.open ? 0 : -6) : 0
+
+        Behavior on y {
+            NumberAnimation {
+                duration: morph.open ? Motion.medium : Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: morph.open ? Motion.decel : Motion.accel
+            }
+        }
+    }
+
     default property alias content: contentItem.data
 
     property real t: 0
@@ -54,12 +79,15 @@ Item {
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Motion.decel
     }
-    NumberAnimation {
+    SequentialAnimation {
         id: closeAnim
-        target: morph; property: "t"; to: 0
-        duration: Motion.base
-        easing.type: Easing.BezierSpline
-        easing.bezierCurve: Motion.accel
+        PauseAnimation { duration: 60 }
+        NumberAnimation {
+            target: morph; property: "t"; to: 0
+            duration: Motion.base
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.accel
+        }
         onFinished: morph.closed()
     }
 
@@ -90,5 +118,18 @@ Item {
         clip: true
         opacity: morph.open ? Math.max(0, (morph.t - 0.4) / 0.6)
                             : Math.max(0, (morph.t - 0.6) / 0.4)
+
+        property real shiftY: morph.open ? 0 : 8
+        transform: Translate { id: contentShift; y: contentItem.shiftY }
+        Behavior on shiftY {
+            SequentialAnimation {
+                PauseAnimation { duration: morph.open ? Math.round(Motion.medium * 0.4) : 0 }
+                NumberAnimation {
+                    duration: morph.open ? Motion.base : 0
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.decel
+                }
+            }
+        }
     }
 }

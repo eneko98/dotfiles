@@ -67,7 +67,11 @@ Pressable {
             : Qt.rgba(Theme.gold.r, Theme.gold.g, Theme.gold.b, 0.30)
 
         Behavior on color {
-            ColorAnimation { duration: Motion.fast }
+            ColorAnimation {
+                duration: Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
         }
 
         Row {
@@ -93,7 +97,11 @@ Pressable {
                 font.pixelSize: 12
 
                 Behavior on color {
-                    ColorAnimation { duration: Motion.fast }
+                    ColorAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.standard
+                    }
                 }
             }
         }

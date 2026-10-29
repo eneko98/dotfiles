@@ -24,11 +24,16 @@ Item {
     // Shadow: stays at the base level so its blur never snaps.
     readonly property var shadowT: Tokens.level(level, false)
 
+    // Exposed so callers (MorphPanel) can override the corner radius.
+    property real radius: height / 2
+    // Exposed so callers (Overview cards) can override the border colour.
+    property color borderColor: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, root.t.stroke)
+
     // The visible surface: lifted 1 px on hover, shadow stays put.
     Rectangle {
         id: fill
         anchors.fill: parent
-        radius: height / 2
+        radius: root.radius
 
         property real liftY: root.lifted ? -1 : 0
 
@@ -38,7 +43,7 @@ Item {
                            Math.min(1, a + root.extra));
         }
         border.width: 1
-        border.color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, root.t.stroke)
+        border.color: root.borderColor
 
         transform: Translate { y: fill.liftY }
 
@@ -74,7 +79,7 @@ Item {
     RectangularShadow {
         z: -1
         anchors.fill: parent
-        radius: fill.radius
+        radius: root.radius
         blur: root.shadowT.shadowBlur
         offset.y: root.shadowT.shadowY
         color: Qt.rgba(0, 0, 0, root.shadowT.shadowAlpha)

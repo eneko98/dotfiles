@@ -188,7 +188,7 @@ Popup {
                         anchors.fill: parent
                         level: 2
                         radius: 14
-                        border.color: cardItem.distance === 0
+                        borderColor: cardItem.distance === 0
                             ? Theme.gold
                             : Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.12)
                     }

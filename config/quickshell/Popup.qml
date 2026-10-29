@@ -124,9 +124,9 @@ PanelWindow {
 
         Behavior on opacity {
             NumberAnimation {
-                duration: Motion.base
+                duration: root.visible ? Motion.base : Motion.fast
                 easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.decel
+                easing.bezierCurve: root.visible ? Motion.standard : Motion.accel
             }
         }
     }
