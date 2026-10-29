@@ -5,8 +5,8 @@
 // unread one carries a neon dot by the app name.
 //
 // Dismiss: the x button on hover, or a two-finger horizontal swipe -- the
-// card follows the gesture with fading opacity, commits past 35% of its
-// width or a 0.6px/ms flick, and collapses its height on the way out.
+// card follows the finger 1:1 and, on release, either leaves through the
+// nearest side (fling, velocity-aware) or springs back (fling).
 import Quickshell
 import QtQuick
 import QtQuick.Effects
@@ -21,11 +21,8 @@ Item {
     // The card leaves in two steps: fade+collapse (this property) and only
     // then the actual dismiss, so the list does not reflow early.
     property bool dying: false
-    property real offset: 0
-    property string axis: ""
-    property real _accX: 0
-    property real _accY: 0
-    property var _samples: []
+    property bool inserted: false      // false until Component.onCompleted
+    property real offset: 0            // horizontal swipe offset in px
 
     // Time refresher: relative labels update once a minute.
     property int tick: 0
@@ -56,22 +53,28 @@ Item {
     implicitHeight: (modelData ? content.implicitHeight + Tokens.space.m * 2 : 0)
 
     width: parent.width
-    height: dying ? 0 : implicitHeight
+    height: dying ? 0 : (inserted ? implicitHeight : 0)
     clip: true
-    opacity: dying ? 0 : 1 - Math.min(0.8, Math.abs(offset) / Math.max(1, width))
+    opacity: dying ? 0 : (inserted ? 1 - Math.min(0.8, Math.abs(offset) / Math.max(1, width)) : 0)
 
+    // Insertion: height and opacity grow together, opacity delayed 60 ms.
     Behavior on height {
-        NumberAnimation {
-            duration: Motion.base
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.accel
+        SequentialAnimation {
+            NumberAnimation {
+                duration: inserted ? Motion.base : Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: inserted ? Motion.decel : Motion.accel
+            }
         }
     }
     Behavior on opacity {
-        NumberAnimation {
-            duration: Motion.base
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.accel
+        SequentialAnimation {
+            PauseAnimation { duration: inserted ? 60 : 0 }
+            NumberAnimation {
+                duration: inserted ? Motion.base : Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: inserted ? Motion.decel : Motion.accel
+            }
         }
     }
 
@@ -81,6 +84,8 @@ Item {
         repeat: true
         onTriggered: root.tick++
     }
+
+    Component.onCompleted: root.inserted = true
 
     function relative() {
         // touch `tick` so the binding re-evaluates once a minute
@@ -95,60 +100,59 @@ Item {
         return Math.round(s / 86400) + " d";
     }
 
-    function release() {
-        const now = Date.now();
-        const recent = _samples.filter(s => now - s.t < 80);
-        const v = recent.length > 1
-            ? (recent[recent.length - 1].dx - recent[0].dx)
-              / Math.max(1, recent[recent.length - 1].t - recent[0].t)
-            : 0;
-        _samples = [];
-        axis = "";
-        _accX = 0;
-        _accY = 0;
-        const far = Math.abs(offset) > width * 0.35;
-        const fast = Math.abs(v) > 0.6 && Math.abs(offset) > 12;
-        if (far || fast) {
+    NumberAnimation {
+        id: swipeOutAnim
+        target: root
+        property: "offset"
+        duration: Motion.fast
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Motion.accel
+        onFinished: {
             root.dying = true;
             root.dismissed();
-        } else {
-            offset = 0;
         }
     }
 
-    Timer {
-        id: idle
-        interval: 90
-        onTriggered: root.release()
+    NumberAnimation {
+        id: swipeBackAnim
+        target: root
+        property: "offset"
+        to: 0
+        duration: Motion.medium
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Motion.standard
     }
 
-    // The gesture: WheelHandler never fires on this Wayland stack, so the
-    // wheel is read from a MouseArea with no buttons (clicks pass through).
-    MouseArea {
+    // The gesture is the shared SwipeTracker; vertical scroll is released
+    // to the panel's Flickable.
+    SwipeTracker {
+        id: swipe
         anchors.fill: parent
-        z: 1
-        acceptedButtons: Qt.NoButton
+        threshold: 0.35
+        velocityThreshold: 0.6
 
-        onWheel: function (event) {
-            const dx = event.inverted ? event.pixelDelta.x : -event.pixelDelta.x;
-            const dy = event.pixelDelta.y;
-            if (root.axis === "") {
-                root._accX += Math.abs(dx);
-                root._accY += Math.abs(dy);
-                if (root._accX + root._accY < 8) {
-                    idle.restart();
-                    return;
-                }
-                root.axis = root._accX >= root._accY ? "x" : "y";
-            }
-            if (root.axis === "y") {
-                event.accepted = false;
-                idle.restart();
+        onMoved: function (offset) {
+            root.offset = Math.max(-root.width, Math.min(root.width, offset));
+        }
+
+        onSwiped: function (direction, velocity) {
+            const target = direction === "left" ? -root.width : root.width;
+            const distance = Math.abs(target - root.offset);
+            swipeOutAnim.to = target;
+            swipeOutAnim.duration = Motion.release(distance, velocity,
+                                                    Motion.flingSlope, 120, 240);
+            swipeOutAnim.easing.bezierCurve = Motion.fling;
+            swipeOutAnim.start();
+        }
+
+        onReleased: function (axis, velocity) {
+            if (axis !== "x")
                 return;
-            }
-            root.offset = Math.max(-root.width, Math.min(root.width, root.offset + dx));
-            root._samples = root._samples.concat([{ t: Date.now(), dx: root.offset }]).slice(-8);
-            idle.restart();
+            const distance = Math.abs(root.offset);
+            swipeBackAnim.duration = Motion.release(distance, velocity,
+                                                     Motion.flingSlope, 160, 240);
+            swipeBackAnim.easing.bezierCurve = Motion.fling;
+            swipeBackAnim.start();
         }
     }
 

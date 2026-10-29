@@ -196,18 +196,31 @@ Singleton {
         property: "progress"
         from: 1
         to: 0
-        paused: island.hovered || island.osdKind !== ""
         easing.type: Easing.Linear
         onFinished: island.dismissCurrent()
     }
 
-    onHoveredChanged: {
-        if (island.current === null || island.current.urgency === 2)
+    // Pause the countdown while hovered or while an OSD is showing. Only
+    // touch the property when the animation is running; otherwise Qt warns
+    // (and ignores) the setPaused call.
+    function syncPause() {
+        if (!notifAnim.running)
             return;
-        // Hover pauses the countdown; leaving resumes it from where it was.
-        if (island.hovered)
-            notifAnim.pause();
-        else
-            notifAnim.resume();
+        const wantPause = island.hovered || island.osdKind !== "";
+        if (notifAnim.paused !== wantPause)
+            notifAnim.paused = wantPause;
+    }
+
+    Connections {
+        target: island
+        function onHoveredChanged() { island.syncPause(); }
+        function onOsdKindChanged() { island.syncPause(); }
+    }
+
+    onCurrentChanged: {
+        // When a new notification arrives, make sure the countdown is not
+        // left paused by a previous hover/OSD state.
+        if (notifAnim.running)
+            notifAnim.paused = false;
     }
 }

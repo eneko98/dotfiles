@@ -356,13 +356,17 @@ PanelWindow {
             }
         }
 
-        // The hover expansion: same idea on the height (the container has a
-        // matching Behavior so the content is clipped in step).
+        // Hover expansion: height grows with medium/decel; collapse waits
+        // hoverOut + 60 ms so the cursor can leave without a fight, then
+        // shrinks with base/standard (content before space).
         Behavior on height {
-            NumberAnimation {
-                duration: Motion.medium
-                easing.type: Easing.BezierSpline
-                easing.bezierCurve: Motion.decel
+            SequentialAnimation {
+                PauseAnimation { duration: island.expanded ? 0 : Motion.hoverOut + 60 }
+                NumberAnimation {
+                    duration: island.expanded ? Motion.medium : Motion.base
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: island.expanded ? Motion.decel : Motion.standard
+                }
             }
         }
 
@@ -775,10 +779,21 @@ PanelWindow {
                     spacing: 4
 
                     Behavior on opacity {
-                        NumberAnimation {
-                            duration: Motion.base
-                            easing.type: Easing.BezierSpline
-                            easing.bezierCurve: Motion.decel
+                        SequentialAnimation {
+                            PauseAnimation {
+                                duration: island.expanded && Island.mode === "notification"
+                                    ? Math.round(Motion.medium * 0.4)
+                                    : Motion.hoverOut
+                            }
+                            NumberAnimation {
+                                duration: island.expanded && Island.mode === "notification"
+                                    ? Motion.base
+                                    : Motion.fast
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: island.expanded && Island.mode === "notification"
+                                    ? Motion.decel
+                                    : Motion.accel
+                            }
                         }
                     }
 
