@@ -110,6 +110,85 @@ this repository from the palette, CC0, with the exact command in the `CREDITS.md
 beside it. Your own images live in `~/Pictures/Wallpapers` and stay untracked;
 the picker lists both.
 
+## Motion
+
+All animations in the shell, lock, greeter and Hyprland share one set of tokens
+(`config/quickshell/Motion.qml`). The goal is a single sense of time instead of
+scattered magic numbers.
+
+| token | ms | used for |
+| --- | --- | --- |
+| `press` | 80 | a state flip, too fast to watch |
+| `fast` | 120 | hover, a colour change, a tooltip |
+| `base` | 180 | a normal transition |
+| `medium` | 240 | geometry the eye should follow |
+| `slow` | 320 | a full panel arriving |
+| `fade` | 120 (80 with reduced motion) | a pure cross-fade |
+
+Interaction waits are not animations and are not zeroed by reduced motion:
+`stagger` 40 ms, `hoverIn` 150 ms, `hoverOut` 300 ms, `tooltip` 500 ms.
+
+Curves are `Easing.BezierSpline` control-point lists:
+
+| token | points | use |
+| --- | --- | --- |
+| `decel` | `0.05, 0.7, 0.1, 1` | something arrives |
+| `accel` | `0.3, 0, 0.8, 0.15` | something leaves |
+| `standard` | `0.2, 0, 0, 1` | something changes on the spot |
+| `snap` | `0.25, 1, 0.5, 1.06` | overview release (the only overshoot) |
+| `fling` | `0.3, 0.6, 0.6, 1` | every other gesture release |
+
+Rule of thumb: **decel for entrance, accel for exit, standard for changes in
+place**. Size that returns to rest (the island shrinking) uses `standard`, not
+`accel`, so it does not stop dead.
+
+Hyprland maps the same tokens: its `open` curve is `decel`, `close` is `accel`,
+`glide` is `standard`, and animation speeds are `duration / 100`. The Quickshell
+layer namespaces (`quickshell-bar`, `quickshell-stage`, `quickshell-menu`) have
+`no_anim = true` in `hyprland.lua` because the shell animates itself; Hyprland
+only animates actual windows.
+
+### Reduced motion
+
+A persisted toggle lives in `$XDG_STATE_HOME/dotfiles/bar-state.json` and is
+wired to `Motion.reduced`. With it on:
+
+- movement, scale, rotation and size changes become instant cuts;
+- opacity changes stay, but shortened to 80 ms;
+- colour changes stay at `fast`;
+- panels fade in at their final position instead of morphing from the trigger;
+- gesture releases jump to the destination;
+- the notification countdown line and the text-cursor blink are hidden;
+- stagger is removed.
+
+The greeter reads the same flag from `/etc/greetd/motion.json`, written by
+`wallpaper sync-greeter` whenever the toggle changes, so the login screen
+respects it too. Hyprland reads it from `bar-state.json` at load time.
+
+### Inspection
+
+`QS_MOTION_SCALE=5` multiplies every animation duration so you can photograph a
+recipe in the middle. Use it from a manual launch, never in the service:
+
+```bash
+QS_MOTION_SCALE=5 quickshell -p config/quickshell/shell.qml
+QS_MOTION_SCALE=5 quickshell -p config/quickshell/lock-test.qml
+QS_MOTION_SCALE=5 GREETER_DEMO=1 quickshell -p config/quickshell/greeter
+```
+
+Other useful measurements:
+
+| what | how |
+| --- | --- |
+| Quickshell render time | `QSG_RENDER_TIMING=1 quickshell -p ...` |
+| Overdraw | `QSG_VISUALIZE=overdraw quickshell -p ...` |
+| Render batches | `QSG_VISUALIZE=batches quickshell -p ...` |
+| Compositor frame times | `debug:overlay` in Hyprland, enabled only while measuring |
+| GPU load | sample `/sys/class/drm/card*/device/gpu_busy_percent` |
+| CPU of the shell | `top` on the `quickshell` process (idle < 1 %) |
+
+The full spec is in `Downloads/motion-spec.md`.
+
 ## Keys
 
 Most things are `SUPER` plus one key; the laptop's own volume, brightness and
