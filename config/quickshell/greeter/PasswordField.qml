@@ -62,13 +62,23 @@ Item {
 
     // Focus halo, outside the box.
     Rectangle {
+        id: halo
+
         anchors.fill: box
         anchors.margins: -3
         radius: box.radius + 3
         color: "transparent"
         border.width: 3
         border.color: Qt.alpha(field.error ? Theme.red : Theme.gold, 0.18)
-        visible: input.activeFocus && !field.busy
+        opacity: input.activeFocus && !field.busy ? 1 : 0
+
+        Behavior on opacity {
+            NumberAnimation {
+                duration: Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
+        }
     }
 
     Rectangle {
@@ -84,6 +94,14 @@ Item {
                     : input.activeFocus ? Theme.gold
                     : hover.hovered ? Theme.fg2
                     : Theme.bg2
+
+        Behavior on border.color {
+            ColorAnimation {
+                duration: Motion.fast
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
+        }
     }
 
     HoverHandler {

@@ -8,6 +8,9 @@ import Quickshell
 Item {
     id: root
 
+    property real reveal: 0
+    property bool launching: false
+
     Auth {
         id: auth
     }
@@ -16,6 +19,17 @@ Item {
         id: clock
         precision: SystemClock.Minutes
     }
+
+    Connections {
+        target: auth
+
+        function onPhaseChanged() {
+            if (auth.phase === "launching")
+                root.launching = true;
+        }
+    }
+
+    Component.onCompleted: reveal = 1
 
     // ---------- background ----------
 
@@ -47,6 +61,25 @@ Item {
         }
     }
 
+    // Startup: black over the wallpaper, fading away with `reveal`.
+    // On launch it fades back in before the greeter quits.
+    Rectangle {
+        anchors.fill: parent
+        color: Theme.bg0
+        opacity: root.launching ? 1 : 1 - root.reveal
+
+        Behavior on opacity {
+            SequentialAnimation {
+                PauseAnimation { duration: root.launching ? 60 : 0 }
+                NumberAnimation {
+                    duration: root.launching ? Motion.base : Motion.slow
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: root.launching ? Motion.accel : Motion.standard
+                }
+            }
+        }
+    }
+
     // Clicking empty space returns focus to the password field.
     MouseArea {
         anchors.fill: parent
@@ -68,6 +101,44 @@ Item {
         anchors.bottomMargin: 96
         width: 360
         spacing: 0
+
+        opacity: root.launching ? 0 : root.reveal
+        y: (1 - root.reveal) * 12
+        scale: 0.97 + 0.03 * root.reveal
+        transformOrigin: Item.Center
+
+        Behavior on opacity {
+            SequentialAnimation {
+                PauseAnimation { duration: 80 }
+                NumberAnimation {
+                    duration: root.launching ? Motion.fast : Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: root.launching ? Motion.accel : Motion.decel
+                }
+            }
+        }
+
+        Behavior on y {
+            SequentialAnimation {
+                PauseAnimation { duration: 80 }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.decel
+                }
+            }
+        }
+
+        Behavior on scale {
+            SequentialAnimation {
+                PauseAnimation { duration: 80 }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.decel
+                }
+            }
+        }
 
         Text {
             text: clock.date.toLocaleDateString(Qt.locale("en_US"), "dddd, d MMMM")
@@ -223,24 +294,64 @@ Item {
                 return "";
             }
 
+            readonly property bool showError: kind === "error"
+
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 8
+                opacity: msgLine.showError ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: msgLine.showError ? Motion.decel : Motion.accel
+                    }
+                }
 
                 Rectangle {
                     width: 6
                     height: 6
                     radius: 3
                     color: Theme.red
-                    visible: msgLine.kind === "error"
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    text: auth.message
+                    color: Theme.fg0
+                    font.family: Config.fontSans
+                    font.pixelSize: 13
+                    elide: Text.ElideRight
+                    width: 346
+                }
+            }
+
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 8
+                opacity: msgLine.showError ? 0 : 1
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: msgLine.showError ? Motion.accel : Motion.decel
+                    }
+                }
+
+                Rectangle {
+                    width: 6
+                    height: 6
+                    radius: 3
+                    color: Theme.teal
+                    visible: msgLine.kind === "caps"
                     anchors.verticalCenter: parent.verticalCenter
                 }
 
                 Text {
                     text: msgLine.kind === "caps" ? "Caps Lock is on" : auth.message
-                    color: msgLine.kind === "error" ? Theme.fg0
-                         : msgLine.kind === "caps" ? Theme.teal
-                         : Theme.fg1
+                    color: msgLine.kind === "caps" ? Theme.teal : Theme.fg1
                     font.family: Config.fontSans
                     font.pixelSize: 13
                     elide: Text.ElideRight
@@ -258,6 +369,31 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 132   // centre aligned with the password field
         spacing: 10
+
+        opacity: root.launching ? 0 : root.reveal
+        y: (1 - root.reveal) * 12
+
+        Behavior on opacity {
+            SequentialAnimation {
+                PauseAnimation { duration: 120 }
+                NumberAnimation {
+                    duration: root.launching ? Motion.fast : Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: root.launching ? Motion.accel : Motion.decel
+                }
+            }
+        }
+
+        Behavior on y {
+            SequentialAnimation {
+                PauseAnimation { duration: 120 }
+                NumberAnimation {
+                    duration: Motion.medium
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.decel
+                }
+            }
+        }
 
         PowerButton {
             id: rebootButton

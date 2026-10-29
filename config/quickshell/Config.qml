@@ -56,5 +56,11 @@ Singleton {
         root.reducedMotion = on;
         adapter.reducedMotion = on;
         stateFile.writeAdapter();
+        // Mirror the new flag to /etc/greetd/motion.json so the greeter's next
+        // boot respects it too.
+        Quickshell.execDetached([
+            Quickshell.env("HOME") + "/.config/hypr/scripts/wallpaper",
+            "sync-greeter"
+        ]);
     }
 }

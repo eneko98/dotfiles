@@ -11,6 +11,8 @@ import QtQuick
 import Quickshell
 
 ShellRoot {
+    Component.onCompleted: Motion.reduced = Config.reducedMotion
+
     FloatingWindow {
         id: window
 

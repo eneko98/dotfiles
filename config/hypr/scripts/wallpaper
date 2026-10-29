@@ -69,6 +69,16 @@ install_greeter() {
 		sudo -n chmod 755 /etc/greetd/quickshell
 		sudo -n chmod 644 /etc/greetd/quickshell/* 2>/dev/null || true
 	fi
+	# Reduced-motion state for the greeter: the user's session toggles it and
+	# writes bar-state.json; we mirror the flag into /etc/greetd/motion.json.
+	bar_state="$state_dir/bar-state.json"
+	motion_json="$state_dir/motion.json"
+	reduced="false"
+	if [ -f "$bar_state" ] && grep -qE '"reducedMotion"[[:space:]]*:[[:space:]]*true' "$bar_state"; then
+		reduced="true"
+	fi
+	printf '{"reducedMotion": %s}\n' "$reduced" >"$motion_json"
+	sudo -n install -m 644 "$motion_json" /etc/greetd/motion.json 2>/dev/null || true
 }
 
 # The icon variant follows the accent; gen-theme.py wrote its name. GSettings is
