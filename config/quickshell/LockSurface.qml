@@ -28,8 +28,9 @@ Rectangle {
 
     Behavior on reveal {
         NumberAnimation {
-            duration: 480
-            easing.type: Easing.OutCubic
+            duration: Motion.slow
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.standard
         }
     }
 
@@ -62,33 +63,57 @@ Rectangle {
     }
 
     // The entrance: black over the wallpaper, fading away with `reveal`.
+    // On unlock it fades out again with base/accel after a 60 ms delay.
     Rectangle {
         anchors.fill: parent
         color: Theme.bg0
-        opacity: (1 - root.reveal) * 0.8
+        opacity: root.context.dismissing ? 0 : (1 - root.reveal) * 0.8
+
+        Behavior on opacity {
+            SequentialAnimation {
+                PauseAnimation { duration: root.context.dismissing ? 60 : 0 }
+                NumberAnimation {
+                    duration: root.context.dismissing ? Motion.base : Motion.slow
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: root.context.dismissing ? Motion.accel : Motion.standard
+                }
+            }
+        }
     }
 
     Column {
         id: content
 
-        anchors.centerIn: parent
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
         spacing: 18
 
         opacity: root.context.dismissing ? 0 : root.reveal
+        y: (1 - root.reveal) * 12
         scale: 0.97 + 0.03 * root.reveal
         transformOrigin: Item.Center
 
         Behavior on opacity {
             NumberAnimation {
-                duration: root.context.dismissing ? 220 : 480
-                easing.type: root.context.dismissing ? Easing.InCubic : Easing.OutCubic
+                duration: root.context.dismissing ? Motion.fast : Motion.medium
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: root.context.dismissing ? Motion.accel : Motion.decel
+            }
+        }
+
+        Behavior on y {
+            NumberAnimation {
+                duration: root.context.dismissing ? Motion.fast : Motion.medium
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: root.context.dismissing ? Motion.accel : Motion.decel
             }
         }
 
         Behavior on scale {
             NumberAnimation {
-                duration: 480
-                easing.type: Easing.OutCubic
+                duration: Motion.medium
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.decel
             }
         }
 
@@ -142,63 +167,131 @@ Rectangle {
             }
         }
 
-        Rectangle {
+        Item {
             anchors.horizontalCenter: parent.horizontalCenter
             width: 280
             height: 40
-            radius: 8
-            color: Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b, 0.92)
-            border.width: 1
-            border.color: password.activeFocus ? Theme.gold : Theme.bg2
 
-            Text {
-                anchors.centerIn: parent
-                visible: password.text.length === 0
-                text: "Password"
-                color: Theme.fg2
-                font.family: "Adwaita Sans"
-                font.pixelSize: 12
+            // Focus halo: a 1 px accent ring outside the field.
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: -2
+                radius: 10
+                color: "transparent"
+                border.width: 1
+                border.color: root.context.showFailure ? Theme.red : Theme.gold
+                opacity: password.activeFocus || root.context.showFailure ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.standard
+                    }
+                }
             }
 
-            TextInput {
-                id: password
-
+            Rectangle {
                 anchors.fill: parent
-                anchors.margins: 12
-                verticalAlignment: TextInput.AlignVCenter
-                horizontalAlignment: TextInput.AlignHCenter
-                echoMode: TextInput.Password
-                enabled: !root.context.unlockInProgress
-                focus: true
-                color: Theme.fg0
-                selectionColor: Theme.gold
-                selectedTextColor: Theme.bg0
-                font.family: "Adwaita Sans"
-                font.pixelSize: 13
-                inputMethodHints: Qt.ImhSensitiveData
+                radius: 8
+                color: Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b, 0.92)
+                border.width: 1
+                border.color: root.context.showFailure ? Theme.red
+                    : password.activeFocus ? Theme.gold
+                    : Theme.bg2
 
-                onTextChanged: root.context.currentText = text
-                onAccepted: root.context.tryUnlock()
+                Behavior on border.color {
+                    ColorAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.standard
+                    }
+                }
 
-                Connections {
-                    target: root.context
+                Text {
+                    anchors.centerIn: parent
+                    visible: password.text.length === 0
+                    text: "Password"
+                    color: Theme.fg2
+                    font.family: "Adwaita Sans"
+                    font.pixelSize: 12
+                }
 
-                    function onCurrentTextChanged() {
-                        if (password.text !== root.context.currentText)
-                            password.text = root.context.currentText;
+                TextInput {
+                    id: password
+
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    verticalAlignment: TextInput.AlignVCenter
+                    horizontalAlignment: TextInput.AlignHCenter
+                    echoMode: TextInput.Password
+                    enabled: !root.context.unlockInProgress
+                    focus: true
+                    color: Theme.fg0
+                    selectionColor: Theme.gold
+                    selectedTextColor: Theme.bg0
+                    font.family: "Adwaita Sans"
+                    font.pixelSize: 13
+                    inputMethodHints: Qt.ImhSensitiveData
+
+                    onTextChanged: root.context.currentText = text
+                    onAccepted: root.context.tryUnlock()
+
+                    Connections {
+                        target: root.context
+
+                        function onCurrentTextChanged() {
+                            if (password.text !== root.context.currentText)
+                                password.text = root.context.currentText;
+                        }
                     }
                 }
             }
         }
 
-        Text {
+        Item {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: root.context.showFailure ? "Incorrect password"
-                : root.context.unlockInProgress ? "Checking…"
-                : "Press Enter to unlock"
-            color: root.context.showFailure ? Theme.red : Theme.fg2
-            font.family: "Adwaita Sans"
-            font.pixelSize: 10
+            width: Math.max(normalMsg.implicitWidth, errorMsg.implicitWidth)
+            height: Math.max(normalMsg.implicitHeight, errorMsg.implicitHeight)
+
+            Text {
+                id: normalMsg
+                anchors.centerIn: parent
+                text: root.context.unlockInProgress ? "Checking…"
+                    : "Press Enter to unlock"
+                color: Theme.fg2
+                font.family: "Adwaita Sans"
+                font.pixelSize: 10
+                opacity: root.context.showFailure ? 0 : 1
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.standard
+                    }
+                }
+            }
+
+            Text {
+                id: errorMsg
+                anchors.centerIn: parent
+                text: "Incorrect password"
+                color: Theme.red
+                font.family: "Adwaita Sans"
+                font.pixelSize: 10
+                opacity: root.context.showFailure ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: root.context.showFailure
+                            ? Motion.decel
+                            : Motion.accel
+                    }
+                }
+            }
         }
     }
 
