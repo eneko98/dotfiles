@@ -180,7 +180,11 @@ PanelWindow {
                             : (cellHover.containsMouse ? Theme.bg2 : "transparent")
 
                         Behavior on color {
-                            ColorAnimation { duration: Motion.fast }
+                            ColorAnimation {
+                                duration: Motion.fast
+                                easing.type: Easing.BezierSpline
+                                easing.bezierCurve: Motion.standard
+                            }
                         }
                     }
 
@@ -232,7 +236,11 @@ PanelWindow {
         opacity: bar.islandHidden ? 0 : 1
 
         Behavior on opacity {
-            NumberAnimation { duration: Motion.fade }
+            NumberAnimation {
+                duration: Motion.fade
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
         }
 
         anchors.horizontalCenter: parent.horizontalCenter
@@ -263,8 +271,9 @@ PanelWindow {
             id: swipeOutAnim
             target: island
             property: "swipeOffset"
-            duration: 160
-            easing.type: Easing.InCubic
+            duration: Motion.fast
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.accel
             onFinished: {
                 Island.dismissCurrent();
                 island.swipeOffset = 0;
@@ -277,8 +286,9 @@ PanelWindow {
             target: island
             property: "swipeOffset"
             to: 0
-            duration: 200
-            easing.type: Easing.OutCubic
+            duration: Motion.medium
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.standard
         }
 
         width: targetWidth
@@ -358,7 +368,7 @@ PanelWindow {
         // matching Behavior so the content is clipped in step).
         Behavior on height {
             NumberAnimation {
-                duration: Motion.fast
+                duration: Motion.medium
                 easing.type: Easing.BezierSpline
                 easing.bezierCurve: Motion.decel
             }
@@ -516,7 +526,7 @@ PanelWindow {
 
             Behavior on height {
                 NumberAnimation {
-                    duration: Motion.fast
+                    duration: Motion.medium
                     easing.type: Easing.BezierSpline
                     easing.bezierCurve: Motion.decel
                 }
@@ -766,7 +776,7 @@ PanelWindow {
 
                     Behavior on opacity {
                         NumberAnimation {
-                            duration: Motion.fast
+                            duration: Motion.base
                             easing.type: Easing.BezierSpline
                             easing.bezierCurve: Motion.decel
                         }
@@ -959,7 +969,11 @@ PanelWindow {
             color: Theme.teal
 
             Behavior on opacity {
-                NumberAnimation { duration: Motion.fade }
+                NumberAnimation {
+                    duration: Motion.fade
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
             }
         }
     }
@@ -978,11 +992,19 @@ PanelWindow {
         opacity: bar.pillHidden ? 0 : 1
 
         Behavior on opacity {
-            NumberAnimation { duration: Motion.fade }
+            NumberAnimation {
+                duration: Motion.fade
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
         }
 
         Behavior on width {
-            NumberAnimation { duration: Motion.medium; easing.type: Easing.OutCubic }
+            NumberAnimation {
+                duration: Motion.medium
+                easing.type: Easing.BezierSpline
+                easing.bezierCurve: Motion.standard
+            }
         }
 
         anchors.right: parent.right

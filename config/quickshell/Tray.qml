@@ -64,7 +64,8 @@ Row {
                         from: 0.4
                         to: 2.0
                         duration: Motion.slow
-                        easing.type: Easing.OutCubic
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.decel
                     }
 
                     NumberAnimation {
@@ -73,7 +74,8 @@ Row {
                         from: 0.55
                         to: 0
                         duration: Motion.slow
-                        easing.type: Easing.OutCubic
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.decel
                     }
                 }
             }
@@ -106,8 +108,8 @@ Row {
                         from: 0.4
                         to: 1
                         duration: Motion.medium
-                        easing.type: Easing.OutBack
-                        easing.overshoot: 1.5
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.decel
                     }
 
                     NumberAnimation {
@@ -116,6 +118,8 @@ Row {
                         from: 0
                         to: 1
                         duration: Motion.base
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.decel
                     }
                 }
 

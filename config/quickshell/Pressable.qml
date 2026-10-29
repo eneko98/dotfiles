@@ -27,7 +27,11 @@ Item {
     activeFocusOnTab: enabled
     scale: root.pressed ? pressScale : 1
     Behavior on scale {
-        NumberAnimation { duration: Motion.press; easing.type: Easing.OutCubic }
+        NumberAnimation {
+            duration: Motion.press
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.decel
+        }
     }
 
     Keys.onPressed: function (event) {
