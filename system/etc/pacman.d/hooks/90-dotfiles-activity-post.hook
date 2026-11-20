@@ -1,0 +1,11 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Operation = Remove
+Type = Package
+Target = *
+
+[Action]
+Description = Publishing transaction progress for the shell...
+When = PostTransaction
+Exec = /usr/local/lib/dotfiles/pacman-activity end

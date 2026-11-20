@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Publishes the ALPM transaction to /run/dotfiles/pacman.json for the shell.
+# Runs as root from a pacman hook; the shell (another user) reads the file.
+set -euo pipefail
+
+dir=/run/dotfiles
+state=$dir/pacman.json
+
+install -d -m 0755 "$dir"
+
+case "${1:-}" in
+start)
+	# NeedsTargets gives one target per line on stdin.
+	total=$(wc -l)
+	# The hook may run under an intermediate shell; walk up until we find
+	# pacman, so the shell's liveness check watches the right PID.
+	pid=$PPID
+	for _ in 1 2 3 4; do
+		comm=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+		[ "$comm" = "pacman" ] && break
+		next=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+		[ -z "$next" ] && break
+		pid=$next
+	done
+	printf '{"state":"running","total":%d,"pid":%d,"started":%d}\n' \
+		"$total" "$pid" "$(date +%s)" >"$state"
+	;;
+end)
+	printf '{"state":"done","ended":%d}\n' "$(date +%s)" >"$state"
+	;;
+*)
+	echo "usage: $0 start|end" >&2
+	exit 2
+	;;
+esac
