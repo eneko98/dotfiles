@@ -1,0 +1,107 @@
+#!/bin/sh
+# measure: A/B timing for the desktop, sampled from the shell's own probes.
+#
+#   measure [seconds] [label]
+#
+# Every second it takes the frame stats the HUD collects (p50/p95/max per
+# window, in ms), plus GPU load, the shell's CPU, PSS, memory pressure,
+# temperature and battery draw. At the end it prints the mean of each.
+#
+# A/B how: change one thing between two runs (blur off, reduced motion,
+# an animation curve) and compare the p95 columns. Both runs carry the same
+# 294x223 overlay, so the comparison is fair even though its own cost is in
+# the absolute numbers.
+#
+# The probes need the HUD enabled to collect; the script turns it on and puts
+# the previous value back when it exits.
+set -eu
+
+secs="${1:-30}"
+label="${2:-run}"
+state="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles/bar-state.json"
+tmp=$(mktemp -d)
+frames="$tmp/frames"
+
+was_hud=false
+if [ -r "$state" ] && command -v jq >/dev/null 2>&1; then
+	[ "$(jq -r '.hud // false' "$state")" = "true" ] && was_hud=true
+fi
+
+cleanup() {
+	[ "$was_hud" = "true" ] || qs ipc call bar hud false >/dev/null 2>&1 || true
+	rm -rf "$tmp"
+}
+trap cleanup EXIT INT TERM
+
+qs ipc call bar hud true >/dev/null 2>&1 || true
+
+gpu_path=$(find /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null | head -n1 || true)
+pid=$(systemctl --user show -p MainPID --value quickshell.service 2>/dev/null || echo 0)
+ticks=$(getconf CLK_TCK)
+temp_path=$(for d in /sys/class/hwmon/hwmon*; do
+	[ "$(cat "$d/name" 2>/dev/null)" = k10temp ] && printf '%s\n' "$d/temp1_input" && break
+done || true)
+cur_path=$(find /sys/class/power_supply/BAT*/current_now 2>/dev/null | head -n1 || true)
+vol_path=$(find /sys/class/power_supply/BAT*/voltage_now 2>/dev/null | head -n1 || true)
+stat_path="/proc/$pid/stat"
+smaps_path="/proc/$pid/smaps_rollup"
+
+# utime + stime, in ticks.
+cpu_ticks() {
+	awk '{print $14 + $15}' "$stat_path" 2>/dev/null || echo 0
+}
+
+printf 'measure: %s, %s s\n' "$label" "$secs"
+printf '%5s %6s %6s %7s %6s %6s %6s\n' \
+	"t" "gpu%" "cpu%" "pss" "psi%" "temp" "W"
+
+prev_ticks=$(cpu_ticks)
+prev_time=$(date +%s)
+i=1
+while [ "$i" -le "$secs" ]; do
+	sleep 1
+	now=$(date +%s)
+	dt=$((now - prev_time))
+	[ "$dt" -le 0 ] && dt=1
+	ticks_now=$(cpu_ticks)
+	cpu=$(awk -v a="$ticks_now" -v b="$prev_ticks" -v dt="$dt" \
+		-v clk="$ticks" 'BEGIN {printf "%.1f", (a - b) / clk / dt * 100}')
+	prev_ticks=$ticks_now
+	prev_time=$now
+
+	gpu=$(cat "$gpu_path" 2>/dev/null || echo -1)
+	pss=$(awk '/^Pss:/ {printf "%d", $2 / 1024}' "$smaps_path" 2>/dev/null || echo 0)
+	psi=$(awk '/^some / {for (i = 1; i <= NF; i++) if ($i ~ /^avg10=/) {
+		sub("avg10=", "", $i); printf "%.2f", $i}}' /proc/pressure/memory 2>/dev/null || echo 0)
+	temp=$(awk '{printf "%.0f", $1 / 1000}' "$temp_path" 2>/dev/null || echo -1)
+	watt=$(awk -v c="$(cat "$cur_path" 2>/dev/null || echo 0)" \
+		-v v="$(cat "$vol_path" 2>/dev/null || echo 0)" \
+		'BEGIN {printf "%.1f", c * v / 1e12}')
+
+	printf '%5s %6s %6s %7s %6s %6s %6s\n' \
+		"$i" "$gpu" "$cpu" "$pss" "$psi" "$temp" "$watt"
+	printf '%s %s %s %s %s\n' "$gpu" "$cpu" "$pss" "$temp" "$watt" \
+		>> "$tmp/system"
+
+	qs ipc call bar perfStats 2>/dev/null \
+		| jq -r 'to_entries[] | "\(.key) \(.value[0]) \(.value[1]) \(.value[2])"' \
+		>> "$frames" 2>/dev/null || true
+	i=$((i + 1))
+done
+
+echo
+echo "system (mean of $secs samples)"
+awk '{g += $1; c += $2; p += $3; t += $4; w += $5; n++}
+	END {printf "  gpu %.1f%%   cpu %.1f%%   pss %d MiB   temp %.0f C   %.1f W\n",
+		g / n, c / n, p / n, t / n, w / n}' "$tmp/system" 2>/dev/null || true
+
+if [ -s "$frames" ]; then
+	echo
+	echo "frames (p50 / p95 / max, ms — mean of the per-second aggregates)"
+	awk '{k = $1; n[k]++; a[k] += $2; b[k] += $3; m[k] += $4}
+		END {for (k in n) printf "  %-10s %5.1f / %5.1f / %5.1f\n",
+			k, a[k] / n[k], b[k] / n[k], m[k] / n[k]}' "$frames" \
+		| sort -k2 -n -r
+else
+	echo "frames: no samples (is the HUD enabled?)"
+fi

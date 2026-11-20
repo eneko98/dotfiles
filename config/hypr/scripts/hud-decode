@@ -1,0 +1,43 @@
+#!/bin/sh
+# Hardware-video-decode probe for the HUD.
+#
+# Sums the AMDGPU video-engine nanoseconds used by the focused window's process
+# tree. Two passes are enough: Firefox puts its content processes under a
+# forkserver, so the decoder is a grandchild.
+#
+# The whole tree is scanned by ONE grep over every fdinfo directory: a per-file
+# `sed` loop took 2-5 s here, this takes single-digit milliseconds.
+#
+# Usage: hud-decode [pid]   (no pid = ask Hyprland for the focused window)
+# Prints: "<nanoseconds> <comm>" so the QML can show what it measured.
+set -eu
+
+pid="${1:-}"
+if [ -z "$pid" ]; then
+	pid=$(hyprctl activewindow -j 2>/dev/null | jq -r '.pid // 0' 2>/dev/null || echo 0)
+fi
+[ "$pid" = "0" ] && { echo "0 -"; exit 0; }
+
+comm=$(cat "/proc/$pid/comm" 2>/dev/null || echo -)
+
+pids="$pid"
+for c in $(pgrep -P "$pid" 2>/dev/null); do
+	pids="$pids $c"
+	for g in $(pgrep -P "$c" 2>/dev/null); do
+		pids="$pids $g"
+	done
+done
+
+dirs=""
+for p in $pids; do
+	[ -d "/proc/$p/fdinfo" ] && dirs="$dirs /proc/$p/fdinfo"
+done
+
+# The engine key is `drm-engine-dec` on this kernel (7.3, amdgpu/VCN); older
+# kernels call it `drm-engine-video`. Match both.
+# shellcheck disable=SC2086
+sum=$(grep -hE '^drm-engine-(dec|video)' $dirs/* 2>/dev/null \
+	| awk -F':[[:space:]]*' '{s += $2} END {print s + 0}')
+[ -z "$sum" ] && sum=0
+
+echo "$sum $comm"

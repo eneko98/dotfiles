@@ -287,6 +287,9 @@ hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("firefox"))
 -- The system dashboard, through the bar's IPC: the same toggle the chart zone
 -- in the status pill uses. `qs` is on PATH and the command runs through a shell.
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("qs ipc call dashboard toggle"))
+
+-- The measurement HUD: FPS, GPU, memory and battery draw, as an overlay.
+hl.bind(mainMod .. " + H", hl.dsp.exec_cmd("qs ipc call bar hud toggle"))
 -- The workspace carousel: the same toggle the three-finger vertical gesture
 -- calls. `qs` is on PATH and the command runs through a shell.
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd("qs ipc call overview toggle"))

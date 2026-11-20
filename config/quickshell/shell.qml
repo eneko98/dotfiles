@@ -428,23 +428,28 @@ ShellRoot {
     TodayPanel {
         id: todayPanel
         notifications: notifications
+        panelName: "today"
     }
 
     SystemPanel {
         id: systemPanel
+        panelName: "system"
     }
 
     DashboardPanel {
         id: dashboardPanel
+        panelName: "dashboard"
     }
 
     Overview {
         id: overview
+        panelName: "overview"
     }
 
     // The VM laboratory, opened by the Lab scene or `qs ipc call lab toggle`.
     LabPanel {
         id: labPanel
+        panelName: "lab"
     }
 
     // The notification server, toasts and history. mako's service is disabled
@@ -460,6 +465,11 @@ ShellRoot {
         id: pacmanActivity
     }
 
+    // The measurement HUD, passive and off by default.
+    Hud {
+        id: hud
+    }
+
     // A countdown published as an activity: `qs ipc call activity timer`.
     ActivityTimer {
         id: activityTimer
@@ -469,6 +479,7 @@ ShellRoot {
     // below (config/hypr/scripts/launcher calls `qs ipc call launcher toggle`).
     Launcher {
         id: launcher
+        panelName: "launcher"
     }
 
     IpcHandler {
@@ -494,6 +505,7 @@ ShellRoot {
     // (`qs ipc call wallpaper toggle`).
     WallpaperPicker {
         id: wallpaperPicker
+        panelName: "wallpaper"
     }
 
     IpcHandler {
@@ -715,6 +727,19 @@ ShellRoot {
             const on = value === "true";
             Motion.reduced = on;
             Config.saveReducedMotion(on);
+        }
+
+        function hud(value: string): void {
+            if (value === "toggle")
+                Config.saveHud(!Config.hud);
+            else
+                Config.saveHud(value === "true");
+        }
+
+        // Frame stats as JSON, for scripts/measure: an A/B run samples this
+        // once a second without needing the HUD painted on screen.
+        function perfStats(): string {
+            return JSON.stringify(Perf.frameStats);
         }
     }
 }

@@ -1,0 +1,26 @@
+#!/bin/sh
+# Paths needed by the HUD and measure.sh. Print key=value lines, not prose.
+set -eu
+
+printf 'gpu='
+find /sys/class/drm/card*/device/gpu_busy_percent | head -n1
+
+printf 'current='
+find /sys/class/power_supply/BAT*/current_now | head -n1
+
+printf 'voltage='
+find /sys/class/power_supply/BAT*/voltage_now | head -n1
+
+printf 'status='
+find /sys/class/power_supply/BAT*/status | head -n1
+
+printf 'temp='
+for d in /sys/class/hwmon/hwmon*; do
+	[ "$(cat "$d/name" 2>/dev/null)" = k10temp ] \
+		&& printf '%s\n' "$d/temp1_input" && break
+done
+
+printf 'pid='
+systemctl --user show -p MainPID --value quickshell.service
+printf 'ticks='
+getconf CLK_TCK

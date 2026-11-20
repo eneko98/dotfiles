@@ -35,6 +35,9 @@ PanelWindow {
 
     property real panelWidth: 240
 
+    // Where FrameProbe reports this window when the HUD is enabled.
+    property string panelName: "popup"
+
     // Extra fill alpha for panels that should read more solid than the
     // default translucent stage (the workspace overview). 0 is the norm.
     property real panelExtra: 0
@@ -70,6 +73,10 @@ PanelWindow {
 
     color: "transparent"
     visible: false
+
+    FrameProbe {
+        name: root.panelName
+    }
 
     // The panel's final geometry. The height follows the content: the
     // column's implicit height plus the MorphPanel's padding on both sides.

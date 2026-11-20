@@ -24,6 +24,10 @@ Singleton {
     property string scene: ""
     property string sceneSaved: ""
 
+    // The measurement HUD is an inspection tool, not a default-on overlay:
+    // false at boot, persisted through the same state file as scenes.
+    property bool hud: false
+
     readonly property string stateDir: Quickshell.env("XDG_STATE_HOME")
         || (Quickshell.env("HOME") + "/.local/state")
 
@@ -42,6 +46,7 @@ Singleton {
             property bool reducedMotion: root.reducedMotion
             property string scene: root.scene
             property string sceneSaved: root.sceneSaved
+            property bool hud: root.hud
         }
     }
 
@@ -59,7 +64,16 @@ Singleton {
         root.reducedMotion = adapter.reducedMotion;
         root.scene = adapter.scene;
         root.sceneSaved = adapter.sceneSaved;
+        root.hud = adapter.hud;
         root.loaded();
+    }
+
+    function saveHud(on) {
+        root.hud = on;
+        adapter.hud = on;
+        stateFile.writeAdapter();
+        if (!on)
+            Perf.clear();
     }
 
     function setLayout(name) {

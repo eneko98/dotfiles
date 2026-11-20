@@ -19,6 +19,10 @@ PanelWindow {
 
     WlrLayershell.namespace: Tokens.ns.bar
 
+    FrameProbe {
+        name: "bar"
+    }
+
     // The morph triggers, for the panels that grow out of them.
     readonly property alias island: island
     readonly property alias statusPill: statusPill

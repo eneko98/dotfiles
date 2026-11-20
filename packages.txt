@@ -290,3 +290,9 @@ edk2-ovmf
 podman
 distrobox
 fuse-overlayfs
+
+# Measurement HUD (idea 2)
+# libva-utils is only `vainfo`, which answers what the GPU can decode: this
+# Vega 8 (VCN 1.0) lists H.264, HEVC and VP9 profile 0/2 and no AV1. The HUD
+# itself reads /proc and /sys with no extra packages.
+libva-utils
