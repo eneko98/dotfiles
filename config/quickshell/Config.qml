@@ -19,6 +19,11 @@ Singleton {
     property string barLayout: "tiers"
     property bool reducedMotion: false
 
+    // The active scene ("" = none) and the values it replaced, as JSON, so a
+    // shell reload keeps both the scene and the way back.
+    property string scene: ""
+    property string sceneSaved: ""
+
     readonly property string stateDir: Quickshell.env("XDG_STATE_HOME")
         || (Quickshell.env("HOME") + "/.local/state")
 
@@ -28,19 +33,33 @@ Singleton {
         path: root.stateDir + "/dotfiles/bar-state.json"
         printErrors: false
 
+        onLoaded: root.adopt()
+
         JsonAdapter {
             id: adapter
 
             property string barLayout: root.barLayout
             property bool reducedMotion: root.reducedMotion
+            property string scene: root.scene
+            property string sceneSaved: root.sceneSaved
         }
     }
 
-    Component.onCompleted: {
+    // Emitted when the state file has been read (or re-read). The shell uses
+    // it to apply a persisted scene after the file exists, which is later
+    // than Component.onCompleted.
+    signal loaded()
+
+    Component.onCompleted: root.adopt()
+
+    function adopt() {
         const stored = adapter.barLayout;
         if (stored === "tiers" || stored === "island" || stored === "frame")
             root.barLayout = stored;
         root.reducedMotion = adapter.reducedMotion;
+        root.scene = adapter.scene;
+        root.sceneSaved = adapter.sceneSaved;
+        root.loaded();
     }
 
     function setLayout(name) {
@@ -50,6 +69,14 @@ Singleton {
         adapter.barLayout = name;
         stateFile.writeAdapter();
         return true;
+    }
+
+    function saveScene(name, saved) {
+        root.scene = name || "";
+        root.sceneSaved = saved ? JSON.stringify(saved) : "";
+        adapter.scene = root.scene;
+        adapter.sceneSaved = root.sceneSaved;
+        stateFile.writeAdapter();
     }
 
     function saveReducedMotion(on) {

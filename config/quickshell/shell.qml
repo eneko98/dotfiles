@@ -32,8 +32,15 @@ ShellRoot {
 
     // Singletons cannot see each other by name (measured), so the shell
     // wires the persisted reduced-motion switch into Motion once, and the
-    // `bar` IPC keeps them in step on changes.
-    Component.onCompleted: Motion.reduced = Config.reducedMotion
+    // `bar` IPC keeps them in step on changes. A persisted scene is applied
+    // here too: the shell is the side that owns the effects.
+    Component.onCompleted: {
+        Motion.reduced = Config.reducedMotion;
+        if (Config.scene !== "") {
+            Scenes.active = Config.scene;
+            root.applyScene(Config.scene, true);
+        }
+    }
 
     // A view into the system clock. Minutes precision is enough for a bar and
     // cheaper than Seconds: QML only recomputes the bound text when the minute
@@ -75,7 +82,9 @@ ShellRoot {
         if (barLoader.item === null)
             return;
         const pill = barLoader.item.statusPill;
-        systemPanel.trigger = pill;
+        // With the bar hidden (Cine) there is no trigger to grow from; the
+        // panel fades in at the same right edge instead.
+        systemPanel.trigger = Scenes.active === "cine" ? null : pill;
         systemPanel.rightMargin = barLoader.item.width - pill.x - pill.width + 14;
         systemPanel.section = section || "";
         systemPanel.visible = true;
@@ -112,6 +121,62 @@ ShellRoot {
     function openWallpaperPicker() {
         wallpaperPicker.rightMargin = (barLoader.item.width - wallpaperPicker.panelWidth) / 2;
         wallpaperPicker.open();
+    }
+
+    // --- Scenes -----------------------------------------------------------
+    // The shell applies the effects; the singleton only holds the name and
+    // the definitions. The previous value of each knob is saved before it is
+    // touched, and that saved value is what leaving restores.
+    property var sceneSaved: ({})
+
+    function setDimInactive(value) {
+        Quickshell.execDetached([
+            "hyprctl", "eval",
+            "hl.config({ decoration = { dim_inactive = "
+                + (value ? "true" : "false") + " } })"
+        ]);
+    }
+
+    function applyScene(name, fromDisk) {
+        const def = Scenes.definitions[name];
+        if (!def)
+            return;
+
+        if (fromDisk) {
+            try {
+                root.sceneSaved = Config.sceneSaved !== ""
+                    ? JSON.parse(Config.sceneSaved) : {};
+            } catch (e) {
+                root.sceneSaved = {};
+            }
+        } else {
+            root.sceneSaved = {
+                dnd: notifications.dnd,
+                caffeine: Caffeine.active,
+                dimInactive: true
+            };
+        }
+
+        notifications.dnd = def.dnd;
+        Caffeine.active = def.caffeine;
+        root.setDimInactive(def.dimInactive);
+
+        if (def.spotify)
+            Quickshell.execDetached(["sh", "-c",
+                "$HOME/.config/hypr/scripts/spotify-toggle"]);
+
+        Config.saveScene(name, root.sceneSaved);
+    }
+
+    function restoreScene() {
+        const saved = root.sceneSaved;
+        if (saved.dnd !== undefined)
+            notifications.dnd = saved.dnd;
+        if (saved.caffeine !== undefined)
+            Caffeine.active = saved.caffeine;
+        root.setDimInactive(saved.dimInactive !== undefined ? saved.dimInactive : true);
+        root.sceneSaved = ({});
+        Config.saveScene("", null);
     }
 
     // The bar, extracted to a layout component so the selector (the `bar`
@@ -151,6 +216,15 @@ ShellRoot {
         value: dashboardPanel.visible && dashboardPanel.trigger !== null
             && barLoader.item !== null
             && dashboardPanel.trigger === barLoader.item.dashboardPill
+    }
+
+    // Cine hides the bar: the PanelWindow unmaps, so its exclusive zone goes
+    // with it and the video gets the full screen. The System panel is a
+    // separate window and can still be opened to leave the scene.
+    Binding {
+        target: barLoader.item
+        property: "visible"
+        value: Scenes.active !== "cine"
     }
 
     // The bar asks; the shell owns the panels.
@@ -205,6 +279,32 @@ ShellRoot {
                     args.push("-u", "critical");
                 args.push(summary, body);
                 Quickshell.execDetached(args);
+            }
+        }
+    }
+
+    // Scenes: the singleton holds the name; the shell applies and reverts.
+    Connections {
+        target: Scenes
+
+        function onEnter(name) {
+            root.applyScene(name, false);
+        }
+
+        function onLeave() {
+            root.restoreScene();
+        }
+    }
+
+    // The state file is read asynchronously; apply the persisted scene when
+    // it has arrived, not at Component.onCompleted.
+    Connections {
+        target: Config
+
+        function onLoaded() {
+            if (Config.scene !== "" && Scenes.active !== Config.scene) {
+                Scenes.active = Config.scene;
+                root.applyScene(Config.scene, true);
             }
         }
     }
@@ -417,6 +517,23 @@ ShellRoot {
 
         function close(): void {
             dashboardPanel.close();
+        }
+    }
+
+    // Scenes: toggle by name, or leave whichever is active.
+    IpcHandler {
+        target: "scene"
+
+        function toggle(name: string): void {
+            Scenes.toggle(name);
+        }
+
+        function clear(): void {
+            Scenes.clear();
+        }
+
+        function state(): string {
+            return Scenes.active;
         }
     }
 
