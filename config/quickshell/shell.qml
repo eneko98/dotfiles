@@ -481,6 +481,10 @@ ShellRoot {
         function close(): void {
             launcher.close();
         }
+
+        function query(text: string): void {
+            launcher.setQuery(text);
+        }
     }
 
     // The wallpaper picker, opened by SUPER + W through the wallpaper script
