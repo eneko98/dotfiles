@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Boot ~/vm/<name>.json as a transient user unit.
+#
+#   vm-run alpine-live
+#
+# The definition lives outside the repo, in ~/vm/<name>.json. An ephemeral VM
+# gets a qcow2 overlay on top of its base in $XDG_RUNTIME_DIR (tmpfs), so the
+# base is never written and the overlay is gone when the unit stops. A live
+# ISO (base: null) needs no disk at all.
+#
+# The QMP socket stays at $XDG_RUNTIME_DIR/vm/<name>.qmp for the shell to talk
+# to the VM; ExecStopPost removes it with the overlay and the UEFI vars.
+set -euo pipefail
+
+name=${1:-}
+if [ -z "$name" ]; then
+	echo "usage: $0 <name>" >&2
+	exit 2
+fi
+
+cfg=$HOME/vm/$name.json
+if [ ! -f "$cfg" ]; then
+	echo "no such VM: $cfg" >&2
+	exit 1
+fi
+
+run=${XDG_RUNTIME_DIR:-/tmp}/vm
+mkdir -p "$run"
+
+get() { jq -r "$1" "$cfg"; }
+mem=$(get '.memory // "2G"')
+cpus=$(get '.cpus // 2')
+
+if systemctl --user is-active --quiet "vm-$name"; then
+	echo "vm-$name is already running" >&2
+	exit 1
+fi
+
+# Refuse to start if it will not fit: the VM's RAM plus ~800 MB of headroom.
+need_kb=$(($(numfmt --from=iec "$mem") / 1024 + 800 * 1024))
+avail_kb=$(awk '/MemAvailable/ { print $2 }' /proc/meminfo)
+if [ "$avail_kb" -lt "$need_kb" ]; then
+	echo "not enough memory for $name: need ${need_kb} kB, have ${avail_kb} kB" >&2
+	exit 1
+fi
+
+# A previous run that died hard can leave these behind; the unit is not
+# running at this point, so they are stale.
+rm -f "$run/$name.qmp" "$run/$name.overlay.qcow2" "$run/$name.vars.fd"
+
+args=(-name "$name" -enable-kvm -machine q35 -cpu host -smp "$cpus" -m "$mem"
+	-nic user,model=virtio-net-pci
+	-qmp "unix:$run/$name.qmp,server=on,wait=off"
+	-audiodev pipewire,id=snd0 -device intel-hda -device hda-duplex,audiodev=snd0)
+
+if [ "$(get '.gl // true')" = "true" ]; then
+	args+=(-device virtio-vga-gl -display gtk,gl=on)
+else
+	args+=(-device virtio-vga -display gtk)
+fi
+
+base=$(get '.base // empty')
+if [ -n "$base" ]; then
+	disk=$HOME/vm/$base
+	if [ "$(get '.ephemeral // true')" = "true" ]; then
+		disk=$run/$name.overlay.qcow2
+		qemu-img create -q -f qcow2 -b "$HOME/vm/$base" -F qcow2 "$disk"
+	fi
+	args+=(-drive "file=$disk,if=virtio,format=qcow2")
+fi
+
+iso=$(get '.iso // empty')
+if [ -n "$iso" ]; then
+	args+=(-cdrom "$HOME/vm/$iso")
+fi
+
+if [ "$(get '.uefi // true')" = "true" ]; then
+	code=/usr/share/edk2/x64/OVMF_CODE.4m.fd
+	vars=$run/$name.vars.fd
+	cp /usr/share/edk2/x64/OVMF_VARS.4m.fd "$vars"
+	args+=(-drive "if=pflash,format=raw,readonly=on,file=$code"
+		-drive "if=pflash,format=raw,file=$vars")
+fi
+
+# The island shows the start. The socket appearing means QEMU is up; the
+# guest's own boot is not something QMP reports, so this is "VM launched".
+qs ipc call activity start "vm-$name" "Starting $name" >/dev/null 2>&1 || true
+trap 'qs ipc call activity end "vm-$name" false >/dev/null 2>&1 || true' ERR
+
+systemd-run --user --unit="vm-$name" --collect \
+	-p "ExecStopPost=/bin/rm -f $run/$name.qmp $run/$name.overlay.qcow2 $run/$name.vars.fd" \
+	qemu-system-x86_64 "${args[@]}"
+
+for _ in $(seq 1 50); do
+	[ -S "$run/$name.qmp" ] && break
+	sleep 0.1
+done
+if systemctl --user is-active --quiet "vm-$name"; then
+	qs ipc call activity end "vm-$name" true >/dev/null 2>&1 || true
+else
+	qs ipc call activity end "vm-$name" false >/dev/null 2>&1 || true
+fi
