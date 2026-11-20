@@ -75,9 +75,18 @@ PanelWindow {
     // column's implicit height plus the MorphPanel's padding on both sides.
     readonly property real panelHeight: column.implicitHeight + Tokens.space.l * 2
 
+    // A PanelWindow has no size until it is mapped. A panel opened for the
+    // first time would compute its target from width/height 0 and animate
+    // off-screen (measured: Lab went to x = -428 before snapping right).
+    // Use the screen geometry for the target instead.
+    readonly property real screenWidth: Quickshell.screens.length > 0
+        ? Quickshell.screens[0].width : width
+    readonly property real screenHeight: Quickshell.screens.length > 0
+        ? Quickshell.screens[0].height : height
+
     readonly property rect finalRect: Qt.rect(
-        width - rightMargin - panelWidth,
-        centerVertically ? Math.round((height - panelHeight) / 2) : topMargin,
+        screenWidth - rightMargin - panelWidth,
+        centerVertically ? Math.round((screenHeight - panelHeight) / 2) : topMargin,
         panelWidth,
         panelHeight)
 
