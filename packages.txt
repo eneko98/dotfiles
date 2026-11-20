@@ -281,3 +281,12 @@ spotify-launcher
 # transient user unit and leaves a QMP socket for the Lab panel.
 qemu-desktop
 edk2-ovmf
+
+# Containers (idea 6, phase 2)
+# podman is the rootless engine, distrobox builds on it, and fuse-overlayfs is
+# the rootless storage driver. subuid/subgid are already configured for the
+# user. Enable the user socket once:
+#     systemctl --user enable --now podman.socket
+podman
+distrobox
+fuse-overlayfs
