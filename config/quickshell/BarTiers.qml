@@ -1039,6 +1039,29 @@ PanelWindow {
             }
         }
 
+        // While a notification is on screen, the activity shrinks to a gold
+        // progress line at the top edge; the full activity row returns when
+        // the notification goes away.
+        Rectangle {
+            visible: Island.mode === "notification" && Island.activityId !== ""
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 14
+            anchors.rightMargin: 14
+            height: 2
+            radius: 1
+            color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
+
+            Rectangle {
+                width: parent.width * (Island.activityValue < 0 ? 0.12
+                    : Math.max(0, Math.min(1, Island.activityValue)))
+                height: parent.height
+                radius: 1
+                color: Theme.gold
+            }
+        }
+
         // The countdown line: 2px fg1 at 40% along the base (not accent: it
         // is time, not an active state).
         Rectangle {
