@@ -85,7 +85,11 @@ ShellRoot {
         // With the bar hidden (Cine) there is no trigger to grow from; the
         // panel fades in at the same right edge instead.
         systemPanel.trigger = Scenes.active === "cine" ? null : pill;
-        systemPanel.rightMargin = barLoader.item.width - pill.x - pill.width + 14;
+        // The bar window is unmapped in Cine, so use its fixed right gap
+        // instead of measuring a hidden layout.
+        systemPanel.rightMargin = Scenes.active === "cine"
+            ? 28
+            : barLoader.item.width - pill.x - pill.width + 14;
         systemPanel.section = section || "";
         systemPanel.visible = true;
     }
