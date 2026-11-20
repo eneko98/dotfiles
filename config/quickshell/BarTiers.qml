@@ -309,12 +309,10 @@ PanelWindow {
             ? dndOsdRow.implicitWidth + 24
             : osdRow.implicitWidth + 24
 
-        // Activity wing: glyph, label, 100 px bar, value and the "+N" chip.
-        readonly property real activityTarget: Math.min(440,
-            14 + 16 + 8 + Math.min(activityLabelMetrics.width, 180)
-            + 8 + 100 + 8 + 34
-            + (Island.activityCount > 1 ? 8 + 24 : 0)
-            + 14)
+        // Activity wing: the row measures itself (glyph, label, 100 px bar,
+        // value and the "+N" chip), so the island is the row plus 24 px.
+        readonly property real activityTarget: Math.min(460,
+            activityRow.implicitWidth + 24)
 
         // Notification wing measurements. The body is hidden when the summary
         // takes more than 60% of the maximum wing (240 of 400 px).
