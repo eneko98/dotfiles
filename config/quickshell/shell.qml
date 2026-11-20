@@ -184,6 +184,31 @@ ShellRoot {
         }
     }
 
+    // Activities that fail or last long leave a notification in the history
+    // (and, if not in DND, in the island). Timers always do. When paru wraps
+    // the run, the pacman activity is silent: the paru one reports at the end.
+    Connections {
+        target: Island
+
+        function onActivityEnded(id, label, ok, ms) {
+            if (id === "pacman" && Island.activities["paru"] !== undefined)
+                return;
+            if (!ok || ms > 60000 || id === "timer") {
+                const summary = id === "timer" ? "Timer: " + label
+                    : ok ? label + " finished" : label + " failed";
+                const body = id === "timer" ? "Done"
+                    : ok ? "Took " + Math.round(ms / 1000) + " s"
+                    : "Exit status non-zero";
+                const args = ["notify-send", "-a", "Activity",
+                    "-i", ok ? "dialog-information" : "dialog-error"];
+                if (!ok)
+                    args.push("-u", "critical");
+                args.push(summary, body);
+                Quickshell.execDetached(args);
+            }
+        }
+    }
+
     // With Today open, arrivals go straight to the list and count as read.
     Binding {
         target: notifications
@@ -295,6 +320,11 @@ ShellRoot {
     // progress. Nothing runs while there is no transaction.
     PacmanActivity {
         id: pacmanActivity
+    }
+
+    // A countdown published as an activity: `qs ipc call activity timer`.
+    ActivityTimer {
+        id: activityTimer
     }
 
     // The application launcher, opened by SUPER + Space through the IPC handler
@@ -410,6 +440,10 @@ ShellRoot {
 
         function end(id: string, ok: bool): void {
             Island.activityEnd(id, ok);
+        }
+
+        function timer(label: string, seconds: int): void {
+            activityTimer.start(label, seconds);
         }
     }
 
