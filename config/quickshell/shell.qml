@@ -145,7 +145,10 @@ ShellRoot {
         labPanel.rightMargin = Scenes.active === "cine"
             ? 28
             : barLoader.item.width - pill.x - pill.width + 14;
-        labPanel.visible = true;
+        // The trigger must be in place for one event-loop turn before the
+        // morph starts; otherwise the first frame uses the previous trigger
+        // and the panel appears to fly in from somewhere else.
+        Qt.callLater(function () { labPanel.visible = true; });
     }
 
     // --- Scenes -----------------------------------------------------------
