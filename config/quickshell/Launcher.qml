@@ -22,6 +22,7 @@ Popup {
     property string query: ""
     property int selectedIndex: 0
     property var vmDefs: []
+    property var boxDefs: []
 
     // Two providers behind one field: applications by default, and `>vm`
     // for the VM definitions in ~/vm. Each result is a small wrapper so the
@@ -44,6 +45,25 @@ Popup {
                     name: v.label,
                     icon: "",
                     comment: v.memory + " · " + v.cpus + " vCPU",
+                    genericName: ""
+                };
+            });
+        }
+
+        if (lower === ">box" || lower.indexOf(">box ") === 0) {
+            const term = lower.replace(/^>box\s*/, "");
+            const matches = root.boxDefs.filter(function (b) {
+                return b.name.toLowerCase().indexOf(term) >= 0
+                    || b.image.toLowerCase().indexOf(term) >= 0;
+            });
+            matches.sort(function (a, b) { return a.name.localeCompare(b.name); });
+            return matches.map(function (b) {
+                return {
+                    kind: "box",
+                    boxName: b.name,
+                    name: b.name,
+                    icon: "",
+                    comment: b.image,
                     genericName: ""
                 };
             });
@@ -91,6 +111,8 @@ Popup {
         root.selectedIndex = 0;
         vmList.running = false;
         vmList.running = true;
+        boxList.running = false;
+        boxList.running = true;
         root.visible = true;
         // The Popup shell focuses its panel when it becomes visible; the input
         // has to win that race.
@@ -106,6 +128,10 @@ Popup {
         if (root.vmDefs.length === 0) {
             vmList.running = false;
             vmList.running = true;
+        }
+        if (root.boxDefs.length === 0) {
+            boxList.running = false;
+            boxList.running = true;
         }
         Qt.callLater(function () { input.forceActiveFocus(); });
     }
@@ -130,6 +156,13 @@ Popup {
             Quickshell.execDetached([
                 Quickshell.env("HOME") + "/.config/hypr/scripts/vm-run",
                 item.vmName
+            ]);
+            return;
+        }
+
+        if (item.kind === "box") {
+            Quickshell.execDetached([
+                "kitty", "-e", "distrobox", "enter", item.boxName
             ]);
             return;
         }
@@ -176,6 +209,34 @@ Popup {
         }
     }
 
+    Process {
+        id: boxList
+
+        command: ["distrobox", "list", "--no-color"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const out = [];
+                for (const line of text.split("\n")) {
+                    if (line.trim() === "")
+                        continue;
+                    const parts = line.split("|").map(function (s) { return s.trim(); });
+                    if (parts.length < 4)
+                        continue;
+                    if (parts[0] === "ID" || parts[1] === "NAME")
+                        continue;
+                    out.push({
+                        id: parts[0],
+                        name: parts[1],
+                        status: parts[2],
+                        image: parts[3]
+                    });
+                }
+                root.boxDefs = out;
+            }
+        }
+    }
+
     // Keep the selected row in view without binding ListView.currentIndex (the
     // view writes that property itself on model changes).
     Connections {
@@ -216,7 +277,7 @@ Popup {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             visible: input.text.length === 0
-            text: "Search apps · >vm for VMs"
+            text: "Search apps · >vm · >box"
             color: Theme.fg2
             font.family: "Adwaita Sans"
             font.pixelSize: 13
@@ -285,6 +346,19 @@ Popup {
             }
 
             Text {
+                id: boxIcon
+
+                anchors.left: parent.left
+                anchors.leftMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                visible: row.modelData.kind === "box"
+                text: "󰏖"
+                color: Theme.teal
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 16
+            }
+
+            Text {
                 id: vmIcon
 
                 anchors.left: parent.left
@@ -305,7 +379,7 @@ Popup {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 20
                 height: 20
-                visible: row.modelData.kind !== "vm" && row.modelData.icon !== ""
+                visible: row.modelData.kind === "app" && row.modelData.icon !== ""
                 source: visible ? Quickshell.iconPath(row.modelData.icon) : ""
                 sourceSize.width: 20
                 sourceSize.height: 20
@@ -314,8 +388,9 @@ Popup {
 
             Text {
                 anchors.left: row.modelData.kind === "vm" ? vmIcon.right
+                    : row.modelData.kind === "box" ? boxIcon.right
                     : appIcon.visible ? appIcon.right : parent.left
-                anchors.leftMargin: row.modelData.kind === "vm" ? 10
+                anchors.leftMargin: row.modelData.kind !== "app" ? 10
                     : appIcon.visible ? 10 : 12
                 anchors.right: parent.right
                 anchors.rightMargin: 10
@@ -330,8 +405,9 @@ Popup {
 
             Text {
                 anchors.left: row.modelData.kind === "vm" ? vmIcon.right
+                    : row.modelData.kind === "box" ? boxIcon.right
                     : appIcon.visible ? appIcon.right : parent.left
-                anchors.leftMargin: row.modelData.kind === "vm" ? 10
+                anchors.leftMargin: row.modelData.kind !== "app" ? 10
                     : appIcon.visible ? 10 : 12
                 anchors.right: parent.right
                 anchors.rightMargin: 10
@@ -358,8 +434,10 @@ Popup {
 
     Text {
         visible: root.results.length === 0
-        text: root.query.trim().toLowerCase().indexOf(">vm") === 0
-            ? "No VMs match" : "No applications match"
+        text: root.query.trim().toLowerCase().indexOf(">box") === 0
+            ? "No boxes match"
+            : root.query.trim().toLowerCase().indexOf(">vm") === 0
+                ? "No VMs match" : "No applications match"
         color: Theme.fg2
         font.family: "Adwaita Sans"
         font.pixelSize: 11
