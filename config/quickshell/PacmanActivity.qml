@@ -41,6 +41,8 @@ Scope {
     }
 
     FileView {
+        id: activityFile
+
         path: "/run/dotfiles/pacman.json"
         watchChanges: true
         printErrors: false
@@ -57,6 +59,16 @@ Scope {
                 // A half-written file is not a transaction: ignore it.
             }
         }
+    }
+
+    // FileView.watchChanges does not follow a path that did not exist when the
+    // shell started, and /run/dotfiles/pacman.json only appears with the first
+    // transaction. Poll it: 1 Hz while idle, 0.5 Hz while a transaction runs.
+    Timer {
+        interval: root.running ? 2000 : 1000
+        repeat: true
+        running: true
+        onTriggered: activityFile.reload()
     }
 
     Process {
