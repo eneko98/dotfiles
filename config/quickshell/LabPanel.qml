@@ -3,12 +3,14 @@
 // the running state refreshes only while the panel is open.
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Wayland
 
 Popup {
     id: root
 
-    panelWidth: 400
+    panelWidth: 520
 
     property var runningMap: ({})
 
@@ -200,11 +202,25 @@ Popup {
             required property int cpus
 
             width: parent.width
-            height: 64
+            height: 72
             level: 2
+            radius: Tokens.radius.card
 
             readonly property string systemState: root.runningMap[row.name] || ""
             readonly property bool running: row.systemState !== ""
+
+            // The QEMU window is a normal toplevel; the overview's
+            // ScreencopyView captures it without QMP screendump (which fails
+            // on virtio-vga-gl) and without grabbing whatever is on top.
+            readonly property var preview: {
+                const list = Hyprland.toplevels.values;
+                for (let i = 0; i < list.length; ++i) {
+                    const title = list[i].title || "";
+                    if (title.indexOf("QEMU (" + row.name + ")") === 0)
+                        return list[i];
+                }
+                return null;
+            }
 
             VmClient {
                 id: client
@@ -213,10 +229,46 @@ Popup {
                 visible: false
             }
 
-            Column {
-                width: row.width - 170
+            Item {
+                id: thumb
+
                 anchors.left: parent.left
-                anchors.leftMargin: 12
+                anchors.leftMargin: 10
+                anchors.verticalCenter: parent.verticalCenter
+                width: 112
+                height: 63
+                clip: true
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 6
+                    color: Theme.bg0
+                    border.width: 1
+                    border.color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.08)
+                }
+
+                ScreencopyView {
+                    anchors.fill: parent
+                    visible: row.running && row.preview !== null
+                    captureSource: visible ? row.preview.wayland : null
+                    live: false
+                    constraintSize: Qt.size(224, 126)
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    visible: !row.running || row.preview === null
+                    text: "󰒓"
+                    color: Theme.fg2
+                    font.family: "JetBrainsMono Nerd Font"
+                    font.pixelSize: 22
+                }
+            }
+
+            Column {
+                width: row.width - 250
+                anchors.left: thumb.right
+                anchors.leftMargin: 10
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 2
 
@@ -372,6 +424,7 @@ Popup {
             width: parent.width
             height: 64
             level: 2
+            radius: Tokens.radius.card
 
             readonly property bool running: cRow.state === "running"
 
