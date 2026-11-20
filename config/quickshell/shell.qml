@@ -290,6 +290,13 @@ ShellRoot {
         id: notifications
     }
 
+    // Long-running ALPM transactions as island activities. The pacman hooks
+    // write /run/dotfiles/pacman.json; this tails the log for per-package
+    // progress. Nothing runs while there is no transaction.
+    PacmanActivity {
+        id: pacmanActivity
+    }
+
     // The application launcher, opened by SUPER + Space through the IPC handler
     // below (config/hypr/scripts/launcher calls `qs ipc call launcher toggle`).
     Launcher {
@@ -380,6 +387,29 @@ ShellRoot {
 
         function close(): void {
             dashboardPanel.close();
+        }
+    }
+
+    // Long-running activities: any script can publish one to the island.
+    // `progress` is the common case; `progressText` adds a label such as
+    // "23/41" without a second call.
+    IpcHandler {
+        target: "activity"
+
+        function start(id: string, label: string): void {
+            Island.activityStart(id, label);
+        }
+
+        function progress(id: string, value: real): void {
+            Island.activityProgress(id, value, "");
+        }
+
+        function progressText(id: string, value: real, text: string): void {
+            Island.activityProgress(id, value, text);
+        }
+
+        function end(id: string, ok: bool): void {
+            Island.activityEnd(id, ok);
         }
     }
 

@@ -302,11 +302,19 @@ PanelWindow {
         }
         readonly property real targetWidth: Island.mode === "osd" ? osdTarget
             : Island.mode === "notification" ? notifTarget
+            : Island.mode === "activity" ? activityTarget
             : clockRow.implicitWidth + 24
 
         readonly property real osdTarget: Island.osdKind === "dnd"
             ? dndOsdRow.implicitWidth + 24
             : osdRow.implicitWidth + 24
+
+        // Activity wing: glyph, label, 100 px bar, value and the "+N" chip.
+        readonly property real activityTarget: Math.min(440,
+            14 + 16 + 8 + Math.min(activityLabelMetrics.width, 180)
+            + 8 + 100 + 8 + 34
+            + (Island.activityCount > 1 ? 8 + 24 : 0)
+            + 14)
 
         // Notification wing measurements. The body is hidden when the summary
         // takes more than 60% of the maximum wing (240 of 400 px).
@@ -405,7 +413,7 @@ PanelWindow {
                 if (mouse.button === Qt.RightButton) {
                     if (Island.mode === "notification")
                         Island.dismissCurrent();
-                    else if (bar.notifications !== null) {
+                    else if (Island.mode !== "activity" && bar.notifications !== null) {
                         bar.notifications.dnd = !bar.notifications.dnd;
                         Island.showDndOsd(bar.notifications.dnd);
                     }
@@ -506,6 +514,14 @@ PanelWindow {
             font.family: "Adwaita Sans"
             font.pixelSize: 12
             text: Island.currentBody
+        }
+
+        TextMetrics {
+            id: activityLabelMetrics
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+            font.bold: true
+            text: Island.currentActivity ? Island.currentActivity.label : ""
         }
 
         // The clipped content container. It is always centred and its width
@@ -667,6 +683,83 @@ PanelWindow {
                         color: Theme.fg0
                         font.family: "Adwaita Sans"
                         font.pixelSize: 12
+                    }
+                }
+
+                // The activity mode: a long-running process with progress.
+                Row {
+                    id: activityRow
+                    visible: Island.mode === "activity"
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        glyph: "󰔟"
+                        size: 14
+                        tone: "active"
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: Math.min(activityLabelMetrics.width, 180)
+                        text: Island.currentActivity ? Island.currentActivity.label : ""
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        elide: Text.ElideRight
+                    }
+
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 100
+                        height: 4
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: 2
+                            color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
+                        }
+
+                        Rectangle {
+                            width: parent.width * Math.max(0, Math.min(1, Island.activityValue))
+                            height: parent.height
+                            radius: 2
+                            color: Theme.gold
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 34
+                        horizontalAlignment: Text.AlignRight
+                        text: Island.activityText !== "" ? Island.activityText
+                            : Island.activityValue >= 0
+                                ? Math.round(Island.activityValue * 100) + "%" : "…"
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                        font.features: ({ "tnum": 1 })
+                    }
+
+                    Rectangle {
+                        visible: Island.activityCount > 1
+                        width: visible ? activityChipLabel.implicitWidth + 10 : 0
+                        height: 18
+                        radius: 9
+                        anchors.verticalCenter: parent.verticalCenter
+                        color: Theme.bg2
+
+                        Text {
+                            id: activityChipLabel
+                            anchors.centerIn: parent
+                            text: "+" + Math.max(0, Island.activityCount - 1)
+                            color: Theme.fg1
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 11
+                            font.features: ({ "tnum": 1 })
+                        }
                     }
                 }
 

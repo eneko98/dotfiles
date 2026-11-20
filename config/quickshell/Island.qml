@@ -37,6 +37,21 @@ Singleton {
     // Demo override for tests and captures (the `bar demo` IPC later).
     property string demoMode: ""
 
+    // --- Activity ---
+    // A long-running process with progress (a pacman transaction, a VM boot,
+    // a download). It is not a notification: it stays until it ends. At most
+    // one is on screen; the others wait in the map and show a "+N" chip.
+    property var activities: ({})       // id -> { label, value, text, startedAt }
+    property string activityId: ""      // the one on screen
+
+    readonly property int activityCount: Object.keys(activities).length
+    readonly property var currentActivity: activityId !== "" && activities[activityId]
+        ? activities[activityId] : null
+    readonly property real activityValue: currentActivity ? currentActivity.value : -1
+    readonly property string activityText: currentActivity ? currentActivity.text : ""
+
+    signal activityEnded(string id, string label, bool ok, int ms)
+
     readonly property string mode: {
         if (demoMode !== "")
             return demoMode;
@@ -44,6 +59,8 @@ Singleton {
             return "osd";
         if (current !== null)
             return "notification";
+        if (activityId !== "")
+            return "activity";
         return "normal";
     }
 
@@ -95,6 +112,42 @@ Singleton {
         island.osdKind = "dnd";
         island.osdText = on ? "Do not disturb on" : "Do not disturb off";
         osdTimer.restart();
+    }
+
+    // --- Activity lifecycle. Reassign the map on every change: mutating a
+    // var in place does not notify QML bindings.
+
+    function activityStart(id, label) {
+        const a = Object.assign({}, island.activities);
+        a[id] = { label: label, value: -1, text: "", startedAt: Date.now() };
+        island.activities = a;
+        island.activityId = id;
+    }
+
+    function activityProgress(id, value, text) {
+        if (!(id in island.activities))
+            return;
+        const prev = island.activities[id];
+        const label = text || "";
+        // Avoid relayout storms: ignore steps under 1 % unless the text changes.
+        if (prev.value >= 0 && Math.abs(value - prev.value) < 0.01
+            && label === prev.text)
+            return;
+        const a = Object.assign({}, island.activities);
+        a[id] = Object.assign({}, prev, { value: value, text: label });
+        island.activities = a;
+    }
+
+    function activityEnd(id, ok) {
+        if (!(id in island.activities))
+            return;
+        const a = Object.assign({}, island.activities);
+        const ended = a[id];
+        delete a[id];
+        island.activities = a;
+        const ids = Object.keys(a);
+        island.activityId = ids.length ? ids[ids.length - 1] : "";
+        island.activityEnded(id, ended.label, ok, Date.now() - ended.startedAt);
     }
 
     function push(notification) {
