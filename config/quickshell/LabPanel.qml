@@ -38,7 +38,9 @@ Popup {
     }
 
     function stopVm(name) {
-        Quickshell.execDetached(["systemctl", "--user", "stop", "vm-" + name]);
+        Quickshell.execDetached([
+            Quickshell.env("HOME") + "/.config/hypr/scripts/vm-stop", name
+        ]);
         refreshTimer.restart();
     }
 

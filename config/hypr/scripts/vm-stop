@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Stop a running VM through the island activity, the counterpart to vm-run.
+#
+#   vm-stop alpine-live
+#
+# The stop itself is a hard `systemctl --user stop` (kills QEMU). The activity
+# stays on screen for at least ~500 ms so the island has time to morph to its
+# full width and show the shutdown instead of a one-frame blip.
+set -euo pipefail
+
+name=${1:-}
+if [ -z "$name" ]; then
+	echo "usage: $0 <name>" >&2
+	exit 2
+fi
+
+unit="vm-$name"
+if ! systemctl --user is-active --quiet "$unit"; then
+	echo "$unit is not running" >&2
+	exit 1
+fi
+
+qs ipc call activity start "$unit" "Stopping $name" >/dev/null 2>&1 || true
+trap 'qs ipc call activity end "$unit" false >/dev/null 2>&1 || true' ERR
+
+start=$(date +%s%N)
+systemctl --user stop "$unit"
+elapsed=$((($(date +%s%N) - start) / 1000000))
+if [ "$elapsed" -lt 500 ]; then
+	sleep 0.5
+fi
+
+qs ipc call activity end "$unit" true >/dev/null 2>&1 || true
