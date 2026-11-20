@@ -225,8 +225,9 @@ they can be pasted straight into a chat.
 
 The launcher is our own Quickshell panel (`config/quickshell/Launcher.qml`): it
 searches `DesktopEntries` by name, generic name, comment and keywords, with
-keyboard selection. `fuzzel` stays installed and is still the dmenu behind the
-clipboard history and the session menu.
+keyboard selection. It also has two command providers: `>vm` lists the VMs in
+`~/vm` and `>box` the distroboxes. `fuzzel` stays installed and is still the
+dmenu behind the clipboard history and the session menu.
 
 **Workspace carousel.** `SUPER + Tab` (or a three-finger vertical swipe) opens
 a Cover Flow of the existing workspaces (`config/quickshell/Overview.qml`). The
@@ -255,6 +256,22 @@ and `ncspot`'s shared client hits the API rate limit, so browsing was worse
 than the app. The official app has no close-to-tray on Linux, so closing its
 window ends the process; to keep it playing, move it to another workspace with
 `SUPER + Shift + <n>`. A left click on its tray icon focuses it again.
+
+**VM laboratory.** `config/hypr/scripts/vm-run <name>` boots `~/vm/<name>.json`
+as a transient user unit: QEMU/KVM, UEFI, PipeWire audio, an ephemeral qcow2
+overlay on top of a base, and a QMP socket at `$XDG_RUNTIME_DIR/vm/<name>.qmp`.
+`vm-stop` shuts it down and reports the stop in the island. The Lab panel
+(System → Lab, or `qs ipc call lab toggle`) lists the VMs in `~/vm` with
+Start/Pause/Resume/Stop, and `>vm` in the launcher starts one. The definitions,
+base images and ISOs are user data and stay outside the repo.
+
+**Containers.** The Lab panel also lists rootless podman containers with
+Start/Stop/Remove, and `>box` in the launcher enters an existing distrobox. The
+user socket is a one-time enable:
+
+```bash
+systemctl --user enable --now podman.socket
+```
 
 **Calendar events.** The control centre's month grid computes Spain's national
 holidays (the fixed dates plus Good Friday) and marks any day listed in
