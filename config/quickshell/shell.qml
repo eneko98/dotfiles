@@ -127,6 +127,15 @@ ShellRoot {
         wallpaperPicker.open();
     }
 
+    // The VM laboratory, centred. The Lab scene opens it; the IPC exists for
+    // scripts and keybinds.
+    function openLab() {
+        if (barLoader.item === null)
+            return;
+        labPanel.rightMargin = (barLoader.item.width - labPanel.panelWidth) / 2;
+        labPanel.visible = true;
+    }
+
     // --- Scenes -----------------------------------------------------------
     // The shell applies the effects; the singleton only holds the name and
     // the definitions. The previous value of each knob is saved before it is
@@ -170,6 +179,9 @@ ShellRoot {
                 "$HOME/.config/hypr/scripts/spotify-toggle"]);
 
         Config.saveScene(name, root.sceneSaved);
+
+        if (name === "lab")
+            root.openLab();
     }
 
     function restoreScene() {
@@ -179,6 +191,8 @@ ShellRoot {
         if (saved.caffeine !== undefined)
             Caffeine.active = saved.caffeine;
         root.setDimInactive(saved.dimInactive !== undefined ? saved.dimInactive : true);
+        if (labPanel.visible)
+            labPanel.close();
         root.sceneSaved = ({});
         Config.saveScene("", null);
     }
@@ -413,6 +427,11 @@ ShellRoot {
         id: overview
     }
 
+    // The VM laboratory, opened by the Lab scene or `qs ipc call lab toggle`.
+    LabPanel {
+        id: labPanel
+    }
+
     // The notification server, toasts and history. mako's service is disabled
     // while this owns org.freedesktop.Notifications.
     NotificationCenter {
@@ -521,6 +540,22 @@ ShellRoot {
 
         function close(): void {
             dashboardPanel.close();
+        }
+    }
+
+    // The VM laboratory.
+    IpcHandler {
+        target: "lab"
+
+        function toggle(): void {
+            if (labPanel.visible)
+                labPanel.close();
+            else
+                root.openLab();
+        }
+
+        function close(): void {
+            labPanel.close();
         }
     }
 
