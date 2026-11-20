@@ -11,6 +11,9 @@ Item {
     required property string name
     property string status: "unknown"   // running | paused | shutdown | unknown
     property bool ready: false
+    // Only a running VM has a QMP socket. Keeping this false for stopped VMs
+    // avoids a ServerNotFoundError every second in the shell log.
+    property bool active: true
 
     function send(obj) {
         if (!qmp.connected)
@@ -49,7 +52,7 @@ Item {
         id: qmp
 
         path: Quickshell.env("XDG_RUNTIME_DIR") + "/vm/" + vm.name + ".qmp"
-        connected: true
+        connected: vm.active
 
         parser: SplitParser {
             onRead: function (line) {
@@ -63,20 +66,31 @@ Item {
         }
 
         onError: function (error) {
-            retry.restart();
+            if (vm.active)
+                retry.restart();
+        }
+    }
+
+    onActiveChanged: {
+        if (!vm.active) {
+            retry.stop();
+            vm.ready = false;
         }
     }
 
     Timer {
         id: retry
         interval: 1000
-        onTriggered: qmp.connected = true
+        onTriggered: {
+            if (vm.active)
+                qmp.connected = true;
+        }
     }
 
     Timer {
         interval: 5000
         repeat: true
-        running: vm.ready
+        running: vm.ready && vm.active
         onTriggered: vm.send({ execute: "query-status" })
     }
 }
