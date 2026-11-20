@@ -9,7 +9,6 @@ Popup {
     id: root
 
     panelWidth: 400
-    centerVertically: true
 
     property var runningMap: ({})
 
@@ -153,6 +152,7 @@ Popup {
             VmClient {
                 id: client
                 name: row.name
+                active: row.running
                 visible: false
             }
 

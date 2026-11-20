@@ -12,7 +12,6 @@ Popup {
     id: root
 
     panelWidth: 740
-    centerVertically: true
 
     onVisibleChanged: {
         Processes.active = visible;

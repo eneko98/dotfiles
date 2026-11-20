@@ -94,15 +94,20 @@ ShellRoot {
         systemPanel.visible = true;
     }
 
-    // The dedicated system dashboard: the dashboard pill (with a morph) or
-    // the IPC (centred, no trigger).
+    // The dedicated system dashboard, hanging from its pill on the right.
     function openDashboard(fromPill) {
         if (barLoader.item === null)
             return;
         if (systemPanel.visible)
             systemPanel.close();
+        // The dashboard pill lives inside the status pill, so its own x is
+        // relative to that surface, not to the bar. Use the status pill for
+        // the right edge and the dashboard pill only as the morph trigger.
+        const status = barLoader.item.statusPill;
         dashboardPanel.trigger = fromPill ? barLoader.item.dashboardPill : null;
-        dashboardPanel.rightMargin = (barLoader.item.width - dashboardPanel.panelWidth) / 2;
+        dashboardPanel.rightMargin = fromPill
+            ? barLoader.item.width - status.x - status.width + 14
+            : 28;
         dashboardPanel.visible = true;
     }
 
@@ -115,24 +120,31 @@ ShellRoot {
         overview.visible = true;
     }
 
-    // The launcher is centred too; the panel width is fixed by Launcher.qml.
+    // The launcher hangs from the island, centred, instead of floating in the
+    // middle of the screen.
     function openLauncher() {
+        launcher.trigger = barLoader.item.island;
         launcher.rightMargin = (barLoader.item.width - launcher.panelWidth) / 2;
         launcher.open();
     }
 
-    // The wallpaper picker is centred for the same reason.
+    // The wallpaper picker does the same.
     function openWallpaperPicker() {
+        wallpaperPicker.trigger = barLoader.item.island;
         wallpaperPicker.rightMargin = (barLoader.item.width - wallpaperPicker.panelWidth) / 2;
         wallpaperPicker.open();
     }
 
-    // The VM laboratory, centred. The Lab scene opens it; the IPC exists for
-    // scripts and keybinds.
+    // The VM laboratory, hanging from the status pill on the right, like the
+    // System panel: it grows out of the pill instead of floating in the middle.
     function openLab() {
         if (barLoader.item === null)
             return;
-        labPanel.rightMargin = (barLoader.item.width - labPanel.panelWidth) / 2;
+        const pill = barLoader.item.statusPill;
+        labPanel.trigger = Scenes.active === "cine" ? null : pill;
+        labPanel.rightMargin = Scenes.active === "cine"
+            ? 28
+            : barLoader.item.width - pill.x - pill.width + 14;
         labPanel.visible = true;
     }
 

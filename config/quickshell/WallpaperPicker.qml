@@ -19,7 +19,6 @@ Popup {
     id: root
 
     panelWidth: 660
-    centerVertically: true
 
     property var wallpapers: []
     property int selectedIndex: 0

@@ -17,7 +17,6 @@ Popup {
     id: root
 
     panelWidth: 520
-    centerVertically: true
 
     property string query: ""
     property int selectedIndex: 0
