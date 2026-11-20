@@ -35,3 +35,31 @@ alias pqe='paru -Qe'           # list explicitly installed packages
 alias porph='paru -Qtd'        # list orphaned packages
 alias pclean='paru -Sc'        # clean the package cache
 alias pclr='paru -Scc'         # clean the whole cache
+
+# Every paru transaction is an island activity. The pacman hook covers the
+# repo part; this wrapper covers the AUR build that follows and reports the
+# final result. Searches and queries are left alone.
+paru() {
+    local transactional=0
+    local arg
+    for arg in "$@"; do
+        case "$arg" in
+            -Syu|-Syyu|-Su|-Sua|-Syua|-S) transactional=1 ;;
+        esac
+    done
+
+    if (( ! transactional )); then
+        command paru "$@"
+        return
+    fi
+
+    qs ipc call activity start paru "Updating" >/dev/null 2>&1
+    command paru "$@"
+    local rc=$?
+    if (( rc == 0 )); then
+        qs ipc call activity end paru true >/dev/null 2>&1
+    else
+        qs ipc call activity end paru false >/dev/null 2>&1
+    fi
+    return $rc
+}
