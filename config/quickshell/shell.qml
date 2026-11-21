@@ -135,22 +135,6 @@ ShellRoot {
         wallpaperPicker.open();
     }
 
-    // The VM laboratory, hanging from the status pill on the right, like the
-    // System panel: it grows out of the pill instead of floating in the middle.
-    function openLab() {
-        if (barLoader.item === null)
-            return;
-        const pill = barLoader.item.statusPill;
-        labPanel.trigger = Scenes.active === "cine" ? null : pill;
-        labPanel.rightMargin = Scenes.active === "cine"
-            ? 28
-            : barLoader.item.width - pill.x - pill.width + 14;
-        // The trigger must be in place for one event-loop turn before the
-        // morph starts; otherwise the first frame uses the previous trigger
-        // and the panel appears to fly in from somewhere else.
-        Qt.callLater(function () { labPanel.visible = true; });
-    }
-
     // --- Scenes -----------------------------------------------------------
     // The shell applies the effects; the singleton only holds the name and
     // the definitions. The previous value of each knob is saved before it is
@@ -194,12 +178,6 @@ ShellRoot {
                 "$HOME/.config/hypr/scripts/spotify-toggle"]);
 
         Config.saveScene(name, root.sceneSaved);
-
-        // The panel is the visible half of the Lab scene, but only when the
-        // user enters it: restoring the scene from disk after a reload or a
-        // reboot brings back its effects, not a window nobody asked for.
-        if (name === "lab" && !fromDisk)
-            root.openLab();
     }
 
     function restoreScene() {
@@ -208,9 +186,8 @@ ShellRoot {
             notifications.dnd = saved.dnd;
         if (saved.caffeine !== undefined)
             Caffeine.active = saved.caffeine;
+
         root.setDimInactive(saved.dimInactive !== undefined ? saved.dimInactive : true);
-        if (labPanel.visible)
-            labPanel.close();
         root.sceneSaved = ({});
         Config.saveScene("", null);
     }
@@ -449,12 +426,6 @@ ShellRoot {
         panelName: "overview"
     }
 
-    // The VM laboratory, opened by the Lab scene or `qs ipc call lab toggle`.
-    LabPanel {
-        id: labPanel
-        panelName: "lab"
-    }
-
     // The notification server, toasts and history. mako's service is disabled
     // while this owns org.freedesktop.Notifications.
     NotificationCenter {
@@ -574,22 +545,6 @@ ShellRoot {
 
         function close(): void {
             dashboardPanel.close();
-        }
-    }
-
-    // The VM laboratory.
-    IpcHandler {
-        target: "lab"
-
-        function toggle(): void {
-            if (labPanel.visible)
-                labPanel.close();
-            else
-                root.openLab();
-        }
-
-        function close(): void {
-            labPanel.close();
         }
     }
 

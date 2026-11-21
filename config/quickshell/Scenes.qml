@@ -15,12 +15,6 @@ Singleton {
     property string active: ""
 
     readonly property var definitions: ({
-        lab: {
-            label: "Lab",
-            dnd: false,
-            caffeine: false,
-            dimInactive: false
-        },
         cine: {
             label: "Cine",
             dnd: true,
@@ -36,7 +30,7 @@ Singleton {
         }
     })
 
-    readonly property var names: ["lab", "cine", "music"]
+    readonly property var names: ["cine", "music"]
 
     signal enter(string name)
     signal leave()

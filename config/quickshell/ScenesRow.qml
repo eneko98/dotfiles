@@ -1,4 +1,4 @@
-// The scene switcher in the System panel: Lab, Cine, Música. One active at a
+// The scene switcher in the System panel: Cine and Música. One active at a
 // time; clicking the active one leaves it.
 import QtQuick
 

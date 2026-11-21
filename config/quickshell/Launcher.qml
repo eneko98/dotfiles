@@ -11,7 +11,6 @@
 // ignores runInTerminal.
 
 import Quickshell
-import Quickshell.Io
 import QtQuick
 
 Popup {
@@ -21,55 +20,14 @@ Popup {
 
     property string query: ""
     property int selectedIndex: 0
-    property var vmDefs: []
-    property var boxDefs: []
 
-    // Two providers behind one field: applications by default, and `>vm`
-    // for the VM definitions in ~/vm. Each result is a small wrapper so the
-    // delegate does not need to know which kind it is until launch().
+    // One provider: every installed application. Each result is a small
+    // wrapper so the delegate does not need to know what it launches.
     readonly property var results: {
         const raw = root.query.trim();
         const lower = raw.toLowerCase();
-
-        if (lower === ">vm" || lower.indexOf(">vm ") === 0) {
-            const term = lower.replace(/^>vm\s*/, "");
-            const matches = root.vmDefs.filter(function (v) {
-                return v.name.toLowerCase().indexOf(term) >= 0
-                    || v.label.toLowerCase().indexOf(term) >= 0;
-            });
-            matches.sort(function (a, b) { return a.label.localeCompare(b.label); });
-            return matches.map(function (v) {
-                return {
-                    kind: "vm",
-                    vmName: v.name,
-                    name: v.label,
-                    icon: "",
-                    comment: v.memory + " · " + v.cpus + " vCPU",
-                    genericName: ""
-                };
-            });
-        }
-
-        if (lower === ">box" || lower.indexOf(">box ") === 0) {
-            const term = lower.replace(/^>box\s*/, "");
-            const matches = root.boxDefs.filter(function (b) {
-                return b.name.toLowerCase().indexOf(term) >= 0
-                    || b.image.toLowerCase().indexOf(term) >= 0;
-            });
-            matches.sort(function (a, b) { return a.name.localeCompare(b.name); });
-            return matches.map(function (b) {
-                return {
-                    kind: "box",
-                    boxName: b.name,
-                    name: b.name,
-                    icon: "",
-                    comment: b.image,
-                    genericName: ""
-                };
-            });
-        }
-
         const all = DesktopEntries.applications.values;
+
         const q = lower;
         const byName = function (a, b) { return a.name.localeCompare(b.name); };
         const wrap = function (entry) {
@@ -109,10 +67,6 @@ Popup {
     function open() {
         root.query = "";
         root.selectedIndex = 0;
-        vmList.running = false;
-        vmList.running = true;
-        boxList.running = false;
-        boxList.running = true;
         root.visible = true;
         // The Popup shell focuses its panel when it becomes visible; the input
         // has to win that race.
@@ -125,14 +79,6 @@ Popup {
         root.query = text;
         root.selectedIndex = 0;
         input.text = text;
-        if (root.vmDefs.length === 0) {
-            vmList.running = false;
-            vmList.running = true;
-        }
-        if (root.boxDefs.length === 0) {
-            boxList.running = false;
-            boxList.running = true;
-        }
         Qt.callLater(function () { input.forceActiveFocus(); });
     }
 
@@ -152,21 +98,6 @@ Popup {
     function launch(item) {
         root.close();
 
-        if (item.kind === "vm") {
-            Quickshell.execDetached([
-                Quickshell.env("HOME") + "/.config/hypr/scripts/vm-run",
-                item.vmName
-            ]);
-            return;
-        }
-
-        if (item.kind === "box") {
-            Quickshell.execDetached([
-                "kitty", "-e", "distrobox", "enter", item.boxName
-            ]);
-            return;
-        }
-
         const entry = item.entry;
         if (entry.runInTerminal) {
             Quickshell.execDetached({
@@ -185,57 +116,6 @@ Popup {
 
     onResultsChanged: if (root.selectedIndex >= root.results.length)
         root.selectedIndex = 0
-
-    // The VM definitions are cheap to read; loading them on open keeps the
-    // `>vm` provider in step with ~/vm without a watcher.
-    Process {
-        id: vmList
-
-        command: ["sh", "-c", "$HOME/.config/hypr/scripts/vm-list"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const out = [];
-                const lines = text.split("\n");
-                for (const line of lines) {
-                    if (line.trim() === "")
-                        continue;
-                    try {
-                        out.push(JSON.parse(line));
-                    } catch (e) {}
-                }
-                root.vmDefs = out;
-            }
-        }
-    }
-
-    Process {
-        id: boxList
-
-        command: ["distrobox", "list", "--no-color"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const out = [];
-                for (const line of text.split("\n")) {
-                    if (line.trim() === "")
-                        continue;
-                    const parts = line.split("|").map(function (s) { return s.trim(); });
-                    if (parts.length < 4)
-                        continue;
-                    if (parts[0] === "ID" || parts[1] === "NAME")
-                        continue;
-                    out.push({
-                        id: parts[0],
-                        name: parts[1],
-                        status: parts[2],
-                        image: parts[3]
-                    });
-                }
-                root.boxDefs = out;
-            }
-        }
-    }
 
     // Keep the selected row in view without binding ListView.currentIndex (the
     // view writes that property itself on model changes).
@@ -277,7 +157,7 @@ Popup {
             anchors.rightMargin: 12
             anchors.verticalCenter: parent.verticalCenter
             visible: input.text.length === 0
-            text: "Search apps · >vm · >box"
+            text: "Search apps"
             color: Theme.fg2
             font.family: "Adwaita Sans"
             font.pixelSize: 13
@@ -345,32 +225,6 @@ Popup {
                 color: Theme.gold
             }
 
-            Text {
-                id: boxIcon
-
-                anchors.left: parent.left
-                anchors.leftMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                visible: row.modelData.kind === "box"
-                text: "󰏖"
-                color: Theme.teal
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-
-            Text {
-                id: vmIcon
-
-                anchors.left: parent.left
-                anchors.leftMargin: 12
-                anchors.verticalCenter: parent.verticalCenter
-                visible: row.modelData.kind === "vm"
-                text: "󰒓"
-                color: Theme.gold
-                font.family: "JetBrainsMono Nerd Font"
-                font.pixelSize: 16
-            }
-
             Image {
                 id: appIcon
 
@@ -379,7 +233,7 @@ Popup {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 20
                 height: 20
-                visible: row.modelData.kind === "app" && row.modelData.icon !== ""
+                visible: row.modelData.icon !== ""
                 source: visible ? Quickshell.iconPath(row.modelData.icon) : ""
                 sourceSize.width: 20
                 sourceSize.height: 20
@@ -387,11 +241,8 @@ Popup {
             }
 
             Text {
-                anchors.left: row.modelData.kind === "vm" ? vmIcon.right
-                    : row.modelData.kind === "box" ? boxIcon.right
-                    : appIcon.visible ? appIcon.right : parent.left
-                anchors.leftMargin: row.modelData.kind !== "app" ? 10
-                    : appIcon.visible ? 10 : 12
+                anchors.left: appIcon.visible ? appIcon.right : parent.left
+                anchors.leftMargin: appIcon.visible ? 10 : 12
                 anchors.right: parent.right
                 anchors.rightMargin: 10
                 anchors.top: parent.top
@@ -404,11 +255,8 @@ Popup {
             }
 
             Text {
-                anchors.left: row.modelData.kind === "vm" ? vmIcon.right
-                    : row.modelData.kind === "box" ? boxIcon.right
-                    : appIcon.visible ? appIcon.right : parent.left
-                anchors.leftMargin: row.modelData.kind !== "app" ? 10
-                    : appIcon.visible ? 10 : 12
+                anchors.left: appIcon.visible ? appIcon.right : parent.left
+                anchors.leftMargin: appIcon.visible ? 10 : 12
                 anchors.right: parent.right
                 anchors.rightMargin: 10
                 anchors.top: parent.top
@@ -434,10 +282,7 @@ Popup {
 
     Text {
         visible: root.results.length === 0
-        text: root.query.trim().toLowerCase().indexOf(">box") === 0
-            ? "No boxes match"
-            : root.query.trim().toLowerCase().indexOf(">vm") === 0
-                ? "No VMs match" : "No applications match"
+        text: "No applications match"
         color: Theme.fg2
         font.family: "Adwaita Sans"
         font.pixelSize: 11

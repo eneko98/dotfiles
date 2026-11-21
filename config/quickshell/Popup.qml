@@ -84,7 +84,8 @@ PanelWindow {
 
     // A PanelWindow has no size until it is mapped. A panel opened for the
     // first time would compute its target from width/height 0 and animate
-    // off-screen (measured: Lab went to x = -428 before snapping right).
+    // off-screen (measured: a panel whose trigger was not in place yet went to
+// x = -428 before snapping right).
     // Use the screen geometry for the target instead.
     readonly property real screenWidth: Quickshell.screens.length > 0
         ? Quickshell.screens[0].width : width

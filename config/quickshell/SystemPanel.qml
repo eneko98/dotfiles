@@ -53,7 +53,7 @@ Popup {
     // power off are the most consequential controls, so they lead.
     SessionRow { width: parent.width }
 
-    // Scenes: Lab, Cine, Música. One at a time, applied as a whole.
+    // Scenes: Cine and Música. One at a time, applied as a whole.
     ScenesRow { width: parent.width }
 
     Rectangle {

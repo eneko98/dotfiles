@@ -1,9 +1,0 @@
-#!/bin/sh
-# Print one JSON line per VM definition in ~/vm, for the Lab panel.
-for f in "$HOME"/vm/*.json; do
-	[ -f "$f" ] || continue
-	n=$(basename "$f" .json)
-	jq -c --arg n "$n" \
-		'{name:$n, label:(.name // $n), memory:(.memory // "2G"), cpus:(.cpus // 2)}' \
-		"$f"
-done

@@ -273,24 +273,6 @@ gtk4-layer-shell
 # limited, and browsing in a terminal was worse than the app.
 spotify-launcher
 
-# VM laboratory (idea 6)
-# qemu-desktop is the metapackage with the GTK UI, PipeWire audio and the
-# virtio-gpu-gl devices; edk2-ovmf is the UEFI firmware. KVM is already usable
-# (/dev/kvm exists and svm is in /proc/cpuinfo). The VM definitions and ISOs
-# live in ~/vm, outside the repo; config/hypr/scripts/vm-run starts one as a
-# transient user unit and leaves a QMP socket for the Lab panel.
-qemu-desktop
-edk2-ovmf
-
-# Containers (idea 6, phase 2)
-# podman is the rootless engine, distrobox builds on it, and fuse-overlayfs is
-# the rootless storage driver. subuid/subgid are already configured for the
-# user. Enable the user socket once:
-#     systemctl --user enable --now podman.socket
-podman
-distrobox
-fuse-overlayfs
-
 # Measurement HUD (idea 2)
 # libva-utils is only `vainfo`, which answers what the GPU can decode: this
 # Vega 8 (VCN 1.0) lists H.264, HEVC and VP9 profile 0/2 and no AV1. The HUD
