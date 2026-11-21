@@ -62,15 +62,24 @@ Row {
     // only visible while a player is up anyway.
     readonly property var peakNode: Pipewire.defaultAudioSink
 
+    // Whether the cursor is over the island; BarTiers feeds this in. The peak
+    // monitor is expensive -- leaving it on while music plays cost ~8 % of a
+    // core, and the cost is opening and closing the capture stream, not
+    // listening to it (measured: one cycle per second was 9 %, one per four
+    // seconds 3 %, i.e. the same as off) -- so it only runs while the bars can
+    // actually be looked at.
+    property bool hovered: false
+
+    readonly property bool peaksWanted: root.visible && root.hovered
+        && root.player !== null && root.player.isPlaying
+
     visible: root.active
 
-    // Levels, not a spectrum. The monitor opens a capture stream in Pipewire,
-    // so it only runs while the island is actually showing the bars.
     PwNodePeakMonitor {
         id: peaks
 
         node: root.peakNode
-        enabled: root.visible && root.player !== null && root.player.isPlaying
+        enabled: root.peaksWanted
     }
 
     Text {
@@ -105,12 +114,10 @@ Row {
                 required property int index
 
                 // A normal property, animated: a Behavior on a readonly one is
-                // not reliable (measured with the slider).
-                property real shown: 0.15
-
-                Binding on shown {
-                    value: Math.max(0.15, peaks.peaks[bar.index] || 0)
-                }
+                // not reliable (measured with the slider). With the monitor off
+                // the bars rest as thin dashes, so the island keeps its width.
+                property real shown: peaks.enabled
+                    ? Math.max(0.15, peaks.peaks[bar.index] || 0) : 0
 
                 Behavior on shown {
                     NumberAnimation { duration: 90 }
