@@ -195,7 +195,10 @@ ShellRoot {
 
         Config.saveScene(name, root.sceneSaved);
 
-        if (name === "lab")
+        // The panel is the visible half of the Lab scene, but only when the
+        // user enters it: restoring the scene from disk after a reload or a
+        // reboot brings back its effects, not a window nobody asked for.
+        if (name === "lab" && !fromDisk)
             root.openLab();
     }
 
