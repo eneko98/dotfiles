@@ -490,6 +490,12 @@ ShellRoot {
         id: notifications
     }
 
+    // The album art accent: it repaints the shell accent while something with
+    // a colourful cover plays and restores the wallpaper accent when it stops.
+    AlbumAccent {
+        id: albumAccent
+    }
+
     // Long-running ALPM transactions as island activities. The pacman hooks
     // write /run/dotfiles/pacman.json; this tails the log for per-package
     // progress. Nothing runs while there is no transaction.
