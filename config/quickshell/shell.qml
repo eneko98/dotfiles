@@ -140,6 +140,12 @@ ShellRoot {
     // the definitions. The previous value of each knob is saved before it is
     // touched, and that saved value is what leaving restores.
     property var sceneSaved: ({})
+    // The dim_inactive value restoreScene() just wrote back. A switch straight
+    // into another scene reuses it instead of re-reading: the restore and the
+    // read are two separate processes, and the read could otherwise catch the
+    // outgoing scene's value before the restore lands.
+    property var dimOriginal: null
+    property string pendingScene: ""
 
     function setDimInactive(value) {
         Quickshell.execDetached([
@@ -147,6 +153,25 @@ ShellRoot {
             "hl.config({ decoration = { dim_inactive = "
                 + (value ? "true" : "false") + " } })"
         ]);
+    }
+
+    // The scene's own effects. Split from applyScene() because entering has to
+    // know the real dim_inactive first: saving an assumed `true` turns a
+    // deliberate `false` into the scene's value for good.
+    function commitScene(name) {
+        const def = Scenes.definitions[name];
+        if (!def)
+            return;
+
+        notifications.dnd = def.dnd;
+        Caffeine.active = def.caffeine;
+        root.setDimInactive(def.dimInactive);
+
+        if (def.spotify)
+            Quickshell.execDetached(["sh", "-c",
+                "$HOME/.config/hypr/scripts/spotify-toggle"]);
+
+        Config.saveScene(name, root.sceneSaved);
     }
 
     function applyScene(name, fromDisk) {
@@ -161,23 +186,27 @@ ShellRoot {
             } catch (e) {
                 root.sceneSaved = {};
             }
-        } else {
+            root.commitScene(name);
+            return;
+        }
+
+        const carry = root.dimOriginal;
+        root.dimOriginal = null;
+        if (carry !== null) {
             root.sceneSaved = {
                 dnd: notifications.dnd,
                 caffeine: Caffeine.active,
-                dimInactive: true
+                dimInactive: carry
             };
+            root.commitScene(name);
+            return;
         }
 
-        notifications.dnd = def.dnd;
-        Caffeine.active = def.caffeine;
-        root.setDimInactive(def.dimInactive);
-
-        if (def.spotify)
-            Quickshell.execDetached(["sh", "-c",
-                "$HOME/.config/hypr/scripts/spotify-toggle"]);
-
-        Config.saveScene(name, root.sceneSaved);
+        // hyprctl getoption reports the live value under the Lua parser too
+        // (`bool: true` / `set: true`). Anything else falls back to the old
+        // assumed `true` rather than skipping the save.
+        root.pendingScene = name;
+        dimRead.running = true;
     }
 
     function restoreScene() {
@@ -187,7 +216,13 @@ ShellRoot {
         if (saved.caffeine !== undefined)
             Caffeine.active = saved.caffeine;
 
-        root.setDimInactive(saved.dimInactive !== undefined ? saved.dimInactive : true);
+        const dim = saved.dimInactive !== undefined ? saved.dimInactive : true;
+        root.setDimInactive(dim);
+        // A leave that is the first half of a switch is consumed by
+        // applyScene() in this same event-loop turn; a real exit clears it.
+        root.dimOriginal = dim;
+        Qt.callLater(function () { root.dimOriginal = null; });
+
         root.sceneSaved = ({});
         Config.saveScene("", null);
     }
@@ -306,6 +341,29 @@ ShellRoot {
 
         function onLeave() {
             root.restoreScene();
+        }
+    }
+
+    // Reads decoration:dim_inactive before a scene overwrites it. Under the
+    // Lua parser the value is still readable: `bool: true` plus `set: true`.
+    Process {
+        id: dimRead
+
+        command: ["hyprctl", "getoption", "decoration:dim_inactive"]
+
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (root.pendingScene === "")
+                    return;
+                root.sceneSaved = {
+                    dnd: notifications.dnd,
+                    caffeine: Caffeine.active,
+                    // An unreadable answer keeps the old assumed `true`.
+                    dimInactive: text.indexOf("bool: false") < 0
+                };
+                root.commitScene(root.pendingScene);
+                root.pendingScene = "";
+            }
         }
     }
 
