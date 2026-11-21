@@ -267,4 +267,50 @@ Column {
             }
         }
     }
+
+    // --- Lyrics -----------------------------------------------------------
+    // The island only has room for the line being sung; Today shows the
+    // context around it, which is what makes a lyric readable.
+    Column {
+        width: parent.width
+        spacing: 3
+        visible: Lyrics.hasLyrics
+
+        Rectangle {
+            width: parent.width
+            height: 1
+            color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
+        }
+
+        Item { width: 1; height: 3 }
+
+        Text {
+            width: parent.width
+            text: Lyrics.previous
+            color: Theme.fg2
+            font.family: "Adwaita Sans"
+            font.pixelSize: 11
+            elide: Text.ElideRight
+        }
+
+        Text {
+            width: parent.width
+            text: Lyrics.current
+            color: Theme.fg0
+            font.family: "Adwaita Sans"
+            font.pixelSize: 13
+            wrapMode: Text.Wrap
+            maximumLineCount: 2
+            elide: Text.ElideRight
+        }
+
+        Text {
+            width: parent.width
+            text: Lyrics.next
+            color: Theme.fg2
+            font.family: "Adwaita Sans"
+            font.pixelSize: 11
+            elide: Text.ElideRight
+        }
+    }
 }
