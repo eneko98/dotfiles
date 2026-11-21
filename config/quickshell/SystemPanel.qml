@@ -127,6 +127,22 @@ Popup {
             checked: Caffeine.active
             onCheckedChanged: Caffeine.active = checked
         }
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            expandable: false
+            checked: Lyrics.enabled
+            glyph: "\uf001"
+            title: "Lyrics"
+            subtitle: Lyrics.enabled
+                ? (Lyrics.hasLyrics ? Lyrics.lines.length + " lines" : "On")
+                : "Off"
+
+            onToggled: {
+                Lyrics.enabled = !Lyrics.enabled;
+                Config.saveLyrics(Lyrics.enabled);
+            }
+        }
     }
 
     // --- The one detail --------------------------------------------------

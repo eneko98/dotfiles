@@ -102,7 +102,15 @@ Singleton {
         fetch.running = true;
     }
 
-    onEnabledChanged: if (root.enabled) root.load()
+    onEnabledChanged: {
+        if (root.enabled) {
+            root.load();
+        } else {
+            // Clearing is the point of the switch: no line, no island wing.
+            root.lines = [];
+            root.index = -1;
+        }
+    }
 
     // A player that was already on a track when the shell started is not a
     // title change: load when the pick itself changes.

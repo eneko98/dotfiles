@@ -373,6 +373,7 @@ ShellRoot {
         target: Config
 
         function onLoaded() {
+            Lyrics.enabled = Config.lyrics;
             if (Config.scene !== "" && Scenes.active !== Config.scene) {
                 Scenes.active = Config.scene;
                 root.applyScene(Config.scene, true);
@@ -780,6 +781,7 @@ ShellRoot {
 
         function enabled(value: string): void {
             Lyrics.enabled = value === "true";
+            Config.saveLyrics(Lyrics.enabled);
         }
     }
 }

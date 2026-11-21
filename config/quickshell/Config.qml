@@ -28,6 +28,9 @@ Singleton {
     // false at boot, persisted through the same state file as scenes.
     property bool hud: false
 
+    // Lyrics in the island, on by default and off with one click in System.
+    property bool lyrics: true
+
     readonly property string stateDir: Quickshell.env("XDG_STATE_HOME")
         || (Quickshell.env("HOME") + "/.local/state")
 
@@ -47,6 +50,7 @@ Singleton {
             property string scene: root.scene
             property string sceneSaved: root.sceneSaved
             property bool hud: root.hud
+            property bool lyrics: root.lyrics
         }
     }
 
@@ -65,6 +69,7 @@ Singleton {
         root.scene = adapter.scene;
         root.sceneSaved = adapter.sceneSaved;
         root.hud = adapter.hud;
+        root.lyrics = adapter.lyrics;
         root.loaded();
     }
 
@@ -74,6 +79,12 @@ Singleton {
         stateFile.writeAdapter();
         if (!on)
             Perf.clear();
+    }
+
+    function saveLyrics(on) {
+        root.lyrics = on;
+        adapter.lyrics = on;
+        stateFile.writeAdapter();
     }
 
     function setLayout(name) {
