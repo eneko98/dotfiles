@@ -758,4 +758,22 @@ ShellRoot {
             return JSON.stringify(Perf.frameStats);
         }
     }
+
+    // Lyrics: the System toggle lives here once the island uses it, and this
+    // is also how a line is checked without a screenshot.
+    IpcHandler {
+        target: "lyrics"
+
+        function state(): string {
+            return "playing=" + Lyrics.playing
+                + " enabled=" + Lyrics.enabled
+                + " lines=" + Lyrics.lines.length
+                + " index=" + Lyrics.index
+                + " current='" + Lyrics.current + "'";
+        }
+
+        function enabled(value: string): void {
+            Lyrics.enabled = value === "true";
+        }
+    }
 }
