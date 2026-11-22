@@ -32,6 +32,7 @@ Item {
     property real humidity: NaN
     property real rain: NaN
     property var hours: []
+    property string mood: "🌡️"
 
     implicitHeight: 24
     // The bar pill sizes itself from this; without it the width came out 0 and
@@ -47,6 +48,22 @@ Item {
 
     // WMO codes as Open-Meteo returns them; ranges collapse to the nearest
     // condition.
+    // The WMO code as a colour emoji too: Noto Color Emoji is installed and
+    // gives the filled, coloured look of the reference without drawing icons.
+    function emoji(code) {
+        if (code === 0) return "☀️";
+        if (code === 1 || code === 2) return "🌤️";
+        if (code === 3) return "☁️";
+        if (code === 45 || code === 48) return "🌫️";
+        if (code >= 51 && code <= 57) return "🌦️";
+        if (code >= 61 && code <= 67) return "🌧️";
+        if (code >= 71 && code <= 77) return "🌨️";
+        if (code >= 80 && code <= 82) return "🌦️";
+        if (code === 85 || code === 86) return "🌨️";
+        if (code >= 95) return "⛈️";
+        return "🌡️";
+    }
+
     function info(code) {
         if (code === 0) return { text: "Clear", glyph: "󰖙" };
         if (code === 1 || code === 2) return { text: "Partly cloudy", glyph: "󰖙" };
@@ -99,6 +116,7 @@ Item {
                 const info = root.info(data.current.weather_code);
                 root.temp = data.current.temperature_2m;
                 root.condition = info.text;
+                root.mood = root.emoji(data.current.weather_code);
                 root.text = Math.round(data.current.temperature_2m) + " °C · " + info.text;
                 root.glyph = info.glyph;
 
@@ -111,10 +129,12 @@ Item {
                 const list = [];
                 if (h && h.time && h.temperature_2m) {
                     for (let i = 0; i < h.time.length && i < 6; ++i) {
+                        const code = h.weather_code ? h.weather_code[i] : 0;
                         list.push({
                             time: h.time[i],
                             temp: h.temperature_2m[i],
-                            code: h.weather_code ? h.weather_code[i] : 0
+                            code: code,
+                            emoji: root.emoji(code)
                         });
                     }
                 }
@@ -131,6 +151,7 @@ Item {
                 root.humidity = NaN;
                 root.rain = NaN;
                 root.hours = [];
+                root.mood = "🌡️";
                 root.glyph = "󰖐";
             }
         }
