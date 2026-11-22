@@ -127,9 +127,6 @@ Popup {
     readonly property int menuWidth: 168
 
     function openMenu(item, pointX, pointY) {
-        if (item.appUnit === "")
-            return;
-
         root.menu = {
             unit: item.appUnit,
             app: item.appClass,
@@ -152,6 +149,9 @@ Popup {
 
         const unit = root.menu.unit;
         root.closeMenu();
+
+        if (unit === "")
+            return;
 
         // Killing a frozen app is refused by systemd ("Cannot perform operation
         // on frozen unit"), so the kill thaws first. Both in one shell, because
@@ -252,13 +252,29 @@ Popup {
                     required property int index
 
                     readonly property real distance: index - root.p
+                    // The window the card stands for: the activated one, or --
+                    // while the panel itself holds the focus -- the one used
+                    // most recently. Taking `list[0]` made the card describe a
+                    // window the user had not touched in hours.
                     readonly property var preview: {
                         const list = modelData.toplevels.values;
-                        for (let i = 0; i < list.length; i++) {
+                        let recent = null;
+
+                        for (let i = 0; i < list.length; ++i) {
                             if (list[i].activated)
                                 return list[i];
+
+                            const ipc = list[i].lastIpcObject;
+                            const age = ipc && ipc.focusHistoryID !== undefined
+                                ? Number(ipc.focusHistoryID) : 9999;
+                            const recentAge = recent && recent.lastIpcObject
+                                && recent.lastIpcObject.focusHistoryID !== undefined
+                                ? Number(recent.lastIpcObject.focusHistoryID) : 9999;
+                            if (recent === null || age < recentAge)
+                                recent = list[i];
                         }
-                        return list.length > 0 ? list[0] : null;
+
+                        return recent;
                     }
                     // The window's PID is the bridge to its app scope. The IPC
                     // object arrives key by key, so `pid` can be missing for a
@@ -580,9 +596,27 @@ Popup {
                     width: parent.width - 8
                     spacing: 1
 
+                    // No app scope: there is nothing to act on, so the menu
+                    // says why instead of showing two rows that do nothing.
+                    Text {
+                        visible: root.menu !== null && root.menu.unit === ""
+                        width: parent.width
+                        leftPadding: 10
+                        rightPadding: 10
+                        topPadding: 7
+                        bottomPadding: 7
+                        text: "Not launched by uwsm. Restart the app to manage it."
+                        wrapMode: Text.WordWrap
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                    }
+
                     Repeater {
-                        model: root.menu !== null && root.menu.frozen
-                            ? ["Thaw", "Kill app"] : ["Freeze", "Kill app"]
+                        model: root.menu !== null && root.menu.unit !== ""
+                            ? (root.menu.frozen
+                                ? ["Thaw", "Kill app"] : ["Freeze", "Kill app"])
+                            : []
 
                         delegate: Pressable {
                             id: row
