@@ -68,13 +68,18 @@ Item {
         default property alias content: inner.data
 
         radius: Tokens.radius.card
-        color: Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b, 0.88)
+        // One step above the panel (bg1) and with its own hairline: without
+        // this the four groups read as one surface split by lines, which is
+        // exactly what the reference does not look like.
+        color: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.55)
+        border.width: 1
+        border.color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.07)
 
         Column {
             id: inner
 
             anchors.fill: parent
-            anchors.margins: Tokens.space.m
+            anchors.margins: 12
             spacing: Tokens.space.xs
         }
     }
@@ -102,17 +107,17 @@ Item {
                 text: gauge.label
                 color: Theme.fg0
                 font.family: "Adwaita Sans"
-                font.pixelSize: 13
+                font.pixelSize: 12
                 font.weight: Font.DemiBold
             }
 
             Item {
                 width: parent.width
-                height: Math.min(parent.width, gauge.height - 52)
+                height: Math.min(parent.width, gauge.height - 24)
 
                 Ring {
                     anchors.fill: parent
-                    anchors.margins: 6
+                    anchors.margins: 0
                     value: gauge.value
                     // The palette's one meaning for red: something is wrong.
                     fillColor: gauge.value >= 0.9 ? Theme.red : Theme.gold
@@ -205,7 +210,7 @@ Item {
 
         width: parent.width
         spacing: 8
-        height: 190
+        height: 186
 
         Card {
             width: (gauges.width - gauges.spacing) / 2
@@ -289,7 +294,7 @@ Item {
 
         width: parent.width
         spacing: 8
-        height: 226
+        height: 212
 
         Card {
             width: (lower.width - lower.spacing) / 2
@@ -307,7 +312,7 @@ Item {
 
             Column {
                 width: parent.width
-                spacing: 10
+                spacing: 14
 
                 Repeater {
                     model: Resources.disks
@@ -371,7 +376,7 @@ Item {
 
             Item {
                 width: parent.width
-                height: 118
+                height: 128
 
                 Sparkline {
                     anchors.fill: parent

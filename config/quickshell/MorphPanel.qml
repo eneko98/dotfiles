@@ -95,8 +95,11 @@ Item {
         NumberAnimation {
             target: morph; property: "tSize"; to: 1
             duration: Motion.panelGrow
+            // No overshoot on the size: backOut made the panel grow ~15 % past
+            // its final width before settling, which read as "the panel is too
+            // big". The bounce stays on the drop, where it is a gesture.
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.backOut
+            easing.bezierCurve: Motion.decel
         }
     }
 

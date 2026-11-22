@@ -14,7 +14,7 @@ Popup {
     id: root
 
     // The dashboard is a wide, two-column section; the rest are one column.
-    panelWidth: root.current === "dashboard" ? 890 : 520
+    panelWidth: root.current === "dashboard" ? 860 : 520
 
     // The tabs are the control centre's own navigation. A panel opened straight
     // on one section (the dashboard, from the stats pill) has no need for them:
