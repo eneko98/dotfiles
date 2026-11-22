@@ -70,15 +70,15 @@ Popup {
     }
 
     // --- The sections row -------------------------------------------------
-    Row {
-        id: tabs
+    // The wheel area is a SIBLING of the Row, not a child: an item with anchors
+    // inside a positioner breaks its layout (the whole row vanished).
+    Item {
+        id: tabsBox
 
         visible: root.showTabs
         width: parent.width
-        spacing: 2
+        height: tabs.height
 
-        // Wheel to walk the sections. An area on top accepting no buttons:
-        // the clicks still reach the tabs underneath.
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.NoButton
@@ -87,6 +87,12 @@ Popup {
                 root.step(event.angleDelta.y > 0 ? -1 : 1);
             }
         }
+
+        Row {
+        id: tabs
+
+        width: parent.width
+        spacing: 2
 
         Repeater {
             model: root.tabs
@@ -147,6 +153,7 @@ Popup {
                 onClicked: root.section = tab.modelData.id === "system"
                     ? "" : tab.modelData.id
             }
+        }
         }
     }
 
