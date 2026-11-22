@@ -179,11 +179,31 @@ Popup {
             root.appStats = ({});
     }
 
+    Timer {
+        id: restart
+        interval: 1000
+        onTriggered: root.updateStats()
+    }
+
     Process {
         id: stats
 
         command: ["python3",
             Quickshell.env("HOME") + "/.config/hypr/scripts/cgstat.py"]
+
+        // If the helper dies (a bad /proc read, a scope vanishing mid-scan) the
+        // cards must not stay blank for the rest of the session: while the
+        // carousel is still open, start it again a second later.
+        onExited: function (code, status) {
+            if (root.visible)
+                restart.start();
+        }
+
+        stderr: SplitParser {
+            onRead: function (line) {
+                console.log("cgstat: " + line);
+            }
+        }
 
         stdout: SplitParser {
             onRead: function (line) {

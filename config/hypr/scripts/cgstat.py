@@ -111,9 +111,23 @@ def main():
     try:
         while True:
             snapshot, previous = stats(slice_path, previous)
+
+            # An empty snapshot is suspicious: the slice may not have existed
+            # when this started (first overview of a boot, before any app ran),
+            # and then the path would stay wrong for the whole session. Look
+            # again instead of printing {} forever.
+            if not snapshot:
+                again = app_slice()
+                if again is not None and again != slice_path:
+                    slice_path, previous = again, {}
+                    continue
+
             try:
-                print(json.dumps(snapshot), flush=True)
+                sys.stdout.write(json.dumps(snapshot) + "\n")
+                sys.stdout.flush()
             except BrokenPipeError:
+                # Quiet the flush at interpreter shutdown too.
+                os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
                 return 0
             time.sleep(1)
     except KeyboardInterrupt:
