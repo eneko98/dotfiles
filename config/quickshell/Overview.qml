@@ -9,6 +9,7 @@
 // too much for a peek.
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 
@@ -86,6 +87,60 @@ Popup {
                 root.p = root.current;
                 Qt.callLater(function () { carousel.forceActiveFocus(); });
             }
+            root.updateStats();
+        }
+    }
+
+    // --- Per-app numbers -----------------------------------------------------
+    // cgstat.py writes one JSON line a second with every app scope's memory,
+    // CPU, frozen flag and the PIDs inside it. A window's PID belongs to exactly
+    // one scope, which is how a card finds its app. The helper only runs while
+    // the carousel is open: those files are cheap to read, but nothing needs
+    // them the rest of the time.
+    property var appStats: ({})
+
+    function statsFor(pid) {
+        for (const unit in root.appStats) {
+            const pids = root.appStats[unit].pids;
+
+            for (let i = 0; i < pids.length; ++i) {
+                if (pids[i] === pid)
+                    return root.appStats[unit];
+            }
+        }
+
+        return null;
+    }
+
+    function memory(bytes) {
+        if (bytes >= 1073741824)
+            return (bytes / 1073741824).toFixed(1) + " GB";
+        return Math.round(bytes / 1048576) + " MB";
+    }
+
+    function updateStats() {
+        if (root.visible === stats.running)
+            return;
+
+        stats.running = root.visible;
+        if (!root.visible)
+            root.appStats = ({});
+    }
+
+    Process {
+        id: stats
+
+        command: ["python3",
+            Quickshell.env("HOME") + "/.config/hypr/scripts/cgstat.py"]
+
+        stdout: SplitParser {
+            onRead: function (line) {
+                try {
+                    root.appStats = JSON.parse(line);
+                } catch (error) {
+                    // A half-written line is not worth a warning every second.
+                }
+            }
         }
     }
 
@@ -153,6 +208,14 @@ Popup {
                         }
                         return list.length > 0 ? list[0] : null;
                     }
+                    // The window's PID is the bridge to its app scope.
+                    readonly property int pid: preview !== null
+                        && preview.lastIpcObject !== undefined
+                        ? preview.lastIpcObject.pid : -1
+                    readonly property string appClass: preview !== null
+                        && preview.lastIpcObject !== undefined
+                        ? (preview.lastIpcObject.class || "") : ""
+                    readonly property var appStats: root.statsFor(pid)
 
                     width: root.cardWidth
                     height: 260
@@ -274,6 +337,30 @@ Popup {
                                     ? "1 window"
                                     : cardItem.modelData.toplevels.values.length + " windows"
                                 color: Theme.fg1
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 11
+                            }
+
+                            // The app's own numbers, or nothing when it was not
+                            // launched through uwsm (no scope of its own) --
+                            // a dash would be noise, not information.
+                            Text {
+                                visible: cardItem.appStats !== null
+
+                                text: {
+                                    const s = cardItem.appStats;
+                                    if (s === null)
+                                        return "";
+
+                                    const head = (s.frozen ? "frozen · " : "")
+                                        + (cardItem.appClass
+                                            ? cardItem.appClass + " · " : "");
+
+                                    return head + root.memory(s.mem) + " · "
+                                        + s.cpu + " %";
+                                }
+                                color: cardItem.appStats !== null
+                                    && cardItem.appStats.frozen ? Theme.teal : Theme.fg2
                                 font.family: "Adwaita Sans"
                                 font.pixelSize: 11
                             }

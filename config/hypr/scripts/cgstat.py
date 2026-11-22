@@ -28,9 +28,11 @@ def app_slice():
 
     Not every process lives under it: this helper is usually started from a
     terminal whose shell sits in `session.slice` (kitty moves its children
-    there), so /proc/self/cgroup is only the first guess. The standard place is
-    derived from the user manager instead.
+    there), and Quickshell itself lives one level up, in `app.slice`. So the path
+    is resolved, then narrowed to `app-graphical.slice` when it exists.
     """
+    roots = []
+
     with open("/proc/self/cgroup") as handle:
         for line in handle:
             if not line.startswith("0::"):
@@ -39,14 +41,18 @@ def app_slice():
             for name in ("app-graphical.slice", "app.slice"):
                 marker = "/" + name
                 if marker in path:
-                    return CGROUP_ROOT + path[:path.index(marker) + len(marker)]
+                    roots.append(CGROUP_ROOT + path[:path.index(marker) + len(marker)])
 
     uid = os.getuid()
-    unit = "%s/user.slice/user-%d.slice/user@%d.service" % (CGROUP_ROOT, uid, uid)
-    for name in ("app.slice/app-graphical.slice", "app-graphical.slice", "app.slice"):
-        candidate = os.path.join(unit, name)
-        if os.path.isdir(candidate):
-            return candidate
+    roots.append("%s/user.slice/user-%d.slice/user@%d.service/app.slice"
+                 % (CGROUP_ROOT, uid, uid))
+
+    for root in roots:
+        graphical = os.path.join(root, "app-graphical.slice")
+        if os.path.isdir(graphical):
+            return graphical
+        if os.path.isdir(root):
+            return root
 
     return None
 
@@ -66,7 +72,7 @@ def stats(slice_path, previous):
         # Only the scopes uwsm makes for apps. kitty puts its children (the
         # shell) in a sibling scope of its own; that one is not "an app" and no
         # window points at it.
-        if not entry.name.startswith("app-"):
+        if not (entry.name.startswith("app-") and entry.name.endswith(".scope")):
             continue
 
         try:
