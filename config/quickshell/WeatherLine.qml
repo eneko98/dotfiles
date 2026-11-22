@@ -34,7 +34,10 @@ Item {
     property var hours: []
     property string mood: "🌡️"
 
-    implicitHeight: 24
+    // The bubble turns the row off but still uses its values: with the row
+    // hidden the item must not keep its 24 px, or the panel opens with a band
+    // of empty space at the top.
+    implicitHeight: root.showRow ? 24 : 0
     // The bar pill sizes itself from this; without it the width came out 0 and
     // the text hung outside the surface.
     implicitWidth: row.implicitWidth
