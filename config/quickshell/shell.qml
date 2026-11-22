@@ -78,19 +78,37 @@ ShellRoot {
     }
 
     // The status pill opens System, its right edge aligned with the pill's.
-    function openSystem(section) {
+    // Where a bubble hangs: on the right half of the bar it aligns right edges,
+    // on the left the left ones -- otherwise a panel opened from the left sits
+    // off-screen (measured: x = -519 with a 750 px dashboard).
+    function placeBubble(panel, pill) {
+        const bar = barLoader.item;
+        panel.trigger = pill;
+
+        if (pill === null) {
+            panel.rightMargin = 28;
+            return;
+        }
+
+        const width = bar.width;
+        panel.rightMargin = pill.x > width / 2
+            ? width - (pill.x + pill.width) + 8
+            : width - pill.x - panel.panelWidth;
+    }
+
+    function openSystem(section, fromPill) {
         if (barLoader.item === null)
             return;
-        const pill = barLoader.item.statusPill;
+
         // With the bar hidden (Cine) there is no trigger to grow from; the
-        // panel fades in at the same right edge instead.
-        systemPanel.trigger = Scenes.active === "cine" ? null : pill;
-        // The bar window is unmapped in Cine, so use its fixed right gap
-        // instead of measuring a hidden layout.
-        systemPanel.rightMargin = Scenes.active === "cine"
-            ? 28
-            : barLoader.item.width - pill.x - pill.width + 14;
+        // panel fades in at the same right gap instead.
+        const pill = Scenes.active === "cine"
+            ? null : (fromPill || barLoader.item.statusPill);
+
+        // The section first: it sets the panel width (the dashboard is wider),
+        // and placing with the old width left it 150 px off-screen.
         systemPanel.section = section || "";
+        root.placeBubble(systemPanel, pill);
         systemPanel.visible = true;
     }
 
@@ -101,15 +119,7 @@ ShellRoot {
         if (barLoader.item === null)
             return;
 
-        panel.trigger = pill;
-        const width = barLoader.item.width;
-        if (pill === null) {
-            panel.rightMargin = 28;
-        } else if (pill.x > width / 2) {
-            panel.rightMargin = width - (pill.x + pill.width) + 8;
-        } else {
-            panel.rightMargin = width - pill.x - panel.panelWidth;
-        }
+        root.placeBubble(panel, pill);
         panel.visible = true;
     }
 
@@ -130,35 +140,13 @@ ShellRoot {
     function openDashboard(trigger) {
         if (barLoader.item === null)
             return;
-        if (systemPanel.visible)
-            systemPanel.close();
-
-        dashboardPanel.trigger = trigger;
-        // A pill on the right hangs its panel with the right edges aligned; a
-        // pill on the left (the stats one) with the left edges aligned, or the
-        // panel lands off-screen (measured: x = -519).
-        // A pill's x is relative to its own parent (the chart zone lives inside
-        // the status pill), so the absolute position is what decides the side.
-        // mapToItem() cannot be called from here (Qt refuses to pass QML items
-        // to that C++ overload: TypeError), but the two possible triggers are
-        // known, so their absolute x is arithmetic.
-        const bar = barLoader.item;
-        const width = bar.width;
-        let atX = 0;
-        if (trigger === bar.statsPill)
-            atX = bar.statsPill.x;
-        else if (trigger === bar.dashboardPill)
-            atX = bar.statusPill.x + bar.dashboardPill.x;
-        else if (trigger !== null)
-            atX = trigger.x;
-
-        const triggerWidth = trigger !== null ? trigger.width : 0;
-        const rightSide = trigger !== null && atX > width / 2;
-        dashboardPanel.rightMargin = trigger === null ? 28
-            : rightSide ? width - (atX + triggerWidth) + 14
-            : width - atX - dashboardPanel.panelWidth;
-        dashboardPanel.visible = true;
+        // The dashboard is now a section of the control centre: the trigger is
+        // whichever pill asked for it (the stats pill on the left, or the
+        // chart zone of the status pill).
+        root.openSystem("dashboard", trigger);
+        return;
     }
+
 
     // The workspace carousel, centred. It has no trigger: the gesture and the
     // keybind open it from anywhere, so it fades in place.
@@ -310,14 +298,6 @@ ShellRoot {
         property: "pillHidden"
         value: systemPanel.visible && systemPanel.trigger !== null
             && barLoader.item !== null && systemPanel.trigger === barLoader.item.statusPill
-    }
-
-    Binding {
-        target: barLoader.item
-        property: "dashboardActive"
-        value: dashboardPanel.visible && dashboardPanel.trigger !== null
-            && barLoader.item !== null
-            && dashboardPanel.trigger === barLoader.item.dashboardPill
     }
 
     // Cine hides the bar: the PanelWindow unmaps, so its exclusive zone goes
@@ -552,11 +532,6 @@ ShellRoot {
         panelName: "system"
     }
 
-    DashboardPanel {
-        id: dashboardPanel
-        panelName: "dashboard"
-    }
-
     Overview {
         id: overview
         panelName: "overview"
@@ -709,15 +684,15 @@ ShellRoot {
         target: "dashboard"
 
         function toggle(): void {
-            if (dashboardPanel.visible)
-                dashboardPanel.close();
+            if (systemPanel.visible && systemPanel.section === "dashboard")
+                systemPanel.close();
             else
                 root.openDashboard(barLoader.item
-                    ? barLoader.item.dashboardPill : null);
+                    ? barLoader.item.statsPill : null);
         }
 
         function close(): void {
-            dashboardPanel.close();
+            systemPanel.close();
         }
     }
 

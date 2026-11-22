@@ -13,7 +13,8 @@ import QtQuick
 Popup {
     id: root
 
-    panelWidth: 520
+    // The dashboard is a wide, two-column section; the rest are one column.
+    panelWidth: root.current === "dashboard" ? 750 : 520
 
     // "" means the system overview (the pills, tiles and battery).
     property string section: ""
@@ -29,6 +30,7 @@ Popup {
         { id: "sound", glyph: "󰕾", label: "Audio" },
         { id: "display", glyph: "󰃠", label: "Display" },
         { id: "resources", glyph: "󰓅", label: "Resources" },
+        { id: "dashboard", glyph: "󰄨", label: "Dashboard" },
         { id: "session", glyph: "󰐥", label: "Session" }
     ]
 
@@ -239,6 +241,10 @@ Popup {
         visible: root.current === "resources"
 
         onProcessesRequested: root.showProcesses = true
+    }
+
+    DashboardSection {
+        visible: root.current === "dashboard"
     }
 
     SessionRow {

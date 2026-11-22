@@ -1,17 +1,17 @@
-// The system dashboard: a dedicated panel (centred, read-only) with the slow
-// picture the bar cannot show -- CPU + frequency + load, memory + zram,
-// disks, network rates and the top processes. The actions stay in the System
-// panel (Processes page, session row), so nothing here changes system state.
+// The system dashboard as a section of the control centre: the slow picture the
+// bar cannot show -- CPU + frequency + load, memory + zram, disks, network rates
+// and the top processes. Read-only; the actions stay in the session and
+// processes pages.
 //
-// Processes samples only while this is open: `Processes.active` follows
-// `visible`, and the first rows appear on the second 2 s tick.
+// Processes and the 1 s sampling run only while the section is visible.
 import Quickshell
 import QtQuick
 
-Popup {
+Item {
     id: root
 
-    panelWidth: 740
+    width: parent.width
+    implicitHeight: body.implicitHeight
 
     onVisibleChanged: {
         Processes.active = visible;
@@ -118,6 +118,9 @@ Popup {
     }
 
     Row {
+        id: body
+
+        width: parent.width
         spacing: Tokens.space.l
 
         // --- Left: CPU, memory, disks -----------------------------------
