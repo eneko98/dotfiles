@@ -137,14 +137,11 @@ ShellRoot {
     // (the chart zone of the status pill, or the stats pill on the left);
     // null fades it in place. The right edge is computed from a pill's own
     // position in the bar, since the pill's x is relative to its parent.
-    function openDashboard(trigger) {
-        if (barLoader.item === null)
-            return;
-        // The dashboard is now a section of the control centre: the trigger is
-        // whichever pill asked for it (the stats pill on the left, or the
-        // chart zone of the status pill).
-        root.openSystem("dashboard", trigger);
-        return;
+    function openDashboard() {
+        // A section of the control centre now; the stats pill is the only
+        // trigger (the old chart zone in the status pill is gone).
+        root.openSystem("dashboard",
+            barLoader.item !== null ? barLoader.item.statsPill : null);
     }
 
 
@@ -295,6 +292,30 @@ ShellRoot {
 
     Binding {
         target: barLoader.item
+        property: "statsHidden"
+        value: systemPanel.visible && systemPanel.trigger !== null
+            && barLoader.item !== null
+            && systemPanel.trigger === barLoader.item.statsPill
+    }
+
+    Binding {
+        target: barLoader.item
+        property: "mediaHidden"
+        value: mediaPanel.visible && mediaPanel.trigger !== null
+            && barLoader.item !== null
+            && mediaPanel.trigger === barLoader.item.mediaPill
+    }
+
+    Binding {
+        target: barLoader.item
+        property: "weatherHidden"
+        value: weatherPanel.visible && weatherPanel.trigger !== null
+            && barLoader.item !== null
+            && weatherPanel.trigger === barLoader.item.weatherPill
+    }
+
+    Binding {
+        target: barLoader.item
         property: "pillHidden"
         value: systemPanel.visible && systemPanel.trigger !== null
             && barLoader.item !== null && systemPanel.trigger === barLoader.item.statusPill
@@ -321,12 +342,8 @@ ShellRoot {
             root.openSystem(section);
         }
 
-        function onDashboardRequested() {
-            root.openDashboard(barLoader.item.dashboardPill);
-        }
-
         function onStatsRequested() {
-            root.openDashboard(barLoader.item.statsPill);
+            root.openDashboard();
         }
 
         function onMediaRequested() {
@@ -687,8 +704,7 @@ ShellRoot {
             if (systemPanel.visible && systemPanel.section === "dashboard")
                 systemPanel.close();
             else
-                root.openDashboard(barLoader.item
-                    ? barLoader.item.statsPill : null);
+                root.openDashboard();
         }
 
         function close(): void {

@@ -29,23 +29,24 @@ PanelWindow {
     readonly property alias statsPill: statsPill
     readonly property alias mediaPill: mediaPill
     readonly property alias weatherPill: weatherPill
-    readonly property alias dashboardPill: dashboardPill
 
     // The notification centre, for the bell's counter and open action.
     property var notifications: null
 
     // Shared-element dips: the panel that grew out of a pill is up.
     property bool islandHidden: false
+    // Same for the new pills: while their bubble is up the pill hides, so the
+    // panel does not show next to a copy of its own trigger.
+    property bool statsHidden: false
+    property bool mediaHidden: false
+    property bool weatherHidden: false
     property bool pillHidden: false
-    // The panel that grew out of the dashboard zone is up.
-    property bool dashboardActive: false
 
     // The island asks for Today, the status modules ask for System (with
     // the section to open); the shell owns the panels and the trigger
     // wiring. The dashboard pill asks for the dedicated dashboard.
     signal todayRequested()
     signal systemRequested(string section)
-    signal dashboardRequested()
     // The stats pill on the left: same panel, different trigger.
     signal statsRequested()
     // The media and weather pills ask for their own bubbles.
@@ -103,7 +104,6 @@ PanelWindow {
         Region { item: weatherPill }
         Region { item: island }
         Region { item: statusPill }
-        Region { item: dashboardPill }
     }
 
     // --- Left pill: the workspaces -------------------------------------
@@ -242,6 +242,7 @@ PanelWindow {
     StatsPill {
         id: statsPill
 
+        opacity: bar.statsHidden ? 0 : 1
         anchors.left: workspacesPill.right
         anchors.leftMargin: Tokens.space.s
         anchors.top: parent.top
@@ -260,7 +261,7 @@ PanelWindow {
         anchors.rightMargin: Tokens.space.s
         anchors.top: island.top
 
-        opacity: bar.islandHidden ? 0 : 1
+        opacity: bar.islandHidden || bar.mediaHidden ? 0 : 1
         onClicked: bar.mediaRequested()
     }
 
@@ -274,7 +275,8 @@ PanelWindow {
         anchors.leftMargin: Tokens.space.s
         anchors.top: island.top
 
-        visible: Island.mode === "normal" && !bar.islandHidden
+        visible: Island.mode === "normal"
+        opacity: bar.islandHidden || bar.weatherHidden ? 0 : 1
         onClicked: bar.weatherRequested()
     }
 
@@ -1239,58 +1241,6 @@ PanelWindow {
 
             }
 
-            // The hairline between the status modules and the dashboard.
-            Item {
-                width: 1 + 2 * 9
-                height: 30
-                anchors.verticalCenter: parent.verticalCenter
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: 1
-                    height: 14
-                    color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.12)
-                }
-            }
-
-            // The dashboard zone: its own hover and click inside the shared
-            // pill. It stays visible (and turns gold) while the panel is up:
-            // the panel does not duplicate it, so there is no shared-element
-            // hole to fill.
-            Item {
-                id: dashboardPill
-                anchors.verticalCenter: parent.verticalCenter
-                width: 26
-                height: 30
-
-                HoverHandler { id: dashboardHover }
-
-                MouseArea {
-                    anchors.fill: parent
-                    z: -1
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: bar.dashboardRequested()
-                }
-
-                Rectangle {
-                    anchors.centerIn: parent
-                    width: 22
-                    height: 22
-                    radius: 11
-                    color: dashboardHover.hovered
-                        ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.8)
-                        : "transparent"
-                }
-
-                Text {
-                    anchors.centerIn: parent
-                    text: "󰄨"
-                    color: dashboardHover.hovered || bar.dashboardActive
-                        ? Theme.gold : Theme.fg1
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 14
-                }
-            }
         }
     }
 
