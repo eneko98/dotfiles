@@ -96,7 +96,7 @@ ShellRoot {
             : width - pill.x - panel.panelWidth;
     }
 
-    function openSystem(section, fromPill) {
+    function openSystem(section, fromPill, withTabs) {
         if (barLoader.item === null)
             return;
 
@@ -107,6 +107,7 @@ ShellRoot {
 
         // The section first: it sets the panel width (the dashboard is wider),
         // and placing with the old width left it 150 px off-screen.
+        systemPanel.showTabs = withTabs !== false;
         systemPanel.section = section || "";
         root.placeBubble(systemPanel, pill);
         systemPanel.visible = true;
@@ -139,9 +140,10 @@ ShellRoot {
     // position in the bar, since the pill's x is relative to its parent.
     function openDashboard() {
         // A section of the control centre now; the stats pill is the only
-        // trigger (the old chart zone in the status pill is gone).
+        // trigger. No tab row: the pill asked for the dashboard, not for the
+        // control centre's navigation.
         root.openSystem("dashboard",
-            barLoader.item !== null ? barLoader.item.statsPill : null);
+            barLoader.item !== null ? barLoader.item.statsPill : null, false);
     }
 
 

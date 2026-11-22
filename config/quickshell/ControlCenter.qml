@@ -16,7 +16,11 @@ Popup {
     // The dashboard is a wide, two-column section; the rest are one column.
     panelWidth: root.current === "dashboard" ? 890 : 520
 
-    // "" means the system overview (the pills, tiles and battery).
+    // The tabs are the control centre's own navigation. A panel opened straight
+    // on one section (the dashboard, from the stats pill) has no need for them:
+    // the pill already said what it wants.
+    property bool showTabs: true
+
     property string section: ""
     readonly property string current: root.section === "" ? "network" : root.section
 
@@ -56,6 +60,7 @@ Popup {
     Row {
         id: tabs
 
+        visible: root.showTabs
         width: parent.width
         spacing: 2
 
@@ -122,6 +127,7 @@ Popup {
     }
 
     Rectangle {
+        visible: root.showTabs
         width: parent.width
         height: 1
         color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
