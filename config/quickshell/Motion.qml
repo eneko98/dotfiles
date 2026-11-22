@@ -45,11 +45,14 @@ Singleton {
     readonly property int medium: 240 * k
     readonly property int slow: 320 * k
 
-    // A panel growing out of its pill: measured on the reference video (30 fps
-    // bursts) at ~250 ms in and ~150 ms back. Arriving is slower than leaving,
-    // which is what makes the close feel like it is being put away.
-    readonly property int panelOpen: 250 * k
-    readonly property int panelClose: 150 * k
+    // A panel growing out of its pill, in two stages as in the reference dots
+    // (bnsplits): first the panel DROPS below the bar, then it GROWS to its
+    // size; closing shrinks first and rises after. All on a soft out-back, so
+    // the panel settles with a tiny overshoot instead of a hard stop.
+    readonly property int panelDrop: 200 * k
+    readonly property int panelGrow: 350 * k
+    readonly property int panelShrink: 250 * k
+    readonly property int panelRise: 350 * k
 
     // The one duration that survives reduced motion: a cut is harsher than a
     // short fade for anything that only changes opacity.
@@ -66,6 +69,10 @@ Singleton {
     readonly property var accel: [0.3, 0.0, 0.8, 0.15, 1.0, 1.0]
     // Gesture release, overview snap only. Peak overshoot ~1.6 % around 80 %.
     // Initial slope 4.
+    // Out-back: an arrival that passes the target and comes back. Softer than
+    // Easing.OutBack's default overshoot (1.70), which reads as a bounce.
+    readonly property var backOut: [0.34, 1.56, 0.64, 1.0, 1.0, 1.0]
+
     readonly property var snap: [0.25, 1.0, 0.5, 1.06, 1.0, 1.0]
     // Gesture release without overshoot (swipes, calendar). Initial slope 2.
     readonly property var fling: [0.3, 0.6, 0.6, 1.0, 1.0, 1.0]

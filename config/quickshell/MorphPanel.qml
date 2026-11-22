@@ -60,37 +60,57 @@ Item {
 
     default property alias content: contentItem.data
 
-    property real t: 0
-    function lerp(a, b) {
+    // Two clocks, like the reference: the panel first DROPS below the bar
+    // (tMove) and then GROWS to its size (tSize). One rect interpolation made
+    // the opening read as a single blur with no gesture in it.
+    property real tMove: 0
+    property real tSize: 0
+
+    function lerp(a, b, t) {
         return a + (b - a) * t;
     }
 
-    x: lerp(from.x, to.x)
-    y: lerp(from.y, to.y)
-    width: lerp(from.width, to.width)
-    height: lerp(from.height, to.height)
+    x: lerp(from.x, to.x, tMove)
+    y: lerp(from.y, to.y, tMove)
+    width: lerp(from.width, to.width, tSize)
+    height: lerp(from.height, to.height, tSize)
     readonly property real radiusNow: lerp(
         fromRadius < 0 ? Tokens.radius.panel : fromRadius,
-        Tokens.radius.panel)
+        Tokens.radius.panel, tSize)
 
-    // Open: medium on the decel curve (the panel arrives). Close: base on the
-    // accel curve (it returns to the trigger); `closed()` fires at the end,
-    // or immediately when it was already closed.
-    NumberAnimation {
+    // Open: drop, then grow, each on a soft out-back so the panel settles with
+    // a small overshoot. Close: shrink, then rise back into the pill.
+    SequentialAnimation {
         id: openAnim
-        target: morph; property: "t"; to: 1
-        duration: Motion.panelOpen
-        easing.type: Easing.BezierSpline
-        easing.bezierCurve: Motion.decel
+
+        NumberAnimation {
+            target: morph; property: "tMove"; to: 1
+            duration: Motion.panelDrop
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.backOut
+        }
+        NumberAnimation {
+            target: morph; property: "tSize"; to: 1
+            duration: Motion.panelGrow
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.backOut
+        }
     }
+
     SequentialAnimation {
         id: closeAnim
-        PauseAnimation { duration: 0 }
+
         NumberAnimation {
-            target: morph; property: "t"; to: 0
-            duration: Motion.panelClose
+            target: morph; property: "tSize"; to: 0
+            duration: Motion.panelShrink
             easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.accel
+            easing.bezierCurve: Motion.decel
+        }
+        NumberAnimation {
+            target: morph; property: "tMove"; to: 0
+            duration: Motion.panelRise
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.backOut
         }
         onFinished: morph.closed()
     }
@@ -101,7 +121,7 @@ Item {
             openAnim.start();
         } else {
             openAnim.stop();
-            if (t > 0)
+            if (tSize > 0 || tMove > 0)
                 closeAnim.start();
             else
                 morph.closed();
@@ -111,7 +131,7 @@ Item {
     Surface {
         anchors.fill: parent
         visible: morph.fill
-        level: morph.t > 0.5 ? 3 : morph.fromLevel
+        level: morph.tSize > 0.5 ? 3 : morph.fromLevel
         radius: morph.radiusNow
         extra: morph.extra
     }
@@ -124,8 +144,8 @@ Item {
         // The content arrives late (the reference is sharp only at the very
         // end of the growth), so the surface reads as a pill stretching before
         // anything is written on it.
-        opacity: morph.open ? Math.max(0, (morph.t - 0.55) / 0.45)
-                            : Math.max(0, (morph.t - 0.7) / 0.3)
+        opacity: morph.open ? Math.max(0, (morph.tSize - 0.55) / 0.45)
+                            : Math.max(0, (morph.tSize - 0.7) / 0.3)
 
         property real shiftY: morph.open ? 0 : 8
         transform: Translate { id: contentShift; y: contentItem.shiftY }
