@@ -36,7 +36,14 @@ Singleton {
     property real load5: 0
     property real load15: 0
     property real cpuMHz: NaN
+    // GPU: amdgpu publishes the busy percentage and the VRAM in use per card.
+    property real gpu: 0             // 0..1, NaN when the file is missing
+    property real vramUsedGiB: NaN
+    property string gpuBusyPath: ""
+    property string vramPath: ""
     property var cpuHistory: []
+    property var netRxHistory: []
+    property var netTxHistory: []
     property var memHistory: []
     property var tempHistory: []
 
@@ -75,11 +82,26 @@ Singleton {
         }
     }
 
+    Process {
+        id: findGpu
+        running: true
+        command: ["sh", "-c", "ls /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null | head -1; ls /sys/class/drm/card*/device/mem_info_vram_used 2>/dev/null | head -1"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.trim().split("\n");
+                res.gpuBusyPath = (lines[0] || "").trim();
+                res.vramPath = (lines[1] || "").trim();
+            }
+        }
+    }
+
     FileView { id: statFile; path: "/proc/stat"; blockLoading: true }
     FileView { id: memFile; path: "/proc/meminfo"; blockLoading: true }
     FileView { id: loadFile; path: "/proc/loadavg"; blockLoading: true }
     FileView { id: cpuinfoFile; path: "/proc/cpuinfo"; blockLoading: true }
     FileView { id: tempFile; path: res.tempPath; blockLoading: true }
+    FileView { id: gpuBusyFile; path: res.gpuBusyPath; blockLoading: true }
+    FileView { id: vramFile; path: res.vramPath; blockLoading: true }
 
     Timer {
         interval: res.interval
@@ -162,6 +184,11 @@ Singleton {
         res.netRxTotal = rx;
         res.netTxTotal = tx;
         res.netIp = parts[3];
+
+        // The dashboard draws both rates; the view normalises them against
+        // their own peak, so the history holds raw bytes per second.
+        res.netRxHistory = push(res.netRxHistory, res.netRxRate);
+        res.netTxHistory = push(res.netTxHistory, res.netTxRate);
     }
 
     function push(list, v) {
@@ -174,6 +201,8 @@ Singleton {
         loadFile.reload();
         cpuinfoFile.reload();
         if (tempPath !== "") tempFile.reload();
+        if (gpuBusyPath !== "") gpuBusyFile.reload();
+        if (vramPath !== "") vramFile.reload();
 
         // CPU: the first line of /proc/stat is the aggregate counter; usage
         // is 1 - (idle delta / total delta) since the previous sample.
@@ -207,6 +236,14 @@ Singleton {
         load5 = parseFloat(loads[1]) || 0;
         load15 = parseFloat(loads[2]) || 0;
         if (tempPath !== "") tempC = parseInt(tempFile.text()) / 1000;
+        if (gpuBusyPath !== "") {
+            const busy = parseInt(gpuBusyFile.text());
+            gpu = isNaN(busy) ? NaN : busy / 100;
+        }
+        if (vramPath !== "") {
+            const vram = parseInt(vramFile.text());
+            vramUsedGiB = isNaN(vram) ? NaN : vram / 1073741824;
+        }
 
         // Frequency: average of every core's current clock (/proc/cpuinfo).
         let mhzSum = 0;

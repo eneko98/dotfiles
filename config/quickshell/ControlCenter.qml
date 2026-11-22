@@ -14,7 +14,7 @@ Popup {
     id: root
 
     // The dashboard is a wide, two-column section; the rest are one column.
-    panelWidth: root.current === "dashboard" ? 750 : 520
+    panelWidth: root.current === "dashboard" ? 890 : 520
 
     // "" means the system overview (the pills, tiles and battery).
     property string section: ""
