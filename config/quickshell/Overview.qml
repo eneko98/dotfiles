@@ -34,33 +34,9 @@ Popup {
     readonly property real cardHeight: 428
     // How far apart two cards sit, as a fraction of the card width: below 0.5
     // they overlap, which is what turns a row into a cover flow.
-    readonly property real spacing: 0.45
-    readonly property real maxAngle: 32
-    readonly property real camera: 2000
+    readonly property real spacing: 0.52
+    readonly property real maxAngle: 30
 
-    // Real perspective, not just a rotation: Qt's Rotation is orthographic
-    // (the card gets narrower but stays a rectangle), while the reference look
-    // is a trapezoid whose near edge is taller. That needs a projection with a
-    // perspective divide, i.e. a 4x4 matrix.
-    //
-    // M = P * Ry(angle), with the camera on the Z axis at `camera`:
-    //   Ry:   x' = c*x + s*z,  z' = -s*x + c*z
-    //   P:    divide by w = 1 - z'/camera
-    // Qt multiplies the item's local coordinates by this, and the divide
-    // produces the trapezoid.
-    function cardMatrix(distance) {
-        const angle = -Math.sign(distance) * root.maxAngle
-            * Math.min(Math.abs(distance), 1) * Math.PI / 180;
-        const c = Math.cos(angle);
-        const s = Math.sin(angle);
-        const depth = 1 / root.camera;
-
-        return Qt.matrix4x4(
-            c, 0, s, 0,
-            0, 1, 0, 0,
-            -s, 0, c, 0,
-            s * depth, 0, -c * depth, 1);
-    }
 
     property int current: 0
     // Continuous carousel position in cards (0 = current workspace centred).
@@ -261,6 +237,22 @@ Popup {
         }
     }
 
+    // What runs on a workspace, for the cards that cannot show a thumbnail.
+    function classesOf(workspace) {
+        const list = workspace.toplevels.values;
+        const names = [];
+
+        for (let i = 0; i < list.length; ++i) {
+            const ipc = list[i].lastIpcObject;
+            const name = ipc && ipc.class ? String(ipc.class) : "";
+
+            if (name !== "" && names.indexOf(name) === -1)
+                names.push(name);
+        }
+
+        return names.join(" \u00b7 ");
+    }
+
     function memory(bytes) {
         if (bytes >= 1073741824)
             return (bytes / 1073741824).toFixed(1) + " GB";
@@ -421,49 +413,71 @@ Popup {
                         return 1 - 0.10 * Math.min(d, 1)
                                  - 0.06 * Math.max(0, Math.min(d - 1, 1));
                     }
-                    opacity: Math.max(0.35,
-                        1 - 0.22 * Math.min(Math.abs(cardItem.distance), 2))
+                    // Full opacity: lowering it let the desktop show through the
+                    // card (measured: the wallpaper text was visible at 22 %),
+                    // which read as "the card is not painted". Depth is the
+                    // scale and the gap, not transparency.
+                    opacity: 1
                     z: -Math.abs(cardItem.distance)
 
-                    transform: Matrix4x4 {
-                        matrix: root.cardMatrix(cardItem.distance)
+                    transform: Rotation {
+                        origin.x: cardItem.width / 2
+                        origin.y: cardItem.height / 2
+                        axis { x: 0; y: 1; z: 0 }
+                        angle: -Math.sign(cardItem.distance) * root.maxAngle
+                            * Math.min(Math.abs(cardItem.distance), 1)
                     }
 
-                    Surface {
+
+                    // A plain Rectangle, not the shared Surface: under the
+                    // rotation the Surface painted neither fill nor border
+                    // (measured with the fill at full alpha and a red probe
+                    // behind it), and its drop shadow has no meaning here.
+                    Rectangle {
                         id: card
 
                         anchors.fill: parent
-                        level: 2
                         radius: 14
-                        // Side cards need a visible edge: they sit over the
-                        // wallpaper showing the same window, and a 12% hairline
-                        // disappeared against it.
-                        borderColor: cardItem.distance === 0
+                        border.width: 1
+                        border.color: cardItem.distance === 0
                             ? Theme.gold
-                            : Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.26)
+                            : Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.32)
+
+                        // bg1 is nearly the same black as the desktop behind,
+                        // so a flat fill made the side cards invisible (measured:
+                        // #0D0D12 against #0A0A0A). A gradient from bg2 down one
+                        // step gives them a body without lighting them up.
+                        gradient: Gradient {
+                            GradientStop {
+                                position: 0.0
+                                color: Qt.rgba(Theme.bg2.r, Theme.bg2.g,
+                                               Theme.bg2.b, 1.0)
+                            }
+                            GradientStop {
+                                position: 1.0
+                                color: Qt.rgba(Theme.bg0.r, Theme.bg0.g,
+                                               Theme.bg0.b, 1.0)
+                            }
+                        }
                     }
 
                     Item {
                         anchors.fill: parent
                         anchors.margins: 1
-                        clip: true
+                        clip: false
 
+                        // Only the workspace on screen has buffers to export: a
+                        // window on a hidden workspace has nothing painted, and
+                        // ScreencopyView there returns an empty card (measured:
+                        // the side cards showed only their translucent fill, so
+                        // the desktop showed through them).
                         ScreencopyView {
                             anchors.fill: parent
+                            visible: cardItem.modelData.focused
                             captureSource: root.visible && cardItem.preview
                                 ? cardItem.preview.wayland : null
                             live: false
                             constraintSize: Qt.size(640, 360)
-                        }
-
-                        // Side cards take a dark wash: they sit over the real
-                        // wallpaper showing the same window, and without it the
-                        // card edge is invisible. The centre stays clean.
-                        Rectangle {
-                            anchors.fill: parent
-                            color: Qt.rgba(Theme.bg0.r, Theme.bg0.g,
-                                           Theme.bg0.b, 0.35)
-                            visible: Math.abs(cardItem.distance) > 0.5
                         }
 
                         // A frozen app stops redrawing its window: the wash and
@@ -488,14 +502,39 @@ Popup {
                             font.pixelSize: 28
                         }
 
-                        Text {
-                            anchors.centerIn: parent
-                            visible: cardItem.preview === null
-                            text: cardItem.modelData.name
-                            color: Theme.fg2
-                            font.family: "Adwaita Sans"
-                            font.pixelSize: 56
-                            font.bold: true
+                        // A workspace that is not on screen has no thumbnail (see
+                        // the ScreencopyView above), so its card carries the number
+                        // and what runs there. Children of a Column must not use
+                        // anchors: they ended up 0-sized and invisible.
+                        // Anchored to the left edge: a side card is mostly covered
+                        // by the centre one, and a centred label lands in the
+                        // hidden half.
+                        Column {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 28
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width * 0.42
+                            spacing: 8
+                            visible: !cardItem.modelData.focused
+                                || cardItem.preview === null
+
+                            Text {
+                                width: parent.width
+                                text: cardItem.modelData.name
+                                color: Theme.fg1
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 72
+                                font.bold: true
+                            }
+
+                            Text {
+                                width: parent.width
+                                elide: Text.ElideRight
+                                text: root.classesOf(cardItem.modelData)
+                                color: Theme.fg1
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 12
+                            }
                         }
 
                         Rectangle {
