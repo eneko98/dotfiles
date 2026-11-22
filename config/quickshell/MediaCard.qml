@@ -56,25 +56,23 @@ Column {
         width: parent.width
         spacing: Tokens.space.m
 
-        Rectangle {
+        // The cover as a record: it turns while the track plays. Without art
+        // the disc still shows, with a glyph where the label would be.
+        Item {
             width: 120
             height: 120
-            radius: Tokens.radius.card
-            color: Theme.bg2
-            clip: true
 
-            Image {
+            Vinyl {
                 anchors.fill: parent
-                visible: root.player && root.player.trackArtUrl !== ""
-                source: root.player ? root.player.trackArtUrl : ""
-                fillMode: Image.PreserveAspectCrop
+                art: root.player ? root.player.trackArtUrl : ""
+                playing: root.player !== null && root.player.isPlaying
             }
 
             Glyph {
                 visible: !root.player || root.player.trackArtUrl === ""
                 anchors.centerIn: parent
                 glyph: "󰎈"
-                size: 42
+                size: 34
             }
         }
 
