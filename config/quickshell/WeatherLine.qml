@@ -26,6 +26,13 @@ Item {
     property real temp: NaN
     property string condition: ""
 
+    // The detail the bubble shows; all of it comes from the same request.
+    property real feels: NaN
+    property real wind: NaN
+    property real humidity: NaN
+    property real rain: NaN
+    property var hours: []
+
     implicitHeight: 24
     // The bar pill sizes itself from this; without it the width came out 0 and
     // the text hung outside the surface.
@@ -69,7 +76,10 @@ Item {
         command: ["curl", "-fsS", "--max-time", "8",
             "https://api.open-meteo.com/v1/forecast?latitude=" + root.latitude
             + "&longitude=" + root.longitude
-            + "&current=temperature_2m,weather_code&timezone=auto"]
+            + "&current=temperature_2m,weather_code,apparent_temperature"
+            + ",wind_speed_10m,relative_humidity_2m,precipitation"
+            + "&hourly=temperature_2m,weather_code&forecast_hours=6"
+            + "&timezone=auto"]
 
         stdout: StdioCollector {
             id: out
@@ -91,6 +101,24 @@ Item {
                 root.condition = info.text;
                 root.text = Math.round(data.current.temperature_2m) + " °C · " + info.text;
                 root.glyph = info.glyph;
+
+                root.feels = data.current.apparent_temperature;
+                root.wind = data.current.wind_speed_10m;
+                root.humidity = data.current.relative_humidity_2m;
+                root.rain = data.current.precipitation;
+
+                const h = data.hourly;
+                const list = [];
+                if (h && h.time && h.temperature_2m) {
+                    for (let i = 0; i < h.time.length && i < 6; ++i) {
+                        list.push({
+                            time: h.time[i],
+                            temp: h.temperature_2m[i],
+                            code: h.weather_code ? h.weather_code[i] : 0
+                        });
+                    }
+                }
+                root.hours = list;
             }
         }
 
@@ -98,6 +126,11 @@ Item {
             if (exitCode !== 0) {
                 root.text = "—";
                 root.temp = NaN;
+                root.feels = NaN;
+                root.wind = NaN;
+                root.humidity = NaN;
+                root.rain = NaN;
+                root.hours = [];
                 root.glyph = "󰖐";
             }
         }
