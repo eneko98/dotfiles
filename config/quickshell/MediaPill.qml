@@ -1,11 +1,7 @@
-// The media pill: the "now playing" wing of the bar, moved out of the island
-// when the bar was split into pills. It holds what the island used to: the
-// play/pause glyph, the spectrum and the current lyric line (or the track).
-// The pill grows with its content, so a line of lyrics widens it -- that is the
-// dynamic island, now on the media side.
-//
-// Clicking the glyph toggles playback; clicking the rest opens the media
-// bubble (the pill's own MouseArea sits behind the content).
+// The media pill, as in the reference: a small round button with the play/pause
+// glyph, nothing else. Clicking the glyph toggles playback; clicking the pill
+// opens the media bubble. With no player it collapses to nothing, so the bar
+// never shows an empty slot.
 import Quickshell
 import Quickshell.Services.Mpris
 import QtQuick
@@ -15,20 +11,31 @@ Surface {
 
     signal clicked()
 
-    Media {
-        id: media
+    // The first player playing, else the first with a title (a paused track can
+    // still be resumed from here). A title is required: playerctld registers
+    // itself as an MPRIS player even with nothing behind it.
+    readonly property var player: {
+        const players = Mpris.players.values;
+        let fallback = null;
 
-        anchors.centerIn: parent
+        for (let i = 0; i < players.length; ++i) {
+            if (players[i].isPlaying)
+                return players[i];
+            if (fallback === null && players[i].trackTitle !== "")
+                fallback = players[i];
+        }
+
+        return fallback;
     }
+
+    readonly property bool active: player !== null && player.trackTitle !== ""
 
     level: 1
     lifted: hover.hovered
-    // Collapses to nothing with no player, so the bar does not show an empty
-    // pill.
-    width: media.active ? media.implicitWidth + 24 : 0
+    width: active ? 38 : 0
     height: 30
-    opacity: media.active ? 1 : 0
-    visible: media.active
+    opacity: active ? 1 : 0
+    visible: active
 
     Behavior on width {
         NumberAnimation {
@@ -45,5 +52,20 @@ Surface {
         z: -1
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
+    }
+
+    Text {
+        anchors.centerIn: parent
+        text: root.player && root.player.isPlaying ? "󰏤" : "󰐊"
+        color: hover.hovered ? Theme.fg0 : Theme.fg1
+        font.family: "JetBrainsMono Nerd Font"
+        font.pixelSize: 15
+
+        MouseArea {
+            anchors.fill: parent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: if (root.player && root.player.canTogglePlaying)
+                root.player.togglePlaying()
+        }
     }
 }
