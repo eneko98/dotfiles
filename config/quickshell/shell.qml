@@ -94,20 +94,40 @@ ShellRoot {
         systemPanel.visible = true;
     }
 
-    // The dedicated system dashboard, hanging from its pill on the right.
-    function openDashboard(fromPill) {
+    // The dedicated system dashboard. `trigger` is the pill it grows out of
+    // (the chart zone of the status pill, or the stats pill on the left);
+    // null fades it in place. The right edge is computed from a pill's own
+    // position in the bar, since the pill's x is relative to its parent.
+    function openDashboard(trigger) {
         if (barLoader.item === null)
             return;
         if (systemPanel.visible)
             systemPanel.close();
-        // The dashboard pill lives inside the status pill, so its own x is
-        // relative to that surface, not to the bar. Use the status pill for
-        // the right edge and the dashboard pill only as the morph trigger.
-        const status = barLoader.item.statusPill;
-        dashboardPanel.trigger = fromPill ? barLoader.item.dashboardPill : null;
-        dashboardPanel.rightMargin = fromPill
-            ? barLoader.item.width - status.x - status.width + 14
-            : 28;
+
+        dashboardPanel.trigger = trigger;
+        // A pill on the right hangs its panel with the right edges aligned; a
+        // pill on the left (the stats one) with the left edges aligned, or the
+        // panel lands off-screen (measured: x = -519).
+        // A pill's x is relative to its own parent (the chart zone lives inside
+        // the status pill), so the absolute position is what decides the side.
+        // mapToItem() cannot be called from here (Qt refuses to pass QML items
+        // to that C++ overload: TypeError), but the two possible triggers are
+        // known, so their absolute x is arithmetic.
+        const bar = barLoader.item;
+        const width = bar.width;
+        let atX = 0;
+        if (trigger === bar.statsPill)
+            atX = bar.statsPill.x;
+        else if (trigger === bar.dashboardPill)
+            atX = bar.statusPill.x + bar.dashboardPill.x;
+        else if (trigger !== null)
+            atX = trigger.x;
+
+        const triggerWidth = trigger !== null ? trigger.width : 0;
+        const rightSide = trigger !== null && atX > width / 2;
+        dashboardPanel.rightMargin = trigger === null ? 28
+            : rightSide ? width - (atX + triggerWidth) + 14
+            : width - atX - dashboardPanel.panelWidth;
         dashboardPanel.visible = true;
     }
 
@@ -293,7 +313,11 @@ ShellRoot {
         }
 
         function onDashboardRequested() {
-            root.openDashboard(true);
+            root.openDashboard(barLoader.item.dashboardPill);
+        }
+
+        function onStatsRequested() {
+            root.openDashboard(barLoader.item.statsPill);
         }
     }
 
@@ -610,7 +634,8 @@ ShellRoot {
             if (dashboardPanel.visible)
                 dashboardPanel.close();
             else
-                root.openDashboard(true);
+                root.openDashboard(barLoader.item
+                    ? barLoader.item.dashboardPill : null);
         }
 
         function close(): void {

@@ -26,6 +26,7 @@ PanelWindow {
     // The morph triggers, for the panels that grow out of them.
     readonly property alias island: island
     readonly property alias statusPill: statusPill
+    readonly property alias statsPill: statsPill
     readonly property alias dashboardPill: dashboardPill
 
     // The notification centre, for the bell's counter and open action.
@@ -43,6 +44,8 @@ PanelWindow {
     signal todayRequested()
     signal systemRequested(string section)
     signal dashboardRequested()
+    // The stats pill on the left: same panel, different trigger.
+    signal statsRequested()
 
     anchors {
         top: true
@@ -237,7 +240,7 @@ PanelWindow {
         anchors.top: parent.top
         anchors.topMargin: Tokens.space.xs
 
-        onClicked: bar.dashboardRequested()
+        onClicked: bar.statsRequested()
     }
 
     // --- Centre: the island --------------------------------------------
