@@ -529,7 +529,6 @@ ShellRoot {
     // moved up into the island's producers.
     TodayPanel {
         id: todayPanel
-        notifications: notifications
         panelName: "today"
     }
 
@@ -546,6 +545,7 @@ ShellRoot {
     // The status pill's panel: sections behind a row of icons.
     ControlCenter {
         id: systemPanel
+        notifications: notifications
         panelName: "system"
     }
 

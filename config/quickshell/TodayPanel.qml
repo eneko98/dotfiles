@@ -1,37 +1,18 @@
-// The Today panel: what the island opens (brief 14.4). Two columns of 340
-// under the island -- media and notifications on the left; the date, the
-// weather line, the calendar and the selected day's agenda on the right.
-// No panel title: the long date is the title. Each column scrolls on its
-// own if the content does not fit; the panel is at most the space between
-// the bar and the screen's bottom margin.
-//
-// `notifications` is the NotificationCenter instance, passed by the host
-// (the server lives in the bar's process).
+// The clock bubble: what the island opens. The date, the analog clock, the
+// month grid and the selected day's agenda -- nothing else. Media and weather
+// have their own bubbles now, and the notification history moved to the control
+// centre, so this is a calendar and not a dashboard.
 import Quickshell
-import Quickshell.Services.Mpris
 import QtQuick
 
 Popup {
     id: root
 
-    panelWidth: 736
+    panelWidth: 372
 
-    property var notifications: null
-
-    // The card's player: the first one playing, else the first with a track
-    // (a paused player can still be resumed from here). No player, no card.
-    readonly property var player: {
-        const players = Mpris.players.values;
-        for (let i = 0; i < players.length; ++i)
-            if (players[i].isPlaying)
-                return players[i];
-        for (let j = 0; j < players.length; ++j)
-            if (players[j].trackTitle !== "")
-                return players[j];
-        return null;
-    }
-
-    readonly property real availableHeight: root.height - 54
+    // Not root.height: a PanelWindow has no size until it is mapped, and the
+    // Flickable then computed a negative height and the panel opened empty.
+    readonly property real availableHeight: 720
 
     component ColumnScroll: Flickable {
         id: scroll
@@ -52,75 +33,53 @@ Popup {
         }
     }
 
-    Row {
-        spacing: Tokens.space.l
+    ColumnScroll {
+        content: [
+            Row {
+                width: 340
+                spacing: Tokens.space.m
 
-        // --- Left: media + notifications --------------------------------
-        ColumnScroll {
-            content: [
-                MediaCard {
-                    width: 340
-                    player: root.player
-                    visible: root.player !== null
-                    onScreen: root.visible
-                },
-                NotificationList {
-                    width: 340
-                    server: root.notifications
+                // The analog clock the user asked for: it ticks only while the
+                // panel is open.
+                AnalogClock {
+                    anchors.verticalCenter: parent.verticalCenter
+                    size: 44
+                    running: root.visible
                 }
-            ]
-        }
 
-        // --- Right: the date and the calendar ---------------------------
-        ColumnScroll {
-            content: [
-                Row {
-                    width: 340
-                    spacing: Tokens.space.m
+                Column {
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 1
 
-                    // The analog clock the user asked for: it ticks only
-                    // while the panel is open.
-                    AnalogClock {
-                        anchors.verticalCenter: parent.verticalCenter
-                        size: 44
-                        running: root.visible
+                    Text {
+                        text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 15
+                        font.weight: Font.DemiBold
                     }
 
-                    Column {
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: 1
-
-                        Text {
-                            text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
-                            color: Theme.fg0
-                            font.family: "Adwaita Sans"
-                            font.pixelSize: 15
-                            font.weight: Font.DemiBold
-                        }
-
-                        Text {
-                            text: Qt.formatDateTime(clock.date, "hh:mm")
-                            color: Theme.fg1
-                            font.family: "Adwaita Sans"
-                            font.pixelSize: 12
-                            font.features: ({ "tnum": 1 })
-                        }
+                    Text {
+                        text: Qt.formatDateTime(clock.date, "hh:mm")
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                        font.features: ({ "tnum": 1 })
                     }
-                },
-                WeatherLine { width: 340 },
-                CalendarView {
-                    id: cal
-                    width: 340
-                    today: clock.date
-                    notifyToday: true
-                },
-                AgendaList {
-                    width: 340
-                    calendar: cal
-                    selected: cal.selected
                 }
-            ]
-        }
+            },
+            CalendarView {
+                id: cal
+                width: 340
+                today: clock.date
+                notifyToday: true
+            },
+            AgendaList {
+                width: 340
+                calendar: cal
+                selected: cal.selected
+            }
+        ]
     }
 
     SystemClock {

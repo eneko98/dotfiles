@@ -20,6 +20,10 @@ Popup {
     property string section: ""
     readonly property string current: root.section === "" ? "system" : root.section
 
+    // The notification server, passed by the shell (it lives in the bar's
+    // process): the history is a section here now.
+    property var notifications: null
+
     // The processes page, pushed over the sections from Resources' link.
     property bool showProcesses: false
 
@@ -28,6 +32,7 @@ Popup {
         { id: "network", glyph: "󰖩", label: "Wi-Fi" },
         { id: "bluetooth", glyph: "󰂯", label: "Bluetooth" },
         { id: "sound", glyph: "󰕾", label: "Audio" },
+        { id: "notifications", glyph: "󰂚", label: "Notifications" },
         { id: "display", glyph: "󰃠", label: "Display" },
         { id: "resources", glyph: "󰓅", label: "Resources" },
         { id: "dashboard", glyph: "󰄨", label: "Dashboard" },
@@ -228,6 +233,12 @@ Popup {
         width: parent.width
         visible: root.current === "sound"
         expanded: root.current === "sound"
+    }
+
+    NotificationList {
+        width: parent.width
+        visible: root.current === "notifications"
+        server: root.notifications
     }
 
     DisplaySection {
