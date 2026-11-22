@@ -571,11 +571,8 @@ PanelWindow {
                     spacing: 8
 
                     // The dynamic part: shows while a player has a track.
-                    // `hovered` gates the peak monitor: it is only worth its
-                    // cost while someone can see the bars.
                     Media {
                         id: media
-                        hovered: islandArea.containsMouse
                     }
 
                     Rectangle {

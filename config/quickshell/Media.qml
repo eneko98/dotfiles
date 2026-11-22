@@ -62,15 +62,12 @@ Row {
     // only visible while a player is up anyway.
     readonly property var peakNode: Pipewire.defaultAudioSink
 
-    // Whether the cursor is over the island; BarTiers feeds this in. The peak
-    // monitor is expensive -- leaving it on while music plays cost ~8 % of a
-    // core, and the cost is opening and closing the capture stream, not
-    // listening to it (measured: one cycle per second was 9 %, one per four
-    // seconds 3 %, i.e. the same as off) -- so it only runs while the bars can
-    // actually be looked at.
-    property bool hovered: false
-
-    readonly property bool peaksWanted: root.visible && root.hovered
+    // The peak monitor runs whenever a track is playing. It is not free --
+    // ~8 % of a core on this laptop, and the cost is opening the capture
+    // stream, not listening to it (measured: one cycle per second 9 %, one per
+    // four seconds 3 %, i.e. the same as off) -- but the bars are part of the
+    // island while music plays, so it stays on.
+    readonly property bool peaksWanted: root.visible
         && root.player !== null && root.player.isPlaying
 
     visible: root.active
@@ -103,7 +100,10 @@ Row {
     Row {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
-        visible: peaks.enabled
+        // Shown while there is a player, not only while the monitor runs:
+        // otherwise the island would shrink on every pause. With the monitor
+        // off the bars rest as thin dashes.
+        visible: root.active
 
         Repeater {
             model: 2
@@ -117,7 +117,7 @@ Row {
                 // not reliable (measured with the slider). With the monitor off
                 // the bars rest as thin dashes, so the island keeps its width.
                 property real shown: peaks.enabled
-                    ? Math.max(0.15, peaks.peaks[bar.index] || 0) : 0
+                    ? Math.max(0.15, peaks.peaks[bar.index] || 0) : 0.15
 
                 Behavior on shown {
                     NumberAnimation { duration: 90 }
