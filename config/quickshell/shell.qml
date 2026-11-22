@@ -94,6 +94,35 @@ ShellRoot {
         systemPanel.visible = true;
     }
 
+    // A bubble under the pill that owns it: on the right of the screen the
+    // panel aligns right edges, on the left the left ones, or it lands
+    // off-screen.
+    function openBubble(panel, pill) {
+        if (barLoader.item === null)
+            return;
+
+        panel.trigger = pill;
+        const width = barLoader.item.width;
+        if (pill === null) {
+            panel.rightMargin = 28;
+        } else if (pill.x > width / 2) {
+            panel.rightMargin = width - (pill.x + pill.width) + 8;
+        } else {
+            panel.rightMargin = width - pill.x - panel.panelWidth;
+        }
+        panel.visible = true;
+    }
+
+    function openMedia() {
+        root.openBubble(mediaPanel, barLoader.item
+            ? barLoader.item.mediaPill : null);
+    }
+
+    function openWeather() {
+        root.openBubble(weatherPanel, barLoader.item
+            ? barLoader.item.weatherPill : null);
+    }
+
     // The dedicated system dashboard. `trigger` is the pill it grows out of
     // (the chart zone of the status pill, or the stats pill on the left);
     // null fades it in place. The right edge is computed from a pill's own
@@ -319,6 +348,14 @@ ShellRoot {
         function onStatsRequested() {
             root.openDashboard(barLoader.item.statsPill);
         }
+
+        function onMediaRequested() {
+            root.openMedia();
+        }
+
+        function onWeatherRequested() {
+            root.openWeather();
+        }
     }
 
     // The island's notification lifecycle: a notification seen for one second
@@ -499,6 +536,16 @@ ShellRoot {
         panelName: "today"
     }
 
+    MediaPanel {
+        id: mediaPanel
+        panelName: "media"
+    }
+
+    WeatherPanel {
+        id: weatherPanel
+        panelName: "weather"
+    }
+
     // The status pill's panel: sections behind a row of icons.
     ControlCenter {
         id: systemPanel
@@ -611,6 +658,36 @@ ShellRoot {
     }
 
     // The status pill's panel; SUPER+N goes here.
+    IpcHandler {
+        target: "media"
+
+        function toggle(): void {
+            if (mediaPanel.visible)
+                mediaPanel.close();
+            else
+                root.openMedia();
+        }
+
+        function close(): void {
+            mediaPanel.close();
+        }
+    }
+
+    IpcHandler {
+        target: "weather"
+
+        function toggle(): void {
+            if (weatherPanel.visible)
+                weatherPanel.close();
+            else
+                root.openWeather();
+        }
+
+        function close(): void {
+            weatherPanel.close();
+        }
+    }
+
     IpcHandler {
         target: "system"
 

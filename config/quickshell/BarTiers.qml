@@ -27,6 +27,8 @@ PanelWindow {
     readonly property alias island: island
     readonly property alias statusPill: statusPill
     readonly property alias statsPill: statsPill
+    readonly property alias mediaPill: mediaPill
+    readonly property alias weatherPill: weatherPill
     readonly property alias dashboardPill: dashboardPill
 
     // The notification centre, for the bell's counter and open action.
@@ -46,6 +48,9 @@ PanelWindow {
     signal dashboardRequested()
     // The stats pill on the left: same panel, different trigger.
     signal statsRequested()
+    // The media and weather pills ask for their own bubbles.
+    signal mediaRequested()
+    signal weatherRequested()
 
     anchors {
         top: true
@@ -256,7 +261,7 @@ PanelWindow {
         anchors.top: island.top
 
         opacity: bar.islandHidden ? 0 : 1
-        onClicked: bar.todayRequested()
+        onClicked: bar.mediaRequested()
     }
 
     // --- Centre-right: the weather -------------------------------------
@@ -270,7 +275,7 @@ PanelWindow {
         anchors.top: island.top
 
         visible: Island.mode === "normal" && !bar.islandHidden
-        onClicked: bar.todayRequested()
+        onClicked: bar.weatherRequested()
     }
 
     // --- Centre: the island --------------------------------------------

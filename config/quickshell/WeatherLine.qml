@@ -20,7 +20,11 @@ Item {
     property bool hovered: false
     // The bar pill wants the glyph and the degrees, nothing else.
     property bool compact: false
+    // The bubble lays the values out its own way; the row is only for the pill
+    // and for Today, so it can be turned off while the fetch keeps running.
+    property bool showRow: true
     property real temp: NaN
+    property string condition: ""
 
     implicitHeight: 24
     // The bar pill sizes itself from this; without it the width came out 0 and
@@ -84,6 +88,7 @@ Item {
 
                 const info = root.info(data.current.weather_code);
                 root.temp = data.current.temperature_2m;
+                root.condition = info.text;
                 root.text = Math.round(data.current.temperature_2m) + " °C · " + info.text;
                 root.glyph = info.glyph;
             }
@@ -101,6 +106,7 @@ Item {
     Row {
         id: row
 
+        visible: root.showRow
         anchors.verticalCenter: parent.verticalCenter
         spacing: root.compact ? 4 : Tokens.space.s
 
