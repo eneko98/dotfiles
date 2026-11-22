@@ -45,7 +45,10 @@ PanelWindow {
     // The workspace carousel is not a panel: it floats over the wallpaper, so
     // the surface goes away and only the dim stays (at its own strength).
     property bool panelSurface: true
-    property real dimAlpha: 0.18
+    // The reference does not dim the desktop behind a bubble: the panel is
+    // opaque enough to read over the wallpaper. 0 is the norm; the overview
+    // keeps one because its cards need it.
+    property real dimAlpha: 0
 
     // Content that wants clicks between its pieces to fall through to the
     // backdrop (the carousel closes on a click outside the cards).

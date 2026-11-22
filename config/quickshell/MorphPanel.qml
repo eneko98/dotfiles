@@ -70,7 +70,10 @@ Item {
         return a + (b - a) * t;
     }
 
-    x: lerp(from.x, to.x, tMove)
+    // x rides the GROW, not the drop: with it on tMove the panel slid
+    // diagonally on its way down, which read as falling sideways. Falling is
+    // vertical; the horizontal travel belongs to the opening.
+    x: lerp(from.x, to.x, tSize)
     y: lerp(from.y, to.y, tMove)
     width: lerp(from.width, to.width, tSize)
     height: lerp(from.height, to.height, tSize)

@@ -17,6 +17,9 @@ Popup {
     id: root
 
     panelWidth: 520
+    // The launcher is the one bubble that keeps a dim: it covers the middle of
+    // the screen and the search needs the contrast.
+    dimAlpha: 0.18
 
     property string query: ""
     property int selectedIndex: 0
