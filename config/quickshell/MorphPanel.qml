@@ -24,8 +24,12 @@ Item {
     property bool open: false
 
     // Extra fill alpha for surfaces that need to read more solid than the
-    // shared pill/card (the workspace overview). 0 keeps the old behaviour.
+    // shared pill/card. 0 keeps the old behaviour.
     property real extra: 0
+
+    // A panel whose content floats (the workspace carousel) keeps the geometry
+    // and the fade but paints no surface: there is no box behind the cards.
+    property bool fill: true
 
     signal closed()
 
@@ -106,6 +110,7 @@ Item {
 
     Surface {
         anchors.fill: parent
+        visible: morph.fill
         level: morph.t > 0.5 ? 3 : morph.fromLevel
         radius: morph.radiusNow
         extra: morph.extra

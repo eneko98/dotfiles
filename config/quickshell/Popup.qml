@@ -39,8 +39,17 @@ PanelWindow {
     property string panelName: "popup"
 
     // Extra fill alpha for panels that should read more solid than the
-    // default translucent stage (the workspace overview). 0 is the norm.
+    // default translucent stage. 0 is the norm.
     property real panelExtra: 0
+
+    // The workspace carousel is not a panel: it floats over the wallpaper, so
+    // the surface goes away and only the dim stays (at its own strength).
+    property bool panelSurface: true
+    property real dimAlpha: 0.18
+
+    // Content that wants clicks between its pieces to fall through to the
+    // backdrop (the carousel closes on a click outside the cards).
+    property bool swallowPanelClicks: true
 
     // Panels that hang under the bar (the module popups, the control centre)
     // leave this false; a launcher in the middle of the screen sets it.
@@ -136,7 +145,7 @@ PanelWindow {
     // the window hiding (with a trigger, only after the morph is back).
     Rectangle {
         anchors.fill: parent
-        color: Qt.rgba(Theme.bg0.r, Theme.bg0.g, Theme.bg0.b, 0.18)
+        color: Qt.rgba(Theme.bg0.r, Theme.bg0.g, Theme.bg0.b, root.dimAlpha)
         opacity: root.visible ? 1 : 0
 
         Behavior on opacity {
@@ -164,6 +173,7 @@ PanelWindow {
         width: panel.width
         height: panel.height
         acceptedButtons: Qt.AllButtons
+        enabled: root.swallowPanelClicks
     }
 
     MorphPanel {
@@ -173,6 +183,7 @@ PanelWindow {
         to: root.finalRect
         fromRadius: root.trigger !== null ? root.trigger.height / 2 : -1
         extra: root.panelExtra
+        fill: root.panelSurface
         open: false
 
         focus: true

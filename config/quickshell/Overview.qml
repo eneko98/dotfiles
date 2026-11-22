@@ -16,15 +16,51 @@ import QtQuick
 Popup {
     id: root
 
-    panelWidth: 1100
-    panelExtra: 0.3
+    // The carousel is not a panel: no surface, only a dim over the wallpaper,
+    // and the cards are free to sit outside the (invisible) content box. Clicks
+    // between cards fall through to the backdrop, so clicking around them
+    // closes, as it should.
+    panelWidth: 1780
+    panelSurface: false
+    dimAlpha: 0.32
+    swallowPanelClicks: false
     centerVertically: true
 
     // Special workspaces have a negative id and their own namespace; they are
     // not part of the carousel.
     readonly property var workspaces: Hyprland.workspaces.values.filter(w => w.id >= 0)
     readonly property int count: workspaces.length
-    readonly property real cardWidth: 420
+    readonly property real cardWidth: 760
+    readonly property real cardHeight: 428
+    // How far apart two cards sit, as a fraction of the card width: below 0.5
+    // they overlap, which is what turns a row into a cover flow.
+    readonly property real spacing: 0.45
+    readonly property real maxAngle: 32
+    readonly property real camera: 2000
+
+    // Real perspective, not just a rotation: Qt's Rotation is orthographic
+    // (the card gets narrower but stays a rectangle), while the reference look
+    // is a trapezoid whose near edge is taller. That needs a projection with a
+    // perspective divide, i.e. a 4x4 matrix.
+    //
+    // M = P * Ry(angle), with the camera on the Z axis at `camera`:
+    //   Ry:   x' = c*x + s*z,  z' = -s*x + c*z
+    //   P:    divide by w = 1 - z'/camera
+    // Qt multiplies the item's local coordinates by this, and the divide
+    // produces the trapezoid.
+    function cardMatrix(distance) {
+        const angle = -Math.sign(distance) * root.maxAngle
+            * Math.min(Math.abs(distance), 1) * Math.PI / 180;
+        const c = Math.cos(angle);
+        const s = Math.sin(angle);
+        const depth = 1 / root.camera;
+
+        return Qt.matrix4x4(
+            c, 0, s, 0,
+            0, 1, 0, 0,
+            -s, 0, c, 0,
+            s * depth, 0, -c * depth, 1);
+    }
 
     property int current: 0
     // Continuous carousel position in cards (0 = current workspace centred).
@@ -246,6 +282,7 @@ Popup {
         onTriggered: root.updateStats()
     }
 
+
     Process {
         id: stats
 
@@ -281,7 +318,7 @@ Popup {
         id: carousel
 
         width: parent.width
-        height: 310
+        height: root.cardHeight + 62
 
         focus: true
 
@@ -291,26 +328,15 @@ Popup {
         Keys.onEnterPressed: root.select()
         Keys.onEscapePressed: root.menu !== null ? root.closeMenu() : root.close()
 
-        Text {
-            id: title
-
-            text: "Workspaces"
-            color: Theme.fg0
-            font.family: "Adwaita Sans"
-            font.pixelSize: 15
-            font.bold: true
-            anchors.left: parent.left
-            anchors.top: parent.top
-        }
-
+        // Not a panel, so no title: the cards and their numbers say what this
+        // is. Only the keys, quiet, under the row.
         Text {
             text: "← →   ·   Enter   ·   Esc"
             color: Theme.fg2
             font.family: "Adwaita Sans"
-            font.pixelSize: 11
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.topMargin: 3
+            font.pixelSize: 10
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.bottom: parent.bottom
         }
 
         Item {
@@ -319,8 +345,8 @@ Popup {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            anchors.topMargin: 40
-            height: 260
+            anchors.topMargin: 8
+            height: root.cardHeight
             clip: false
 
             Repeater {
@@ -333,6 +359,8 @@ Popup {
                     required property int index
 
                     readonly property real distance: index - root.p
+
+
                     // The window the card stands for: the activated one, or --
                     // while the panel itself holds the focus -- the one used
                     // most recently. Taking `list[0]` made the card describe a
@@ -376,38 +404,29 @@ Popup {
                     readonly property string appUnit: root.unitFor(pid)
 
                     width: root.cardWidth
-                    height: 260
-                    x: {
-                        const center = cards.width / 2 - root.cardWidth / 2;
-                        const d = index - root.p;
-                        let offset;
-                        if (Math.abs(d) <= 1) {
-                            offset = d * 0.55 * root.cardWidth;
-                        } else {
-                            offset = Math.sign(d) * (0.55 * root.cardWidth
-                                + (Math.abs(d) - 1) * 0.25 * root.cardWidth);
-                        }
-                        return center + offset;
-                    }
+                    height: root.cardHeight
+                    // The row moves as one: one card step is `spacing` widths.
+                    x: cards.width / 2 - root.cardWidth / 2
+                        + cardItem.distance * root.spacing * root.cardWidth
+                        // Cards further out bunch up a little more, so a long
+                        // row does not run off the screen.
+                        + Math.sign(cardItem.distance)
+                            * Math.max(0, Math.abs(cardItem.distance) - 1)
+                            * 0.06 * root.cardWidth
+                    // Slightly lower than the centre card: the arc of a real
+                    // cover flow, not a straight belt.
+                    y: 8 * Math.min(Math.abs(cardItem.distance), 1)
                     scale: {
-                        const d = Math.abs(index - root.p);
-                        return 1 - 0.16 * Math.min(d, 1)
+                        const d = Math.abs(cardItem.distance);
+                        return 1 - 0.10 * Math.min(d, 1)
                                  - 0.06 * Math.max(0, Math.min(d - 1, 1));
                     }
-                    opacity: {
-                        const d = Math.abs(index - root.p);
-                        return 1 - 0.3 * Math.min(d, 2) / 2;
-                    }
-                    z: -Math.abs(index - root.p)
+                    opacity: Math.max(0.35,
+                        1 - 0.22 * Math.min(Math.abs(cardItem.distance), 2))
+                    z: -Math.abs(cardItem.distance)
 
-                    transform: Rotation {
-                        origin.x: cardItem.width / 2
-                        origin.y: cardItem.height / 2
-                        axis { x: 0; y: 1; z: 0 }
-                        angle: {
-                            const d = index - root.p;
-                            return -Math.sign(d) * 30 * Math.min(Math.abs(d), 1);
-                        }
+                    transform: Matrix4x4 {
+                        matrix: root.cardMatrix(cardItem.distance)
                     }
 
                     Surface {
@@ -416,9 +435,12 @@ Popup {
                         anchors.fill: parent
                         level: 2
                         radius: 14
+                        // Side cards need a visible edge: they sit over the
+                        // wallpaper showing the same window, and a 12% hairline
+                        // disappeared against it.
                         borderColor: cardItem.distance === 0
                             ? Theme.gold
-                            : Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.12)
+                            : Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.26)
                     }
 
                     Item {
@@ -432,6 +454,16 @@ Popup {
                                 ? cardItem.preview.wayland : null
                             live: false
                             constraintSize: Qt.size(640, 360)
+                        }
+
+                        // Side cards take a dark wash: they sit over the real
+                        // wallpaper showing the same window, and without it the
+                        // card edge is invisible. The centre stays clean.
+                        Rectangle {
+                            anchors.fill: parent
+                            color: Qt.rgba(Theme.bg0.r, Theme.bg0.g,
+                                           Theme.bg0.b, 0.35)
+                            visible: Math.abs(cardItem.distance) > 0.5
                         }
 
                         // A frozen app stops redrawing its window: the wash and
@@ -490,6 +522,10 @@ Popup {
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 12
                             spacing: 2
+                            // Only the centre card is readable; on the others the
+                            // text would be blurred by the perspective anyway.
+                            opacity: Math.max(0,
+                                1 - Math.abs(cardItem.distance) * 1.8)
 
                             Row {
                                 spacing: 6
@@ -563,9 +599,8 @@ Popup {
                         // click (every press is the left button), so a long
                         // press opens the same menu.
                         onPressAndHold: function (mouse) {
-                            const point = cardItem.mapToItem(carousel,
-                                                             mouse.x, mouse.y);
-                            root.openMenu(cardItem, point.x, point.y);
+                            root.openMenu(cardItem, cardItem.x + mouse.x,
+                                          cardItem.y + mouse.y);
                         }
 
                         onClicked: function (mouse) {
@@ -575,9 +610,8 @@ Popup {
                                 return;
 
                             if (mouse.button === Qt.RightButton) {
-                                const point = cardItem.mapToItem(carousel,
-                                                                 mouse.x, mouse.y);
-                                root.openMenu(cardItem, point.x, point.y);
+                                root.openMenu(cardItem, cardItem.x + mouse.x,
+                                              cardItem.y + mouse.y);
                                 return;
                             }
 
@@ -605,14 +639,15 @@ Popup {
                     root.dragStartP = root.p;
                     root.dragging = true;
                 }
-                root.p = root.dragStartP - offset / root.cardWidth;
+                root.p = root.dragStartP - offset / (root.cardWidth * root.spacing);
             }
 
             onSwiped: function (direction, velocity) {
                 root.dragging = false;
                 const target = Math.max(0, Math.min(root.count - 1,
                     root.current + (direction === "left" ? 1 : -1)));
-                const distance = Math.abs(target - root.p) * root.cardWidth;
+                const distance = Math.abs(target - root.p)
+                    * root.cardWidth * root.spacing;
                 snap.duration = Motion.release(distance, velocity,
                                                 Motion.snapSlope, 160, 320);
                 snap.easing.bezierCurve = Motion.snap;
@@ -625,7 +660,8 @@ Popup {
                     root.dragging = false;
                     const target = Math.max(0, Math.min(root.count - 1,
                                                         Math.round(root.p)));
-                    const distance = Math.abs(target - root.p) * root.cardWidth;
+                    const distance = Math.abs(target - root.p)
+                        * root.cardWidth * root.spacing;
                     snap.duration = Motion.release(distance, velocity,
                                                     Motion.snapSlope, 160, 320);
                     snap.easing.bezierCurve = Motion.snap;
