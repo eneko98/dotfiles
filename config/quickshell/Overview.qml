@@ -131,9 +131,70 @@ Popup {
             unit: item.appUnit,
             app: item.appClass,
             frozen: item.appStats !== null && item.appStats.frozen,
+            high: item.appStats !== null ? item.appStats.high : null,
+            view: "root",
             x: pointX,
             y: pointY
         };
+    }
+
+    // Two views: the actions, and the memory caps (a third level would be a
+    // menu for a menu; four presets is all this needs).
+    readonly property var menuRows: {
+        if (root.menu === null || root.menu.unit === "")
+            return [];
+
+        if (root.menu.view === "limit")
+            return ["\u2039 Memory", "512 MB", "1 GB", "2 GB", "No cap"];
+
+        return [root.menu.frozen ? "Thaw" : "Freeze", "Memory cap\u2026",
+                "Kill app"];
+    }
+
+    function showView(view) {
+        if (root.menu === null)
+            return;
+
+        const next = Object.assign({}, root.menu);
+        next.view = view;
+        root.menu = next;
+    }
+
+    function choose(label) {
+        if (label === "Memory cap\u2026")
+            return root.showView("limit");
+        if (label === "\u2039 Memory")
+            return root.showView("root");
+        if (label === "Freeze" || label === "Thaw")
+            return root.act(label === "Freeze" ? "freeze" : "thaw");
+        if (label === "Kill app")
+            return root.act("stop");
+        if (label === "512 MB")
+            return root.cap(536870912);
+        if (label === "1 GB")
+            return root.cap(1073741824);
+        if (label === "2 GB")
+            return root.cap(2147483648);
+        if (label === "No cap")
+            return root.cap(null);
+    }
+
+    // `MemoryHigh` throttles instead of killing: past the cap the app is slowed
+    // (its pages get reclaimed), which is what you want on 5.7 GB -- MemoryMax
+    // would just OOM-kill it. `--runtime` keeps it out of disk state.
+    function cap(bytes) {
+        if (root.menu === null)
+            return;
+
+        const unit = root.menu.unit;
+        root.closeMenu();
+
+        if (unit === "")
+            return;
+
+        Quickshell.execDetached(["systemctl", "--user", "set-property",
+            "--runtime", unit,
+            "MemoryHigh=" + (bytes === null ? "infinity" : String(bytes))]);
     }
 
     function closeMenu() {
@@ -475,8 +536,13 @@ Popup {
                                         + (cardItem.appClass
                                             ? cardItem.appClass + " · " : "");
 
-                                    return head + root.memory(s.mem) + " · "
+                                    let line = head + root.memory(s.mem) + " · "
                                         + s.cpu + " %";
+
+                                    if (s.high !== null && s.high !== undefined)
+                                        line += " · cap " + root.memory(s.high);
+
+                                    return line;
                                 }
                                 color: cardItem.appStats !== null
                                     && cardItem.appStats.frozen ? Theme.teal : Theme.fg2
@@ -633,10 +699,7 @@ Popup {
                     }
 
                     Repeater {
-                        model: root.menu !== null && root.menu.unit !== ""
-                            ? (root.menu.frozen
-                                ? ["Thaw", "Kill app"] : ["Freeze", "Kill app"])
-                            : []
+                        model: root.menuRows
 
                         delegate: Pressable {
                             id: row
@@ -667,9 +730,7 @@ Popup {
                                 font.pixelSize: 12
                             }
 
-                            onClicked: root.act(row.modelData === "Kill app"
-                                ? "stop"
-                                : row.modelData === "Freeze" ? "freeze" : "thaw")
+                            onClicked: root.choose(row.modelData)
                         }
                     }
                 }

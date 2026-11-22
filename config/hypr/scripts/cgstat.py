@@ -4,11 +4,13 @@
 Prints one JSON line per second, one entry per app scope, and nothing else:
 
     {"app-Hyprland-kitty-6bb512da.scope": {"mem": 51200000, "cpu": 1.2,
-                                           "frozen": false, "pids": [12169]}}
+                                           "frozen": false, "high": null,
+                                           "pids": [12169]}}
 
-`mem` is bytes, `cpu` is percent of one core since the previous line, and `pids`
-is what the overview needs to answer "which app is this window?" (a window's PID
-belongs to exactly one scope). Everything comes from the cgroup filesystem: no
+`mem` is bytes, `cpu` is percent of one core since the previous line, `high` is
+the memory cap in bytes (null when there is none), and `pids` is what the overview
+needs to answer "which app is this window?" (a window's PID belongs to exactly one
+scope). Everything comes from the cgroup filesystem: no
 daemon, no `systemctl` per tick, no scanning /proc.
 
 Only the app-graphical.slice is read, so a frozen Spotify cannot inflate this
@@ -77,6 +79,9 @@ def stats(slice_path, previous):
 
         try:
             memory = int(read(entry.path, "memory.current"))
+            # cgroup v2 says "max" where systemd says infinity.
+            high_raw = read(entry.path, "memory.high").strip()
+            high = None if high_raw == "max" else int(high_raw)
             usage = int(read(entry.path, "cpu.stat").split()[1])
             frozen = read(entry.path, "cgroup.freeze").strip() == "1"
             pids = [int(pid) for pid in read(entry.path, "cgroup.procs").split()]
@@ -95,6 +100,7 @@ def stats(slice_path, previous):
             "mem": memory,
             "cpu": cpu,
             "frozen": frozen,
+            "high": high,
             "pids": pids,
         }
 
