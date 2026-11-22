@@ -148,10 +148,29 @@ if [[ -f "$firefox_ini" ]]; then
 	fi
 fi
 
-if ((changed == 0 && skipped == 0)); then
+# --- Orphan links ----------------------------------------------------------
+# Deleting a file from config/ (or a generated copy from the state theme) leaves
+# its symlink pointing nowhere, and Quickshell then complains about a file it
+# cannot read. Only links whose target is inside this repo or the state theme are
+# removed: anything else under ~/.config belongs to the user.
+pruned=0
+
+while IFS= read -r -d '' link; do
+	target="$(readlink -- "$link")"
+	case "$target" in
+		"$src_dir"/* | "$state_theme"/*) ;;
+		*) continue ;;
+	esac
+	printf 'prune   %s (target is gone)\n' "$link"
+	((dry_run)) || rm -f -- "$link"
+	pruned=$((pruned + 1))
+done < <(find "$dst_dir" -xtype l -print0 2>/dev/null)
+
+if ((changed == 0 && skipped == 0 && pruned == 0)); then
 	printf 'already up to date\n'
 elif ((dry_run)); then
-	printf '\n%s change(s) would be made (dry run)\n' "$changed"
+	printf '\n%s change(s) would be made, %s orphan(s) removed (dry run)\n' \
+		"$changed" "$pruned"
 fi
 
 if ((skipped > 0)); then
