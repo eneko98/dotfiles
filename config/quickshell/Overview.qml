@@ -374,9 +374,6 @@ Popup {
                     }
                     readonly property var appStats: root.statsFor(pid)
                     readonly property string appUnit: root.unitFor(pid)
-                    // systemd escapes the "-" in "jail-kitty" as \x2d, so the
-                    // scope reads app-...-jail\x2dkitty-<hash>.scope.
-                    readonly property bool jailed: appUnit.indexOf("-jail\\x2d") !== -1
 
                     width: root.cardWidth
                     height: 260
@@ -536,7 +533,6 @@ Popup {
                                         return "";
 
                                     const head = (s.frozen ? "frozen · " : "")
-                                        + (cardItem.jailed ? "jail · " : "")
                                         + (cardItem.appClass
                                             ? cardItem.appClass + " · " : "");
 
@@ -548,10 +544,8 @@ Popup {
 
                                     return line;
                                 }
-                                color: cardItem.jailed
-                                    || (cardItem.appStats !== null
-                                        && cardItem.appStats.frozen)
-                                    ? Theme.teal : Theme.fg2
+                                color: cardItem.appStats !== null
+                                    && cardItem.appStats.frozen ? Theme.teal : Theme.fg2
                                 font.family: "Adwaita Sans"
                                 font.pixelSize: 11
                             }

@@ -95,9 +95,15 @@ Popup {
             % root.results.length;
     }
 
-    function launch(item, jailed) {
+    function launch(item) {
         root.close();
 
+        // Every app is launched through uwsm, so it gets its own systemd scope
+        // (app-*.scope) instead of living inside the compositor's cgroup. That
+        // is what makes "this window's app: 1.2 GB, 18 %" measurable later.
+        // `-a` names the scope after the desktop entry, so a terminal app reads
+        // "app-...-yazi-..." rather than "kitty".
+        //
         // The command is built here rather than handing uwsm the .desktop ID:
         // uwsm expands field codes wrongly (measured: yazi.desktop's `Exec=yazi
         // %f` opened kitty on an "Open URL error" page).
@@ -106,32 +112,10 @@ Popup {
             ? ["kitty", "-e"].concat(entry.command)
             : entry.command;
 
-        // Shift + Enter: the same program, but inside the bubblewrap jail --
-        // throwaway home, read-only system. The script runs it through
-        // `uwsm app` itself, so it is not wrapped twice.
-        if (jailed) {
-            Quickshell.execDetached({
-                command: [Quickshell.env("HOME") + "/.config/hypr/scripts/jail"]
-                    .concat(command),
-                workingDirectory: entry.workingDirectory
-            });
-            return;
-        }
-
-        // Everywhere else apps go through uwsm, so each one gets its own systemd
-        // scope (app-*.scope) instead of living inside the compositor's cgroup.
-        // That is what makes "this window's app: 1.2 GB, 18 %" measurable.
-        // `-a` names the scope after the entry, so a terminal app reads
-        // "app-...-yazi-..." rather than "kitty".
         Quickshell.execDetached({
             command: ["uwsm", "app", "-a", entry.id, "--"].concat(command),
             workingDirectory: entry.workingDirectory
         });
-    }
-
-    function launchJailSelected() {
-        if (root.results.length > 0)
-            root.launch(root.results[root.selectedIndex], true);
     }
 
     function launchSelected() {
@@ -209,29 +193,7 @@ Popup {
                 root.selectedIndex = 0;
             }
 
-            // Shift + Enter launches in the jail. Marking the key accepted
-            // keeps TextInput from also treating it as Enter; the flag covers
-            // the case where `accepted` still arrives in the same event.
-            property bool jailKey: false
-
-            Keys.onPressed: function (event) {
-                if (event.key !== Qt.Key_Return && event.key !== Qt.Key_Enter)
-                    return;
-                if (!(event.modifiers & Qt.ShiftModifier))
-                    return;
-
-                input.jailKey = true;
-                Qt.callLater(function () { input.jailKey = false; });
-                root.launchJailSelected();
-                event.accepted = true;
-            }
-
-            onAccepted: {
-                if (input.jailKey)
-                    return;
-
-                root.launchSelected();
-            }
+            onAccepted: root.launchSelected()
 
             Keys.onDownPressed: root.move(1)
             Keys.onUpPressed: root.move(-1)

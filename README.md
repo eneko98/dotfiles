@@ -9,7 +9,6 @@ Arch + Hyprland (Lua) desktop, one component per commit. `config/` mirrors
 | --- | --- |
 | `SUPER + Q` | terminal (kitty) |
 | `SUPER + Space` | launcher |
-| `Shift + Enter` (in the launcher) | run the app in a throwaway home |
 | `SUPER + E` | files (yazi) |
 | `SUPER + G` | Firefox |
 | `SUPER + D` | dashboard |

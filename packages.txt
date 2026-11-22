@@ -280,13 +280,6 @@ spotify-launcher
 # music plays, against 8-11 % for the two bars.
 cava
 
-# The jail (Shift + Enter in the launcher): `config/hypr/scripts/jail` runs a
-# program with a throwaway home and a read-only system, so trying an AppImage or
-# a random binary cannot write into ~. It is a convenience sandbox, not a
-# security boundary. It was already installed as a dependency; listed here
-# because the config needs it.
-bubblewrap
-
 # Measurement HUD (idea 2)
 # libva-utils is only `vainfo`, which answers what the GPU can decode: this
 # Vega 8 (VCN 1.0) lists H.264, HEVC and VP9 profile 0/2 and no AV1. The HUD
