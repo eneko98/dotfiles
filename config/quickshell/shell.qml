@@ -499,7 +499,8 @@ ShellRoot {
         panelName: "today"
     }
 
-    SystemPanel {
+    // The status pill's panel: sections behind a row of icons.
+    ControlCenter {
         id: systemPanel
         panelName: "system"
     }

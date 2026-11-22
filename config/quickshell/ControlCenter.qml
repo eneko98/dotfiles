@@ -1,0 +1,294 @@
+// The control centre: the status pill's panel. A row of section icons on top
+// (the active one stretches into a pill with its name, as in the reference) and
+// one section below, instead of the old column of accordions.
+//
+// The sections themselves are unchanged components (NetworkSection,
+// BluetoothSection, SoundSection, DisplaySection, ResourcesSection, the tiles
+// and the session row): this file only decides which one is on screen and keeps
+// the network/bluetooth scanners alive exactly while their section is open.
+import Quickshell
+import Quickshell.Networking
+import QtQuick
+
+Popup {
+    id: root
+
+    panelWidth: 520
+
+    // "" means the system overview (the pills, tiles and battery).
+    property string section: ""
+    readonly property string current: root.section === "" ? "system" : root.section
+
+    // The processes page, pushed over the sections from Resources' link.
+    property bool showProcesses: false
+
+    readonly property var tabs: [
+        { id: "system", glyph: "󰍹", label: "System" },
+        { id: "network", glyph: "󰖩", label: "Wi-Fi" },
+        { id: "bluetooth", glyph: "󰂯", label: "Bluetooth" },
+        { id: "sound", glyph: "󰕾", label: "Audio" },
+        { id: "display", glyph: "󰃠", label: "Display" },
+        { id: "resources", glyph: "󰓅", label: "Resources" },
+        { id: "session", glyph: "󰐥", label: "Session" }
+    ]
+
+    function open(section) {
+        root.section = section || "";
+        root.showProcesses = false;
+    }
+
+    // Escape goes back from the processes page before closing the panel.
+    function close() {
+        if (root.showProcesses) {
+            root.showProcesses = false;
+            return;
+        }
+        root.closePanel();
+    }
+
+    // --- The sections row -------------------------------------------------
+    Row {
+        id: tabs
+
+        width: parent.width
+        spacing: 2
+
+        Repeater {
+            model: root.tabs
+
+            delegate: Pressable {
+                id: tab
+
+                required property var modelData
+
+                readonly property bool active: root.current === tab.modelData.id
+
+                height: 30
+                width: tabRow.implicitWidth + (tab.active ? 24 : 12)
+                pressScale: 1.0
+
+                Behavior on width {
+                    NumberAnimation {
+                        duration: Motion.fast
+                        easing.type: Easing.BezierSpline
+                        easing.bezierCurve: Motion.standard
+                    }
+                }
+
+                Rectangle {
+                    anchors.fill: parent
+                    radius: 15
+                    color: tab.active
+                        ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.9)
+                        : tab.hovered
+                            ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.5)
+                            : "transparent"
+                }
+
+                Row {
+                    id: tabRow
+
+                    anchors.centerIn: parent
+                    spacing: 7
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: tab.modelData.glyph
+                        color: tab.active ? Theme.gold : Theme.fg1
+                        font.family: "JetBrainsMono Nerd Font"
+                        font.pixelSize: 15
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: tab.active
+                        text: tab.modelData.label
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
+                    }
+                }
+
+                onClicked: root.section = tab.modelData.id === "system"
+                    ? "" : tab.modelData.id
+            }
+        }
+    }
+
+    Rectangle {
+        width: parent.width
+        height: 1
+        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.06)
+    }
+
+    // --- One section at a time -------------------------------------------
+    // Declared as direct children so the Column sizes the panel to whichever is
+    // visible; a Column ignores invisible children.
+    BatterySection {
+        id: batterySection
+
+        width: parent.width
+        visible: root.current === "system"
+    }
+
+    Grid {
+        width: parent.width
+        columns: 2
+        spacing: Tokens.space.s
+        visible: root.current === "system"
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            checked: Networking.wifiEnabled
+            glyph: "󰖩"
+            title: "Wi-Fi"
+            subtitle: Networking.wifiEnabled
+                ? (root.networkName !== "" ? root.networkName : "On")
+                : "Off"
+
+            onToggled: Networking.wifiEnabled = !Networking.wifiEnabled
+            onExpandRequested: root.section = "network"
+        }
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            checked: root.adapter ? root.adapter.enabled : false
+            glyph: "\uf293"
+            title: "Bluetooth"
+            subtitle: root.adapter && root.adapter.enabled
+                ? (root.btName !== "" ? root.btName : "On")
+                : "Off"
+
+            onToggled: {
+                if (root.adapter)
+                    root.adapter.enabled = !root.adapter.enabled;
+                else
+                    Quickshell.execDetached(["pkexec", "rfkill", "unblock", "bluetooth"]);
+            }
+            onExpandRequested: root.section = "bluetooth"
+        }
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            expandable: false
+            checked: NightLight.on
+            glyph: "󰖔"
+            title: "Night light"
+            subtitle: NightLight.on ? "4000 K" : "Off"
+
+            onToggled: NightLight.toggle()
+        }
+
+        CaffeineTile {
+            width: (parent.width - Tokens.space.s) / 2
+            checked: Caffeine.active
+            onCheckedChanged: Caffeine.active = checked
+        }
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            expandable: false
+            checked: Lyrics.enabled
+            glyph: "\uf001"
+            title: "Lyrics"
+            subtitle: Lyrics.enabled
+                ? (Lyrics.hasLyrics ? Lyrics.lines.length + " lines" : "On")
+                : "Off"
+
+            onToggled: {
+                Lyrics.enabled = !Lyrics.enabled;
+                Config.saveLyrics(Lyrics.enabled);
+            }
+        }
+    }
+
+    NetworkSection {
+        id: netSection
+
+        width: parent.width
+        showTile: false
+        visible: root.current === "network"
+        expanded: root.current === "network"
+    }
+
+    BluetoothSection {
+        id: btSection
+
+        width: parent.width
+        showTile: false
+        visible: root.current === "bluetooth"
+        expanded: root.current === "bluetooth"
+    }
+
+    SoundSection {
+        id: soundSection
+
+        width: parent.width
+        visible: root.current === "sound"
+        expanded: root.current === "sound"
+    }
+
+    DisplaySection {
+        width: parent.width
+        visible: root.current === "display"
+        showNightTile: false
+    }
+
+    ResourcesSection {
+        width: parent.width
+        visible: root.current === "resources"
+
+        onProcessesRequested: root.showProcesses = true
+    }
+
+    SessionRow {
+        width: parent.width
+        visible: root.current === "session"
+    }
+
+    ScenesRow {
+        width: parent.width
+        visible: root.current === "session"
+    }
+
+    // The processes page: pushed over the sections (the overlay layer of
+    // the stage), back with Escape or the header.
+    overlay: SubPage {
+        anchors.fill: parent
+        active: root.showProcesses
+        title: "Processes"
+
+        onBack: root.showProcesses = false
+
+        ProcessesPage {
+            width: parent.width
+        }
+    }
+
+    // --- Shared service reads --------------------------------------------
+    readonly property var adapter: Bluetooth.defaultAdapter
+
+    readonly property string networkName: {
+        const devices = Networking.devices.values;
+        for (let i = 0; i < devices.length; ++i) {
+            if (devices[i].type !== DeviceType.Wifi)
+                continue;
+            const networks = devices[i].networks.values;
+            for (let j = 0; j < networks.length; ++j)
+                if (networks[j].connected)
+                    return networks[j].name;
+        }
+        return "";
+    }
+
+    readonly property string btName: {
+        if (!root.adapter)
+            return "";
+        const devices = root.adapter.devices.values;
+        for (let i = 0; i < devices.length; ++i) {
+            if (devices[i].connected)
+                return devices[i].name;
+        }
+        return "";
+    }
+}
