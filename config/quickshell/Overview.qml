@@ -466,14 +466,13 @@ Popup {
                         anchors.margins: 1
                         clip: false
 
-                        // Only the workspace on screen has buffers to export: a
-                        // window on a hidden workspace has nothing painted, and
-                        // ScreencopyView there returns an empty card (measured:
-                        // the side cards showed only their translucent fill, so
-                        // the desktop showed through them).
+                        // Every window can be exported, including the ones on a
+                        // hidden workspace (verified: the side card shows its
+                        // window). What made them look empty was the card being
+                        // translucent, not the capture.
                         ScreencopyView {
                             anchors.fill: parent
-                            visible: cardItem.modelData.focused
+                            visible: true
                             captureSource: root.visible && cardItem.preview
                                 ? cardItem.preview.wayland : null
                             live: false
@@ -502,10 +501,9 @@ Popup {
                             font.pixelSize: 28
                         }
 
-                        // A workspace that is not on screen has no thumbnail (see
-                        // the ScreencopyView above), so its card carries the number
-                        // and what runs there. Children of a Column must not use
-                        // anchors: they ended up 0-sized and invisible.
+                        // An empty workspace has no window to capture, so the card
+                        // carries its number and (nothing else). Children of a
+                        // Column must not use anchors: they end up 0-sized.
                         // Anchored to the left edge: a side card is mostly covered
                         // by the centre one, and a centred label lands in the
                         // hidden half.
@@ -515,8 +513,7 @@ Popup {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width * 0.42
                             spacing: 8
-                            visible: !cardItem.modelData.focused
-                                || cardItem.preview === null
+                            visible: cardItem.preview === null
 
                             Text {
                                 width: parent.width
@@ -574,7 +571,7 @@ Popup {
                                     height: 6
                                     radius: 3
                                     color: Theme.gold
-                                    visible: cardItem.modelData.focused
+                                    visible: true
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
 
