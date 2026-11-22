@@ -79,16 +79,16 @@ Item {
     NumberAnimation {
         id: openAnim
         target: morph; property: "t"; to: 1
-        duration: Motion.medium
+        duration: Motion.panelOpen
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Motion.decel
     }
     SequentialAnimation {
         id: closeAnim
-        PauseAnimation { duration: 60 }
+        PauseAnimation { duration: 0 }
         NumberAnimation {
             target: morph; property: "t"; to: 0
-            duration: Motion.base
+            duration: Motion.panelClose
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Motion.accel
         }
@@ -121,8 +121,11 @@ Item {
         anchors.fill: parent
         anchors.margins: Tokens.space.l
         clip: true
-        opacity: morph.open ? Math.max(0, (morph.t - 0.4) / 0.6)
-                            : Math.max(0, (morph.t - 0.6) / 0.4)
+        // The content arrives late (the reference is sharp only at the very
+        // end of the growth), so the surface reads as a pill stretching before
+        // anything is written on it.
+        opacity: morph.open ? Math.max(0, (morph.t - 0.55) / 0.45)
+                            : Math.max(0, (morph.t - 0.7) / 0.3)
 
         property real shiftY: morph.open ? 0 : 8
         transform: Translate { id: contentShift; y: contentItem.shiftY }

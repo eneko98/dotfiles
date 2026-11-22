@@ -45,6 +45,12 @@ Singleton {
     readonly property int medium: 240 * k
     readonly property int slow: 320 * k
 
+    // A panel growing out of its pill: measured on the reference video (30 fps
+    // bursts) at ~250 ms in and ~150 ms back. Arriving is slower than leaving,
+    // which is what makes the close feel like it is being put away.
+    readonly property int panelOpen: 250 * k
+    readonly property int panelClose: 150 * k
+
     // The one duration that survives reduced motion: a cut is harsher than a
     // short fade for anything that only changes opacity.
     readonly property int fade: reduced ? 80 : 120 * debugScale
