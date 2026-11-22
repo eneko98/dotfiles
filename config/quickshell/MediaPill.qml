@@ -1,9 +1,11 @@
-// The media pill: the play/pause glyph of whatever is playing, and a click that
-// opens the media bubble. It is the piece that used to live inside the island,
-// moved out so the island is only the clock (and the notification surface).
+// The media pill: the "now playing" wing of the bar, moved out of the island
+// when the bar was split into pills. It holds what the island used to: the
+// play/pause glyph, the spectrum and the current lyric line (or the track).
+// The pill grows with its content, so a line of lyrics widens it -- that is the
+// dynamic island, now on the media side.
 //
-// The glyph toggles playback; the rest of the pill opens the panel. Same
-// arrangement as the reference bar: a small pause button next to the clock.
+// Clicking the glyph toggles playback; clicking the rest opens the media
+// bubble (the pill's own MouseArea sits behind the content).
 import Quickshell
 import Quickshell.Services.Mpris
 import QtQuick
@@ -13,34 +15,20 @@ Surface {
 
     signal clicked()
 
-    // Same player the island used: the first one playing, else the first with a
-    // title, so a paused track can be resumed from here.
-    readonly property var player: {
-        const players = Mpris.players.values;
-        let fallback = null;
+    Media {
+        id: media
 
-        for (let i = 0; i < players.length; ++i) {
-            if (players[i].isPlaying)
-                return players[i];
-            if (fallback === null && players[i].trackTitle !== "")
-                fallback = players[i];
-        }
-
-        return fallback;
+        anchors.centerIn: parent
     }
-
-    // A player with no track is not media: playerctld registers itself as an
-    // MPRIS player even with nothing behind it, which painted an empty pill.
-    readonly property bool active: player !== null && player.trackTitle !== ""
 
     level: 1
     lifted: hover.hovered
     // Collapses to nothing with no player, so the bar does not show an empty
-    // pill: `visible` on the pill keeps its slot out of the row.
-    width: active ? 38 : 0
+    // pill.
+    width: media.active ? media.implicitWidth + 24 : 0
     height: 30
-    opacity: active ? 1 : 0
-    visible: active
+    opacity: media.active ? 1 : 0
+    visible: media.active
 
     Behavior on width {
         NumberAnimation {
@@ -57,22 +45,5 @@ Surface {
         z: -1
         cursorShape: Qt.PointingHandCursor
         onClicked: root.clicked()
-    }
-
-    Text {
-        anchors.centerIn: parent
-        // The MDI box sits ~1 px high at this size; same nudge as the island.
-        anchors.verticalCenterOffset: 0
-        text: root.player && root.player.isPlaying ? "󰏤" : "󰐊"
-        color: hover.hovered ? Theme.fg0 : Theme.fg1
-        font.family: "JetBrainsMono Nerd Font"
-        font.pixelSize: 15
-
-        MouseArea {
-            anchors.fill: parent
-            cursorShape: Qt.PointingHandCursor
-            onClicked: if (root.player && root.player.canTogglePlaying)
-                root.player.togglePlaying()
-        }
     }
 }
