@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Run a program with a throwaway home, so trying a random binary or AppImage
+# cannot touch ~/.config, ~/.ssh or anything else of yours.
+#
+#   jail <command> [args...]
+#   jail --no-net <command> [args...]
+#
+# What it is: a convenience sandbox, NOT a security boundary. The app still
+# talks to the real compositor and (by default) the network, so malformed or
+# hostile code can still hurt you in other ways. It is for "I do not want this
+# thing writing into my home", which is the case that actually happens.
+#
+# System is read-only, /tmp is a tmpfs, the home is an empty tmpfs, and what the
+# app writes there disappears with it. Everything goes through `uwsm app`, so
+# the sandbox is an app-*.scope like any other: the overview can measure it,
+# freeze it and kill it.
+set -euo pipefail
+
+no_net=0
+if [[ ${1:-} == --no-net ]]; then
+	no_net=1
+	shift
+fi
+
+if (( $# == 0 )); then
+	printf 'usage: jail [--no-net] <command> [args...]\n' >&2
+	exit 2
+fi
+
+runtime=${XDG_RUNTIME_DIR:?XDG_RUNTIME_DIR is not set}
+wayland=${WAYLAND_DISPLAY:?WAYLAND_DISPLAY is not set}
+home=${HOME:?HOME is not set}
+
+args=(
+	--unshare-all
+	--die-with-parent
+	--new-session
+	--ro-bind /usr /usr
+	--symlink usr/bin /bin
+	--symlink usr/lib /lib
+	--symlink usr/lib /lib64
+	--ro-bind /etc /etc
+	--proc /proc
+	--dev /dev
+	--dev-bind /dev/dri /dev/dri
+	--tmpfs /tmp
+	--tmpfs "$home"
+	--setenv HOME "$home"
+	--dir "$runtime"
+	--ro-bind "$runtime/$wayland" "$runtime/$wayland"
+	--setenv XDG_RUNTIME_DIR "$runtime"
+	--setenv WAYLAND_DISPLAY "$wayland"
+)
+
+# Audio, when the sockets exist: a jailed video or game without sound is a
+# worse test than one with it, and these are the same sockets every app uses.
+for socket in pipewire-0 pipewire-0-manager pulse/native; do
+	[[ -e "$runtime/$socket" ]] || continue
+	args+=(--ro-bind "$runtime/$socket" "$runtime/$socket")
+done
+
+(( no_net )) || args+=(--share-net)
+
+# The scope is named after the program so the overview reads "jail-firefox".
+exec uwsm app -a "jail-$(basename -- "$1")" -- bwrap "${args[@]}" -- "$@"
