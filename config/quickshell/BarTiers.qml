@@ -95,6 +95,7 @@ PanelWindow {
         Region { item: workspacesPill }
         Region { item: statsPill }
         Region { item: mediaPill }
+        Region { item: weatherPill }
         Region { item: island }
         Region { item: statusPill }
         Region { item: dashboardPill }
@@ -255,6 +256,20 @@ PanelWindow {
         anchors.top: island.top
 
         opacity: bar.islandHidden ? 0 : 1
+        onClicked: bar.todayRequested()
+    }
+
+    // --- Centre-right: the weather -------------------------------------
+    // Only in normal mode: it hangs off the island, and while the island shows
+    // a notification or an OSD it would be in the way.
+    WeatherPill {
+        id: weatherPill
+
+        anchors.left: island.right
+        anchors.leftMargin: Tokens.space.s
+        anchors.top: island.top
+
+        visible: Island.mode === "normal" && !bar.islandHidden
         onClicked: bar.todayRequested()
     }
 

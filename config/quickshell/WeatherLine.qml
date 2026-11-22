@@ -18,8 +18,14 @@ Item {
     property string text: "—"
     property string glyph: "󰖐"
     property bool hovered: false
+    // The bar pill wants the glyph and the degrees, nothing else.
+    property bool compact: false
+    property real temp: NaN
 
     implicitHeight: 24
+    // The bar pill sizes itself from this; without it the width came out 0 and
+    // the text hung outside the surface.
+    implicitWidth: row.implicitWidth
 
     function refresh() {
         query.running = false;
@@ -77,6 +83,7 @@ Item {
                     return;
 
                 const info = root.info(data.current.weather_code);
+                root.temp = data.current.temperature_2m;
                 root.text = Math.round(data.current.temperature_2m) + " °C · " + info.text;
                 root.glyph = info.glyph;
             }
@@ -85,14 +92,17 @@ Item {
         onExited: function (exitCode) {
             if (exitCode !== 0) {
                 root.text = "—";
+                root.temp = NaN;
                 root.glyph = "󰖐";
             }
         }
     }
 
     Row {
+        id: row
+
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Tokens.space.s
+        spacing: root.compact ? 4 : Tokens.space.s
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
@@ -104,14 +114,17 @@ Item {
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: root.text
+            text: root.compact
+                ? (isNaN(root.temp) ? "—" : Math.round(root.temp) + "\u00b0")
+                : root.text
             color: Theme.fg0
             font.family: "Adwaita Sans"
-            font.pixelSize: 13
+            font.pixelSize: root.compact ? 11 : 13
         }
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
+            visible: !root.compact
             text: root.place
             color: Theme.fg1
             font.family: "Adwaita Sans"
