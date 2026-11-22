@@ -158,7 +158,12 @@ ShellRoot {
     // The scene's own effects. Split from applyScene() because entering has to
     // know the real dim_inactive first: saving an assumed `true` turns a
     // deliberate `false` into the scene's value for good.
-    function commitScene(name) {
+    //
+    // `launch` is false when the scene is restored at startup: a restored
+    // scene returns its effects (DND, caffeine, dim_inactive), not its
+    // windows. Before this, leaving the machine with Música active made
+    // the next boot start Spotify with its window on top.
+    function commitScene(name, launch) {
         const def = Scenes.definitions[name];
         if (!def)
             return;
@@ -167,7 +172,7 @@ ShellRoot {
         Caffeine.active = def.caffeine;
         root.setDimInactive(def.dimInactive);
 
-        if (def.spotify)
+        if (def.spotify && launch !== false)
             Quickshell.execDetached(["sh", "-c",
                 "$HOME/.config/hypr/scripts/spotify-toggle"]);
 
@@ -186,7 +191,7 @@ ShellRoot {
             } catch (e) {
                 root.sceneSaved = {};
             }
-            root.commitScene(name);
+            root.commitScene(name, false);
             return;
         }
 
