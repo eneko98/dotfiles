@@ -94,6 +94,7 @@ PanelWindow {
     mask: Region {
         Region { item: workspacesPill }
         Region { item: statsPill }
+        Region { item: mediaPill }
         Region { item: island }
         Region { item: statusPill }
         Region { item: dashboardPill }
@@ -241,6 +242,20 @@ PanelWindow {
         anchors.topMargin: Tokens.space.xs
 
         onClicked: bar.statsRequested()
+    }
+
+    // --- Centre-left: the media pill -----------------------------------
+    // Media leaves the island so the island is only the clock. The pill opens
+    // the media panel; its glyph toggles playback.
+    MediaPill {
+        id: mediaPill
+
+        anchors.right: island.left
+        anchors.rightMargin: Tokens.space.s
+        anchors.top: island.top
+
+        opacity: bar.islandHidden ? 0 : 1
+        onClicked: bar.todayRequested()
     }
 
     // --- Centre: the island --------------------------------------------
@@ -588,18 +603,6 @@ PanelWindow {
                     anchors.centerIn: parent
                     spacing: 8
 
-                    // The dynamic part: shows while a player has a track.
-                    Media {
-                        id: media
-                    }
-
-                    Rectangle {
-                        visible: media.active
-                        width: 1
-                        height: 14
-                        color: Theme.bg2
-                    }
-
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
                         text: Qt.formatDateTime(clock.date, "hh:mm")
@@ -613,10 +616,8 @@ PanelWindow {
                         font.features: ({ "tnum": 1 })
                     }
 
-                    // The date steps aside while the media section is up.
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: !media.active
                         text: Qt.formatDateTime(clock.date, "ddd d MMM")
                         color: Theme.fg1
                         font.family: "Adwaita Sans"
