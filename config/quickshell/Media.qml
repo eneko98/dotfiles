@@ -1,5 +1,5 @@
 // What the island shows when something is playing: a play/pause glyph, the
-// peak bars, and the current lyric line (or the track, elided to a fixed width
+// spectrum, and the current lyric line (or the track, elided to a fixed width
 // so a long title cannot take over the bar).
 //
 // The player is picked from Mpris.players: the first one actually playing, or
@@ -11,8 +11,8 @@
 // QML records each read, so isPlaying and the track metadata updates re-run it.
 
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Mpris
-import Quickshell.Services.Pipewire
 import QtQuick
 
 Row {
@@ -54,29 +54,54 @@ Row {
         return artist === "" ? title : title + " — " + artist;
     }
 
-    // The default output, not the player's own stream: Spotify publishes its
-    // node without channel positions (Pipewire calls them Unknown) and the
-    // peak monitor refuses it with "missing channels present in capture
-    // stream" (measured). The sink has real Left/Right channels, so the bars
-    // follow the output; anything else making sound rides along, which is
-    // only visible while a player is up anyway.
-    readonly property var peakNode: Pipewire.defaultAudioSink
+    // The spectrum: cava's FFT over the default output's monitor, in raw mode
+    // (one line per frame, eight values 0..1000 separated by ';'). This
+    // replaced PwNodePeakMonitor, which only knows one value per channel (two
+    // bars, no bands) and cost as much while it was on.
+    //
+    // `bands` holds 0..1 heights; when cava is not running it stays at rest.
+    property var bands: [0, 0, 0, 0, 0, 0, 0, 0]
 
-    // The peak monitor runs whenever a track is playing. It is not free --
-    // ~8 % of a core on this laptop, and the cost is opening the capture
-    // stream, not listening to it (measured: one cycle per second 9 %, one per
-    // four seconds 3 %, i.e. the same as off) -- but the bars are part of the
-    // island while music plays, so it stays on.
-    readonly property bool peaksWanted: root.visible
+    readonly property bool spectrumWanted: root.visible
         && root.player !== null && root.player.isPlaying
 
     visible: root.active
 
-    PwNodePeakMonitor {
-        id: peaks
+    // A `running:` binding on a Process is unreliable: Quickshell writes the
+    // property when it starts and the binding does not come back (measured
+    // with bt-agent). Start and stop are imperative here.
+    function updateSpectrum() {
+        if (root.spectrumWanted === cava.running)
+            return;
 
-        node: root.peakNode
-        enabled: root.peaksWanted
+        cava.running = root.spectrumWanted;
+        if (!root.spectrumWanted)
+            root.bands = [0, 0, 0, 0, 0, 0, 0, 0];
+    }
+
+    onSpectrumWantedChanged: root.updateSpectrum()
+    Component.onCompleted: root.updateSpectrum()
+
+    Process {
+        id: cava
+
+        command: ["cava", "-p", Quickshell.env("HOME") + "/.config/cava/config"]
+
+        stdout: SplitParser {
+            onRead: function (line) {
+                const parts = line.split(";");
+                const out = [];
+
+                for (let i = 0; i < parts.length && out.length < 8; ++i) {
+                    const value = parseInt(parts[i]);
+                    if (!isNaN(value))
+                        out.push(Math.min(1, value / 1000));
+                }
+
+                if (out.length === 8)
+                    root.bands = out;
+            }
+        }
     }
 
     Text {
@@ -100,28 +125,25 @@ Row {
     Row {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
-        // Shown while there is a player, not only while the monitor runs:
-        // otherwise the island would shrink on every pause. With the monitor
-        // off the bars rest as thin dashes.
+        // Shown while there is a player, not only while cava runs: otherwise
+        // the island would shrink on every pause. With cava stopped the bars
+        // rest as thin dashes.
         visible: root.active
 
         Repeater {
-            model: 2
+            model: 8
 
             Rectangle {
                 id: bar
 
                 required property int index
 
-                // A normal property, animated: a Behavior on a readonly one is
-                // not reliable (measured with the slider). With the monitor off
-                // the bars rest as thin dashes, so the island keeps its width.
-                property real shown: peaks.enabled
-                    ? Math.max(0.15, peaks.peaks[bar.index] || 0) : 0.15
-
-                Behavior on shown {
-                    NumberAnimation { duration: 90 }
-                }
+                // cava already smooths its own fall, so this is a plain
+                // binding, no Behavior: animating eight bars twenty times a
+                // second cost more than the FFT did (measured 13.8 % of a core
+                // with the animation, 6.7 % without). 0.12 is the resting
+                // height, so a silent band still shows a dash.
+                property real shown: Math.max(0.12, root.bands[bar.index] || 0)
 
                 width: 3
                 height: 14

@@ -273,6 +273,13 @@ gtk4-layer-shell
 # limited, and browsing in a terminal was worse than the app.
 spotify-launcher
 
+# The island's spectrum. cava does the FFT and writes the band values to stdout
+# in raw mode; the shell reads them and draws eight bars. The peak monitor this
+# replaced (PwNodePeakMonitor) only knows one value per channel, so two bars was
+# its ceiling. Measured together with the shell at 20 fps: 6,6 % of a core while
+# music plays, against 8-11 % for the two bars.
+cava
+
 # Measurement HUD (idea 2)
 # libva-utils is only `vainfo`, which answers what the GPU can decode: this
 # Vega 8 (VCN 1.0) lists H.264, HEVC and VP9 profile 0/2 and no AV1. The HUD

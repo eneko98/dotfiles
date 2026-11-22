@@ -1,0 +1,28 @@
+# Cava, feeding the island's spectrum. The shell starts it while a track plays
+# and stops it on pause, reading its raw output: one line per frame with eight
+# values 0..1000 separated by ';'.
+#
+# The input is PipeWire's default output monitor (`source = auto` follows the
+# default sink), which is the same mix the peak monitor this replaced listened
+# to. Its FFT is what makes more than two bars possible at all: the peak
+# monitor only knows one value per channel, and stereo has two.
+#
+# The framerate is the price of the whole thing: every frame invalidates eight
+# bindings in the bar. Measured on this laptop while a tone played, counting
+# shell + cava together: 30 fps 16 %, 20 fps 6 %, 15 fps 4 %. The old peak
+# monitor cost 8-11 % for two bars, so 20 is both cheaper and smoother than
+# what it replaced; below that the throw of a 14 px bar starts to step.
+
+[general]
+bars = 8
+framerate = 20
+
+[input]
+method = pipewire
+source = auto
+
+[output]
+method = raw
+raw_target = /dev/stdout
+data_format = ascii
+channels = mono
