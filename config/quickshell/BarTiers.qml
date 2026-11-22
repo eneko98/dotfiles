@@ -90,6 +90,7 @@ PanelWindow {
     // Region tracks its item, so the mask follows the island as it grows.
     mask: Region {
         Region { item: workspacesPill }
+        Region { item: statsPill }
         Region { item: island }
         Region { item: statusPill }
         Region { item: dashboardPill }
@@ -223,6 +224,20 @@ PanelWindow {
                 }
             }
         }
+    }
+
+    // --- Left: the system stats ----------------------------------------
+    // CPU, temperature and memory at a glance; the click opens the dashboard,
+    // which is where those numbers live in detail.
+    StatsPill {
+        id: statsPill
+
+        anchors.left: workspacesPill.right
+        anchors.leftMargin: Tokens.space.s
+        anchors.top: parent.top
+        anchors.topMargin: Tokens.space.xs
+
+        onClicked: bar.dashboardRequested()
     }
 
     // --- Centre: the island --------------------------------------------
