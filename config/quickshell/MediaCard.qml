@@ -127,22 +127,53 @@ Column {
             color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.10)
 
             Rectangle {
-                width: parent.width
-                    * (root.length > 0 ? Math.min(1, root.pos / root.length) : 0)
+                width: parent.width * (seek.dragging
+                    ? seek.fraction
+                    : root.length > 0 ? Math.min(1, root.pos / root.length) : 0)
                 height: parent.height
                 radius: 3
                 color: Theme.gold
             }
 
+            // Click jumps; dragging follows the finger and seeks once on
+            // release. Before this there was only onPressed, so sliding did
+            // nothing at all.
             MouseArea {
+                id: seek
+
                 enabled: root.player ? root.player.canSeek : false
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
 
+                property bool dragging: false
+                property real fraction: 0
+
+                function update(x) {
+                    seek.fraction = Math.max(0, Math.min(1, x / seek.width));
+                }
+
                 onPressed: function (mouse) {
+                    seek.dragging = true;
+                    seek.update(mouse.x);
+                }
+
+                onPositionChanged: function (mouse) {
+                    if (seek.dragging)
+                        seek.update(mouse.x);
+                }
+
+                onReleased: function (mouse) {
+                    if (!seek.dragging)
+                        return;
+
+                    seek.update(mouse.x);
+                    seek.dragging = false;
+
+                    // `position` is a writable property in Quickshell's MPRIS
+                    // API; there is no setPosition() method, and calling one
+                    // was a TypeError nobody saw (seeking never worked).
                     if (root.player && root.length > 0)
-                        root.player.setPosition(
-                            Math.max(0, Math.min(1, mouse.x / width)) * root.length);
+                        root.player.position = seek.fraction * root.length;
                 }
             }
         }
@@ -154,7 +185,8 @@ Column {
             Text {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: root.fmt(root.pos)
+                text: root.fmt(seek.dragging
+                    ? seek.fraction * root.length : root.pos)
                 color: Theme.fg1
                 font.family: "Adwaita Sans"
                 font.pixelSize: 11
