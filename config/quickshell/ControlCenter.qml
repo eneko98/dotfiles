@@ -42,6 +42,19 @@ Popup {
         { id: "session", glyph: "󰐥", label: "Session" }
     ]
 
+    // Move between sections by one, wrapping. The wheel over the tab row and
+    // the arrow keys use it; the IPC does too, which is how it gets tested
+    // without a pointer.
+    function step(delta) {
+        const ids = root.tabs.map(t => t.id);
+        let index = ids.indexOf(root.current);
+        if (index < 0)
+            index = 0;
+
+        index = (index + delta + ids.length) % ids.length;
+        root.section = ids[index];
+    }
+
     function open(section) {
         root.section = section || "";
         root.showProcesses = false;
@@ -63,6 +76,17 @@ Popup {
         visible: root.showTabs
         width: parent.width
         spacing: 2
+
+        // Wheel to walk the sections. An area on top accepting no buttons:
+        // the clicks still reach the tabs underneath.
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+
+            onWheel: function (event) {
+                root.step(event.angleDelta.y > 0 ? -1 : 1);
+            }
+        }
 
         Repeater {
             model: root.tabs

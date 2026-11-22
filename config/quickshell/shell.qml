@@ -695,6 +695,14 @@ ShellRoot {
         function close(): void {
             systemPanel.close();
         }
+
+        function next(): void {
+            systemPanel.step(1);
+        }
+
+        function prev(): void {
+            systemPanel.step(-1);
+        }
     }
 
     // The dedicated dashboard, opened from Resources' link or a script
