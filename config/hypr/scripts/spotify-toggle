@@ -6,5 +6,7 @@
 if hyprctl clients -j | jq -e '.[] | select(.class == "Spotify")' >/dev/null 2>&1; then
     hyprctl dispatch 'hl.dsp.focus({ window = "class:Spotify" })'
 else
-    spotify-launcher --skip-update >/dev/null 2>&1 &
+    # Through uwsm, so Spotify is its own app-*.scope: the overview can then
+    # show its memory/CPU and freezing it acts on the whole player.
+    uwsm app -- spotify-launcher --skip-update >/dev/null 2>&1 &
 fi

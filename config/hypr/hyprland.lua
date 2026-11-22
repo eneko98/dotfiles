@@ -8,6 +8,15 @@
 
 local terminal = "kitty"
 
+-- Apps are launched through uwsm so each one gets its own systemd scope
+-- (app-*.scope) instead of living inside the compositor's cgroup. That is what
+-- lets the overview say "this window's app: 1.2 GB, 18 %" and what makes
+-- freezing or capping an app act on the whole app. Scripts that run and exit
+-- (screenshots, the bar's IPC) do not need it.
+local function app(command)
+    return "uwsm app -- " .. command
+end
+
 -- Every colour below comes from theme.lua, which is the palette the wallpaper
 -- was reduced to. require() finds it because Hyprland puts the config directory
 -- first in package.path, so plain require("theme") resolves
@@ -277,13 +286,13 @@ hl.gesture({
 ------------------
 local mainMod = "SUPER"
 
-hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(app(terminal)))
 -- The launcher. $HOME rather than ~, because the command goes through sh -c.
 hl.bind(mainMod .. " + Space", hl.dsp.exec_cmd("$HOME/.config/hypr/scripts/launcher"))
 -- The file manager, opened directly in a terminal. Closing yazi closes kitty.
-hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(terminal .. " yazi"))
+hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(app(terminal .. " yazi")))
 -- The web browser.
-hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("firefox"))
+hl.bind(mainMod .. " + G", hl.dsp.exec_cmd(app("firefox")))
 -- The system dashboard, through the bar's IPC: the same toggle the chart zone
 -- in the status pill uses. `qs` is on PATH and the command runs through a shell.
 hl.bind(mainMod .. " + D", hl.dsp.exec_cmd("qs ipc call dashboard toggle"))

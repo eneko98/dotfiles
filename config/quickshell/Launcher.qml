@@ -8,7 +8,7 @@
 // fuzzy scorer would be the next step, not a pretending one.
 //
 // Terminal entries need kitty -e by hand: DesktopEntry.execute() deliberately
-// ignores runInTerminal.
+// ignores runInTerminal, and we do not use execute() anyway (see launch()).
 
 import Quickshell
 import QtQuick
@@ -98,15 +98,24 @@ Popup {
     function launch(item) {
         root.close();
 
+        // Every app is launched through uwsm, so it gets its own systemd scope
+        // (app-*.scope) instead of living inside the compositor's cgroup. That
+        // is what makes "this window's app: 1.2 GB, 18 %" measurable later.
+        // `-a` names the scope after the desktop entry, so a terminal app reads
+        // "app-...-yazi-..." rather than "kitty".
+        //
+        // The command is built here rather than handing uwsm the .desktop ID:
+        // uwsm expands field codes wrongly (measured: yazi.desktop's `Exec=yazi
+        // %f` opened kitty on an "Open URL error" page).
         const entry = item.entry;
-        if (entry.runInTerminal) {
-            Quickshell.execDetached({
-                command: ["kitty", "-e"].concat(entry.command),
-                workingDirectory: entry.workingDirectory
-            });
-        } else {
-            entry.execute();
-        }
+        const command = entry.runInTerminal
+            ? ["kitty", "-e"].concat(entry.command)
+            : entry.command;
+
+        Quickshell.execDetached({
+            command: ["uwsm", "app", "-a", entry.id, "--"].concat(command),
+            workingDirectory: entry.workingDirectory
+        });
     }
 
     function launchSelected() {
