@@ -22,6 +22,10 @@ Arch + Hyprland (Lua) desktop, one component per commit. `config/` mirrors
 | `SUPER + Shift + 1..0` | move window to workspace 1-10 |
 | `SUPER + scroll` | previous / next workspace |
 | `SUPER + F` | fullscreen |
+| `SUPER + Shift + Space` | float or tile the window |
+| `SUPER + drag` | move a window |
+| `SUPER + right drag` | resize a window |
+| drag a window edge | resize it (no modifier needed) |
 | `SUPER + C` | close window |
 | `SUPER + L` | lock |
 | `SUPER + M` | log out |

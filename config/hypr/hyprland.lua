@@ -160,7 +160,25 @@ hl.config({
     general = {
         gaps_out = 8,
         gaps_in = 5,
+        -- Floating windows resize from their own edge, and the grab area is
+        -- wider than the 1 px border: nobody should have to hit a pixel.
+        resize_on_border = true,
+        extend_border_grab_area = 20,
     },
+})
+
+-- Dialogs are not documents: floating them keeps the tiling underneath intact,
+-- which is what you want while moving sliders in the mixer or picking a Qt
+-- theme. Everything else tiles until you float it by hand.
+hl.window_rule({
+    name = "float-pavucontrol",
+    match = { class = "pavucontrol" },
+    float = true,
+})
+hl.window_rule({
+    name = "float-qt6ct",
+    match = { class = "qt6ct" },
+    float = true,
 })
 
 ------------------
@@ -328,6 +346,18 @@ end
 -- numbers: e+1 is "the next existing one". Same binding Hyprland ships.
 hl.bind(mainMod .. " + mouse_down", hl.dsp.focus({ workspace = "e+1" }))
 hl.bind(mainMod .. " + mouse_up",   hl.dsp.focus({ workspace = "e-1" }))
+
+-- The mouse, the way every stacking desktop does it: SUPER + left drag moves a
+-- window, SUPER + right drag resizes it. `mouse = true` is what tells Hyprland
+-- the pattern is a mouse button rather than a key.
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+-- Float the focused window (or put it back). Floating is what makes a window
+-- keep its size and position -- a stack of them around the tiled one is the
+-- screenshot people post.
+hl.bind(mainMod .. " + SHIFT + Space",
+        hl.dsp.window.float({ action = "toggle" }))
 
 -- Hardware keys. Brightness and volume reach the compositor as XF86 keysyms and
 -- nothing handles them by default, so they are bound here. Volume is
