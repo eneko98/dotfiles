@@ -17,6 +17,11 @@ Item {
     // blur rather than a record.
     property int turnDuration: 6000
 
+    // The label is the point here: 0.76 of the disc leaves a thin ring of vinyl
+    // and gives the cover as much room as it can get without losing the record
+    // (0.52 read as a small stamp in the middle of a big black circle).
+    property real labelRatio: 0.76
+
     width: size
     height: size
 
@@ -39,7 +44,7 @@ Item {
 
             Rectangle {
                 anchors.centerIn: parent
-                width: disc.width * (0.93 - index * 0.07)
+                width: disc.width * (0.96 - index * 0.055)
                 height: width
                 radius: width / 2
                 color: "transparent"
@@ -50,7 +55,7 @@ Item {
 
         Avatar {
             anchors.centerIn: parent
-            size: disc.width * 0.52
+            size: disc.width * root.labelRatio
             source: root.art
         }
 
