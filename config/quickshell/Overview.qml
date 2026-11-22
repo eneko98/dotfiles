@@ -99,17 +99,69 @@ Popup {
     // them the rest of the time.
     property var appStats: ({})
 
-    function statsFor(pid) {
+    // The scope a window belongs to, found through its PID. Empty when the
+    // window was not launched through uwsm (no scope of its own).
+    function unitFor(pid) {
         for (const unit in root.appStats) {
             const pids = root.appStats[unit].pids;
 
             for (let i = 0; i < pids.length; ++i) {
                 if (pids[i] === pid)
-                    return root.appStats[unit];
+                    return unit;
             }
         }
 
-        return null;
+        return "";
+    }
+
+    function statsFor(pid) {
+        const unit = root.unitFor(pid);
+        return unit === "" ? null : root.appStats[unit];
+    }
+
+    // --- The card menu -------------------------------------------------------
+    // Right click on a card: freeze/thaw or kill the app behind its window.
+    // `menu` holds the scope's unit and where to draw the little panel; null
+    // means closed.
+    property var menu: null
+    readonly property int menuWidth: 168
+
+    function openMenu(item, pointX, pointY) {
+        if (item.appUnit === "")
+            return;
+
+        root.menu = {
+            unit: item.appUnit,
+            app: item.appClass,
+            frozen: item.appStats !== null && item.appStats.frozen,
+            x: pointX,
+            y: pointY
+        };
+    }
+
+    function closeMenu() {
+        root.menu = null;
+    }
+
+    // systemctl --user is what systemd delegates the user's cgroup subtree for:
+    // freeze stops every process in the scope, stop kills the whole tree and
+    // takes the window with it.
+    function act(action) {
+        if (root.menu === null)
+            return;
+
+        const unit = root.menu.unit;
+        root.closeMenu();
+
+        // Killing a frozen app is refused by systemd ("Cannot perform operation
+        // on frozen unit"), so the kill thaws first. Both in one shell, because
+        // two execDetached calls have no order between them.
+        if (action === "stop") {
+            Quickshell.execDetached(["sh", "-c", "systemctl --user thaw '"
+                + unit + "'; systemctl --user stop '" + unit + "'"]);
+        } else {
+            Quickshell.execDetached(["systemctl", "--user", action, unit]);
+        }
     }
 
     function memory(bytes) {
@@ -156,7 +208,7 @@ Popup {
         Keys.onRightPressed: root.step(1)
         Keys.onReturnPressed: root.select()
         Keys.onEnterPressed: root.select()
-        Keys.onEscapePressed: root.close()
+        Keys.onEscapePressed: root.menu !== null ? root.closeMenu() : root.close()
 
         Text {
             id: title
@@ -208,14 +260,23 @@ Popup {
                         }
                         return list.length > 0 ? list[0] : null;
                     }
-                    // The window's PID is the bridge to its app scope.
-                    readonly property int pid: preview !== null
-                        && preview.lastIpcObject !== undefined
-                        ? preview.lastIpcObject.pid : -1
-                    readonly property string appClass: preview !== null
-                        && preview.lastIpcObject !== undefined
-                        ? (preview.lastIpcObject.class || "") : ""
+                    // The window's PID is the bridge to its app scope. The IPC
+                    // object arrives key by key, so `pid` can be missing for a
+                    // moment: coercing undefined into an `int` warns and leaves
+                    // the property useless (measured: the card silently lost its
+                    // numbers until this was guarded).
+                    readonly property int pid: {
+                        const ipc = preview !== null ? preview.lastIpcObject : null;
+                        const value = ipc && ipc.pid !== undefined
+                            ? Number(ipc.pid) : -1;
+                        return isNaN(value) ? -1 : value;
+                    }
+                    readonly property string appClass: {
+                        const ipc = preview !== null ? preview.lastIpcObject : null;
+                        return ipc && ipc.class ? String(ipc.class) : "";
+                    }
                     readonly property var appStats: root.statsFor(pid)
+                    readonly property string appUnit: root.unitFor(pid)
 
                     width: root.cardWidth
                     height: 260
@@ -274,6 +335,28 @@ Popup {
                                 ? cardItem.preview.wayland : null
                             live: false
                             constraintSize: Qt.size(640, 360)
+                        }
+
+                        // A frozen app stops redrawing its window: the wash and
+                        // the snowflake say "paused", not "broken".
+                        Rectangle {
+                            anchors.fill: parent
+                            visible: cardItem.appStats !== null
+                                && cardItem.appStats.frozen
+                            color: Qt.rgba(Theme.bg0.r, Theme.bg0.g,
+                                           Theme.bg0.b, 0.55)
+                        }
+
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.top: parent.top
+                            anchors.topMargin: 18
+                            visible: cardItem.appStats !== null
+                                && cardItem.appStats.frozen
+                            text: "\u2744"
+                            color: Theme.teal
+                            font.family: "Adwaita Sans"
+                            font.pixelSize: 28
                         }
 
                         Text {
@@ -370,8 +453,32 @@ Popup {
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
+                        // Right click is a menu; the default is left-only, which
+                        // is the trap that made the tray look dead.
+                        acceptedButtons: Qt.LeftButton | Qt.RightButton
 
-                        onClicked: {
+                        // The touchpad on this laptop never produces a right
+                        // click (every press is the left button), so a long
+                        // press opens the same menu.
+                        onPressAndHold: function (mouse) {
+                            const point = cardItem.mapToItem(carousel,
+                                                             mouse.x, mouse.y);
+                            root.openMenu(cardItem, point.x, point.y);
+                        }
+
+                        onClicked: function (mouse) {
+                            // A long press that just opened the menu must not
+                            // also jump to the workspace on release.
+                            if (root.menu !== null)
+                                return;
+
+                            if (mouse.button === Qt.RightButton) {
+                                const point = cardItem.mapToItem(carousel,
+                                                                 mouse.x, mouse.y);
+                                root.openMenu(cardItem, point.x, point.y);
+                                return;
+                            }
+
                             root.p = cardItem.index;
                             root.current = cardItem.index;
                             root.select();
@@ -427,6 +534,91 @@ Popup {
 
             onWheeled: function (direction) {
                 root.step(direction === "up" ? 1 : -1);
+            }
+        }
+
+        // --- The card menu ---------------------------------------------------
+        // Drawn inside the carousel on purpose: a second child of the Popup
+        // root would land in its content column and grow the panel.
+        Item {
+            id: menuLayer
+
+            anchors.fill: parent
+            visible: root.menu !== null
+            z: 10
+
+            // Any click that is not on the menu closes it.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.AllButtons
+                onClicked: root.closeMenu()
+            }
+
+            Surface {
+                id: menuPanel
+
+                x: {
+                    if (root.menu === null)
+                        return 0;
+                    return Math.max(0, Math.min(menuLayer.width - width,
+                                                 root.menu.x - width / 2));
+                }
+                y: {
+                    if (root.menu === null)
+                        return 0;
+                    return Math.min(menuLayer.height - height, root.menu.y + 8);
+                }
+                width: root.menuWidth
+                height: menuColumn.implicitHeight + 8
+                level: 3
+                radius: 10
+
+                Column {
+                    id: menuColumn
+
+                    anchors.centerIn: parent
+                    width: parent.width - 8
+                    spacing: 1
+
+                    Repeater {
+                        model: root.menu !== null && root.menu.frozen
+                            ? ["Thaw", "Kill app"] : ["Freeze", "Kill app"]
+
+                        delegate: Pressable {
+                            id: row
+
+                            required property string modelData
+
+                            width: parent.width
+                            height: 30
+                            pressScale: 1.0
+
+                            Rectangle {
+                                anchors.fill: parent
+                                radius: 6
+                                color: row.hovered
+                                    ? Qt.rgba(Theme.bg2.r, Theme.bg2.g,
+                                              Theme.bg2.b, 0.9)
+                                    : "transparent"
+                            }
+
+                            Text {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 10
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: row.modelData
+                                color: row.modelData === "Kill app"
+                                    ? Theme.red : Theme.fg0
+                                font.family: "Adwaita Sans"
+                                font.pixelSize: 12
+                            }
+
+                            onClicked: root.act(row.modelData === "Kill app"
+                                ? "stop"
+                                : row.modelData === "Freeze" ? "freeze" : "thaw")
+                        }
+                    }
+                }
             }
         }
     }
