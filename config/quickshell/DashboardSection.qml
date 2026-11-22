@@ -82,6 +82,7 @@ Item {
     // One gauge: the label above, the ring, and three lines inside it (a small
     // figure on top, the main value, a small one under it), as in the
     // reference.
+    // One cell inside a container: label above, ring with three lines inside.
     component Gauge: Item {
         id: gauge
 
@@ -91,11 +92,8 @@ Item {
         property string mainText: ""
         property string bottomText: ""
 
-        Card {
+        Column {
             anchors.fill: parent
-
-            Column {
-            width: parent.width
             spacing: 4
 
             Text {
@@ -154,8 +152,15 @@ Item {
                     }
                 }
             }
-            }
         }
+    }
+
+    // The hairline between the two gauges of a container.
+    component Divider: Rectangle {
+        width: 1
+        height: parent.height - 28
+        anchors.verticalCenter: parent.verticalCenter
+        color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.07)
     }
 
     component Title: Text {
@@ -194,7 +199,7 @@ Item {
         width: parent.width
         spacing: 8
 
-    // --- The four gauges --------------------------------------------------
+    // --- The four gauges: two containers of two, hairline between --------
     Row {
         id: gauges
 
@@ -202,53 +207,79 @@ Item {
         spacing: 8
         height: 190
 
-        Gauge {
-            width: (gauges.width - gauges.spacing * 3) / 4
+        Card {
+            width: (gauges.width - gauges.spacing) / 2
             height: gauges.height
 
-            label: "CPU"
+            Row {
+                width: parent.width
+                height: parent.height
+                spacing: 8
+
+                Gauge {
+                    width: (parent.width - 8) / 2
+                    height: parent.height
+
+                    label: "CPU"
             value: Resources.cpu
             topText: isNaN(Resources.tempC) ? "" : Math.round(Resources.tempC) + "\u00b0"
             mainText: Math.round(Resources.cpu * 100) + "%"
-            bottomText: isNaN(Resources.cpuMHz)
-                ? "" : (Resources.cpuMHz / 1000).toFixed(2) + " GHz"
+                    bottomText: isNaN(Resources.cpuMHz)
+                        ? "" : (Resources.cpuMHz / 1000).toFixed(2) + " GHz"
+                }
+
+                Divider {}
+
+                Gauge {
+                    width: (parent.width - 8) / 2
+                    height: parent.height
+
+                    label: "GPU"
+                    value: isNaN(Resources.gpu) ? 0 : Resources.gpu
+                    topText: isNaN(Resources.tempC) ? "" : Math.round(Resources.tempC) + "\u00b0"
+                    mainText: isNaN(Resources.gpu) ? "—" : Math.round(Resources.gpu * 100) + "%"
+                    bottomText: isNaN(Resources.vramUsedGiB)
+                        ? "" : Resources.vramUsedGiB.toFixed(2) + " GiB"
+                }
+            }
         }
 
-        Gauge {
-            width: (gauges.width - gauges.spacing * 3) / 4
+        Card {
+            width: (gauges.width - gauges.spacing) / 2
             height: gauges.height
 
-            label: "GPU"
-            value: isNaN(Resources.gpu) ? 0 : Resources.gpu
-            topText: isNaN(Resources.tempC) ? "" : Math.round(Resources.tempC) + "\u00b0"
-            mainText: isNaN(Resources.gpu) ? "—" : Math.round(Resources.gpu * 100) + "%"
-            bottomText: isNaN(Resources.vramUsedGiB)
-                ? "" : Resources.vramUsedGiB.toFixed(2) + " GiB"
-        }
+            Row {
+                width: parent.width
+                height: parent.height
+                spacing: 8
 
-        Gauge {
-            width: (gauges.width - gauges.spacing * 3) / 4
-            height: gauges.height
+                Gauge {
+                    width: (parent.width - 8) / 2
+                    height: parent.height
 
-            label: "Memory"
-            value: Resources.memUsed
-            topText: Resources.memUsedGiB.toFixed(2) + " GiB"
-            mainText: Math.round(Resources.memUsed * 100) + "%"
-            bottomText: Resources.memTotalGiB.toFixed(2) + " GiB"
-        }
+                    label: "Memory"
+                    value: Resources.memUsed
+                    topText: Resources.memUsedGiB.toFixed(2) + " GiB"
+                    mainText: Math.round(Resources.memUsed * 100) + "%"
+                    bottomText: Resources.memTotalGiB.toFixed(2) + " GiB"
+                }
 
-        Gauge {
-            width: (gauges.width - gauges.spacing * 3) / 4
-            height: gauges.height
+                Divider {}
 
-            label: "Swap"
-            value: Resources.swapTotalGiB > 0
-                ? Resources.swapUsedGiB / Resources.swapTotalGiB : 0
-            topText: Resources.swapUsedGiB.toFixed(2) + " GiB"
-            mainText: Resources.swapTotalGiB > 0
-                ? Math.round(100 * Resources.swapUsedGiB / Resources.swapTotalGiB) + "%"
-                : "—"
-            bottomText: Resources.swapTotalGiB.toFixed(2) + " GiB"
+                Gauge {
+                    width: (parent.width - 8) / 2
+                    height: parent.height
+
+                    label: "Swap"
+                    value: Resources.swapTotalGiB > 0
+                        ? Resources.swapUsedGiB / Resources.swapTotalGiB : 0
+                    topText: Resources.swapUsedGiB.toFixed(2) + " GiB"
+                    mainText: Resources.swapTotalGiB > 0
+                        ? Math.round(100 * Resources.swapUsedGiB / Resources.swapTotalGiB) + "%"
+                        : "—"
+                    bottomText: Resources.swapTotalGiB.toFixed(2) + " GiB"
+                }
+            }
         }
     }
 

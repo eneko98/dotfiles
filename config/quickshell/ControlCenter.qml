@@ -18,7 +18,7 @@ Popup {
 
     // "" means the system overview (the pills, tiles and battery).
     property string section: ""
-    readonly property string current: root.section === "" ? "system" : root.section
+    readonly property string current: root.section === "" ? "network" : root.section
 
     // The notification server, passed by the shell (it lives in the bar's
     // process): the history is a section here now.
@@ -28,7 +28,6 @@ Popup {
     property bool showProcesses: false
 
     readonly property var tabs: [
-        { id: "system", glyph: "󰍹", label: "System" },
         { id: "network", glyph: "󰖩", label: "Wi-Fi" },
         { id: "bluetooth", glyph: "󰂯", label: "Bluetooth" },
         { id: "sound", glyph: "󰕾", label: "Audio" },
@@ -130,85 +129,10 @@ Popup {
 
     // --- One section at a time -------------------------------------------
     // Declared as direct children so the Column sizes the panel to whichever is
-    // visible; a Column ignores invisible children.
-    BatterySection {
-        id: batterySection
-
-        width: parent.width
-        visible: root.current === "system"
-    }
-
-    Grid {
-        width: parent.width
-        columns: 2
-        spacing: Tokens.space.s
-        visible: root.current === "system"
-
-        ToggleTile {
-            width: (parent.width - Tokens.space.s) / 2
-            checked: Networking.wifiEnabled
-            glyph: "󰖩"
-            title: "Wi-Fi"
-            subtitle: Networking.wifiEnabled
-                ? (root.networkName !== "" ? root.networkName : "On")
-                : "Off"
-
-            onToggled: Networking.wifiEnabled = !Networking.wifiEnabled
-            onExpandRequested: root.section = "network"
-        }
-
-        ToggleTile {
-            width: (parent.width - Tokens.space.s) / 2
-            checked: root.adapter ? root.adapter.enabled : false
-            glyph: "\uf293"
-            title: "Bluetooth"
-            subtitle: root.adapter && root.adapter.enabled
-                ? (root.btName !== "" ? root.btName : "On")
-                : "Off"
-
-            onToggled: {
-                if (root.adapter)
-                    root.adapter.enabled = !root.adapter.enabled;
-                else
-                    Quickshell.execDetached(["pkexec", "rfkill", "unblock", "bluetooth"]);
-            }
-            onExpandRequested: root.section = "bluetooth"
-        }
-
-        ToggleTile {
-            width: (parent.width - Tokens.space.s) / 2
-            expandable: false
-            checked: NightLight.on
-            glyph: "󰖔"
-            title: "Night light"
-            subtitle: NightLight.on ? "4000 K" : "Off"
-
-            onToggled: NightLight.toggle()
-        }
-
-        CaffeineTile {
-            width: (parent.width - Tokens.space.s) / 2
-            checked: Caffeine.active
-            onCheckedChanged: Caffeine.active = checked
-        }
-
-        ToggleTile {
-            width: (parent.width - Tokens.space.s) / 2
-            expandable: false
-            checked: Lyrics.enabled
-            glyph: "\uf001"
-            title: "Lyrics"
-            subtitle: Lyrics.enabled
-                ? (Lyrics.hasLyrics ? Lyrics.lines.length + " lines" : "On")
-                : "Off"
-
-            onToggled: {
-                Lyrics.enabled = !Lyrics.enabled;
-                Config.saveLyrics(Lyrics.enabled);
-            }
-        }
-    }
-
+    // visible; a Column ignores invisible children. There is no "System" page:
+    // the tabs are the pages, so a grid of the same switches would only repeat
+    // them. The switches live where they belong: night light in Display,
+    // caffeine and lyrics in Session.
     NetworkSection {
         id: netSection
 
@@ -244,7 +168,7 @@ Popup {
     DisplaySection {
         width: parent.width
         visible: root.current === "display"
-        showNightTile: false
+        showNightTile: true
     }
 
     ResourcesSection {
@@ -266,6 +190,35 @@ Popup {
     ScenesRow {
         width: parent.width
         visible: root.current === "session"
+    }
+
+    Grid {
+        width: parent.width
+        columns: 2
+        spacing: Tokens.space.s
+        visible: root.current === "session"
+
+        CaffeineTile {
+            width: (parent.width - Tokens.space.s) / 2
+            checked: Caffeine.active
+            onCheckedChanged: Caffeine.active = checked
+        }
+
+        ToggleTile {
+            width: (parent.width - Tokens.space.s) / 2
+            expandable: false
+            checked: Lyrics.enabled
+            glyph: "\uf001"
+            title: "Lyrics"
+            subtitle: Lyrics.enabled
+                ? (Lyrics.hasLyrics ? Lyrics.lines.length + " lines" : "On")
+                : "Off"
+
+            onToggled: {
+                Lyrics.enabled = !Lyrics.enabled;
+                Config.saveLyrics(Lyrics.enabled);
+            }
+        }
     }
 
     // The processes page: pushed over the sections (the overlay layer of
