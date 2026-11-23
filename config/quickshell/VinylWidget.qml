@@ -118,11 +118,14 @@ Widget {
         width: 168
         height: 168
 
-        // The fallback is painted UNDER the images, so a cover that is still
-        // loading (or failed) shows the glyph instead of a hole.
+        // The sleeve base is OPAQUE: the record sits right behind it, and a
+        // translucent base let the disc bleed through the fallback (the
+        // "weird cover" the user saw). The glyph lives under the images too:
+        // a cover that loads covers it; one that is loading (or failed, like
+        // an expired Spotify CDN link) shows it.
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.7)
+            color: Theme.bg2
 
             Glyph {
                 anchors.centerIn: parent

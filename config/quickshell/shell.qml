@@ -579,11 +579,25 @@ ShellRoot {
     // hides them. They take no clicks: press-and-move drags, the corner grip
     // scales, and a release without movement does nothing.
     FetchWidget {
+        id: fetchWidget
         forceHidden: Scenes.active === "cine"
     }
 
     VinylWidget {
+        id: vinylWidget
         forceHidden: Scenes.active === "cine"
+    }
+
+    // No pointer can be injected on this machine (no dotool, no wlrctl), so
+    // the resize gesture is verified through this: it drives the same three
+    // steps a hand on the grip produces.
+    IpcHandler {
+        target: "widgets"
+
+        function resize(which: string, dx: string, dy: string): void {
+            const w = which === "vinyl" ? vinylWidget : fetchWidget;
+            w.testResize(Number(dx), Number(dy));
+        }
     }
 
 

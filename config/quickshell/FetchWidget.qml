@@ -156,11 +156,21 @@ Widget {
                 renderType: Text.QtRendering
             }
 
+            // The value column is 240 px MINUS the suffix's own width: the
+            // suffix follows the Text, so a full-width value pushed it to the
+            // card's edge ("· pacman" hung outside, measured on screen).
+            TextMetrics {
+                id: suffixMetrics
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 12
+                text: root.staticRows[index].suffix
+            }
+
             Row {
                 x: 88
 
                 Text {
-                    width: 240
+                    width: 240 - suffixMetrics.width
                     text: root.staticRows[index].v
                     elide: Text.ElideRight
                     color: Theme.fg0

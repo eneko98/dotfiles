@@ -344,12 +344,27 @@ PanelWindow {
 
     // The scale that puts the card's bottom-right corner nearest the cursor
     // is the projection of the corner offset onto the card's diagonal.
+    // EVERYTHING HERE IS IN WINDOW COORDINATES: the corner arrives from the
+    // grip's own MouseArea, and during a resize the window does not move, so
+    // window and screen differ by a constant (winL/winT). Subtracting the
+    // SCREEN-side cardX instead of the window-side card.x made every
+    // projection negative and clamped the gesture to minScale: the instant
+    // shrink that could not grow back (measured on the user's hand).
     function resizeTo(cornerX, cornerY) {
-        const a = cornerX - root.cardX;
-        const b = cornerY - root.cardY;
+        const a = cornerX - card.x;
+        const b = cornerY - card.y;
         const s = (root.cardW * a + root.cardH * b)
             / (root.cardW * root.cardW + root.cardH * root.cardH);
         root.liveScale = Math.max(root.minScale, Math.min(root.resizeMaxFit, s));
+    }
+
+    // Test hook: no pointer can be injected on this machine, so the resize
+    // gesture is driven from the `widgets` IPC. dx/dy are px from the card's
+    // current corner, the same thing a hand dragging the grip produces.
+    function testResize(dx, dy) {
+        root.beginResize();
+        root.resizeTo(card.x + card.width + dx, card.y + card.height + dy);
+        root.endResize();
     }
 
     // --- the grip ---
