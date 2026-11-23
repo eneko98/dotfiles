@@ -1,10 +1,10 @@
 // The media pill. Two states:
 //  - live: a player is playing (or paused with a title), shown as the reference
 //    does -- a small round button with the play/pause glyph;
-//  - stale: nothing is playing but the last track is remembered, shown as
-//    "glyph + title — artist" for three seconds after the shell starts, then the
-//    pill collapses: the bar must not carry a song that finished days ago. A
-//    live player cancels that countdown.
+//  - stale: nothing is playing but the last track is remembered. It is "glyph +
+//    title — artist" for three seconds after the shell starts, then it collapses
+//    to the bare glyph: the title of a song that finished days ago is noise, but
+//    the button is the way back into the bubble (and to resume Spotify).
 //
 // The last track is persisted in Config, so it survives a reboot.
 import Quickshell
@@ -39,7 +39,7 @@ Surface {
     // The remembered track is a boot shortcut, not a label: three seconds and
     // it is gone. Coming back to live (or losing the remembered one) resets it.
     property bool staleExpired: false
-    readonly property bool shown: root.live || (root.stale && !root.staleExpired)
+    readonly property bool shown: root.live || root.stale
 
     onStaleChanged: {
         root.staleExpired = false;
@@ -60,8 +60,11 @@ Surface {
 
     level: 1
     lifted: hover.hovered
-    width: root.live ? 38 : root.stale && !root.staleExpired
-        ? staleRow.implicitWidth + 24 : 0
+    // Live and expired-stale are the same 38 px button; only the remembered
+    // label makes it wider.
+    width: root.live ? 38
+        : root.stale ? (root.staleExpired ? 38 : staleRow.implicitWidth + 24)
+        : 0
     height: 30
     opacity: root.shown ? 1 : 0
     visible: root.shown
@@ -127,7 +130,7 @@ Surface {
         // button of the reference and the title lives in the bubble.
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            visible: root.stale
+            visible: root.stale && !root.staleExpired
             width: Math.min(implicitWidth, 220)
             text: root.staleLabel
             elide: Text.ElideRight
