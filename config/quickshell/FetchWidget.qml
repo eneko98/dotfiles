@@ -156,38 +156,16 @@ Widget {
                 renderType: Text.QtRendering
             }
 
-            // The value column is 240 px MINUS the suffix's own width: the
-            // suffix follows the Text, so a full-width value pushed it to the
-            // card's edge ("· pacman" hung outside, measured on screen).
-            TextMetrics {
-                id: suffixMetrics
+            Text {
+                x: 88
+                width: 240
+                text: root.staticRows[index].v
+                elide: Text.ElideRight
+                color: Theme.fg0
                 font.family: "JetBrainsMono Nerd Font"
                 font.pixelSize: 12
-                text: root.staticRows[index].suffix
-            }
-
-            Row {
-                x: 88
-
-                Text {
-                    width: 240 - suffixMetrics.width
-                    text: root.staticRows[index].v
-                    elide: Text.ElideRight
-                    color: Theme.fg0
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 12
-                    renderType: Text.QtRendering
-                    textFormat: Text.PlainText
-                }
-
-                Text {
-                    text: root.staticRows[index].suffix
-                    visible: root.staticRows[index].suffix !== ""
-                    color: Theme.fg1
-                    font.family: "JetBrainsMono Nerd Font"
-                    font.pixelSize: 12
-                    renderType: Text.QtRendering
-                }
+                renderType: Text.QtRendering
+                textFormat: Text.PlainText
             }
         }
     }
@@ -274,11 +252,10 @@ Widget {
 
     // --- data --------------------------------------------------------------
     readonly property var staticRows: [
-        { k: "Kernel", v: SystemInfo.kernel.replace(/^Linux /, ""),
-            suffix: "" },
-        { k: "WM", v: SystemInfo.wm, suffix: "" },
-        { k: "Shell", v: SystemInfo.shell, suffix: "" },
-        { k: "Packages", v: String(SystemInfo.packages), suffix: " · pacman" }
+        { k: "Kernel", v: SystemInfo.kernel.replace(/^Linux /, "") },
+        { k: "WM", v: SystemInfo.wm },
+        { k: "Shell", v: SystemInfo.shell },
+        { k: "Packages", v: String(SystemInfo.packages) }
     ]
 
     readonly property bool tempHot: !isNaN(Resources.tempC)
