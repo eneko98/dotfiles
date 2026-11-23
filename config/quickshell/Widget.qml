@@ -80,6 +80,12 @@ PanelWindow {
     Surface {
         id: card
 
+        // The content declares the size through cardW/cardH; the window
+        // follows the card. Without this the card stayed 0x0 and the layer
+        // mapped as a 1x1 dot -- nothing on screen.
+        width: root.cardW
+        height: root.cardH
+
         level: 2
         radius: 16
         lifted: dragArea.containsMouse
