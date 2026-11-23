@@ -12,6 +12,7 @@ import Quickshell.Bluetooth
 import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Networking
+import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
@@ -1233,13 +1234,29 @@ PanelWindow {
                     { id: "session", glyph: "" }
                 ]
 
+                // The audio icon follows the sink: muted is a crossed speaker,
+                // and the bars change with the level -- the reference does the
+                // same through statusIconFor().
+                readonly property string soundGlyph: {
+                    const sink = Pipewire.defaultAudioSink;
+                    if (sink === null || sink.audio === undefined)
+                        return "󰕾";
+                    if (sink.muted)
+                        return "󰖁";
+
+                    const v = sink.audio.volume;
+                    return v <= 0.01 ? "󰕿" : v < 0.34 ? "󰕿"
+                        : v < 0.67 ? "󰖀" : "󰕾";
+                }
+
                 Repeater {
                     model: modules.sections
 
                     delegate: SectionButton {
                         required property var modelData
 
-                        glyph: modelData.glyph
+                        glyph: modelData.id === "sound"
+                            ? modules.soundGlyph : modelData.glyph
                         current: modelData.id === "network" ? Networking.wifiEnabled
                             : modelData.id === "bluetooth"
                                 ? (Bluetooth.defaultAdapter
