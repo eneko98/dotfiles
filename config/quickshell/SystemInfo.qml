@@ -186,12 +186,23 @@ Singleton {
         }
     }
 
+    // The first version had `running: watched && !diskProc.running` with
+    // triggeredOnStart: every time df finished, the timer armed itself again
+    // and fired another df immediately -- a df loop that cost a third of a
+    // core (measured). The timer now runs on its own interval and only skips
+    // a tick while a df is still in flight; the first read is a one-shot when
+    // a widget starts watching.
     Timer {
         interval: 30000
-        running: root.watched && !diskProc.running
+        running: root.watched
         repeat: true
-        triggeredOnStart: true
 
-        onTriggered: diskProc.running = true
+        onTriggered: if (!diskProc.running)
+            diskProc.running = true
+    }
+
+    onWatchedChanged: {
+        if (root.watched && !diskProc.running)
+            diskProc.running = true;
     }
 }

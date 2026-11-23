@@ -1,3 +1,5 @@
+//@ pragma Env QT_LOGGING_RULES=quickshell.io.socket.warning=false
+
 // The bar. This is the root of the Quickshell config: Quickshell looks for
 // ~/.config/quickshell/shell.qml and runs it.
 //
@@ -573,18 +575,15 @@ ShellRoot {
     }
 
     // --- Desktop widgets ---------------------------------------------------
-    // Ambient cards on the wallpaper, one per kind. The position lives in
-    // Config (drag persists it); Cine hides them because a film does not want
-    // chrome on the wall. Each widget's click opens the panel that owns its
-    // subject, so the card is a shortcut, not a second control surface.
+    // Ambient cards on the wallpaper. Position and scale live in Config; Cine
+    // hides them. They take no clicks: press-and-move drags, the corner grip
+    // scales, and a release without movement does nothing.
     FetchWidget {
         forceHidden: Scenes.active === "cine"
-        onClicked: root.openDashboard()
     }
 
     VinylWidget {
         forceHidden: Scenes.active === "cine"
-        onClicked: root.openMedia()
     }
 
 

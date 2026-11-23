@@ -24,6 +24,10 @@ Singleton {
 
     readonly property var space: ({ xs: 4, s: 8, m: 12, l: 16, xl: 24 })
 
+    // The bar's reserved strip (BarTiers.exclusiveZone). The widgets clamp
+    // below it, so a drag can never slide a card under the bar.
+    readonly property int topInset: 38
+
     readonly property var radius: ({ panel: 18, card: 12, control: 8 })
 
     readonly property var e1: ({ fill: 0.78, fillSolid: 0.90, stroke: 0.06, highlight: 0.05, shadowBlur: 12, shadowY: 2, shadowAlpha: 0.35 })
