@@ -40,6 +40,8 @@ PanelWindow {
     property bool islandHidden: false
     // Same for the new pills: while their bubble is up the pill hides, so the
     // panel does not show next to a copy of its own trigger.
+    // The section opened last, so the icon row remembers it.
+    property string lastSection: ""
     property bool statsHidden: false
     property bool mediaHidden: false
     property bool weatherHidden: false
@@ -1267,6 +1269,7 @@ PanelWindow {
                                     ? Bluetooth.defaultAdapter.enabled : false)
                             : true
 
+                        selected: bar.lastSection === modelData.id
                         onClicked: bar.systemRequested(modelData.id)
                     }
                 }

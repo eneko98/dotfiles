@@ -107,6 +107,11 @@ ShellRoot {
 
         // The section first: it sets the panel width (the dashboard is wider),
         // and placing with the old width left it 150 px off-screen.
+        // The bar's icon row remembers the last section, however it was
+        // opened (click, SUPER+N or IPC): the funnel is here, not in the click.
+        if (section)
+            barLoader.item.lastSection = section;
+
         systemPanel.showTabs = withTabs !== false;
         systemPanel.section = section || "";
         root.placeBubble(systemPanel, pill);

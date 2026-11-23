@@ -8,6 +8,9 @@ Item {
 
     property string glyph: ""
     property bool current: true
+    // The section opened last: a quiet background so the row remembers where
+    // you were, even with the panel closed.
+    property bool selected: false
 
     signal clicked()
 
@@ -21,7 +24,10 @@ Item {
         width: 22
         height: 22
         radius: 11
-        color: hover.hovered
+        // Hover and "last opened" share the same fill: one is momentary, the
+        // other persists. At 55 % the selected pill was invisible on a dark
+        // wallpaper (measured 0.17 % RMSE against no selection).
+        color: hover.hovered || root.selected
             ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.85)
             : "transparent"
     }
@@ -29,7 +35,8 @@ Item {
     Text {
         anchors.centerIn: parent
         text: root.glyph
-        color: root.current ? Theme.fg1 : Theme.fg2
+        color: (hover.hovered || root.selected) && root.current
+            ? Theme.fg0 : root.current ? Theme.fg1 : Theme.fg2
         opacity: root.current ? 1 : 0.55
         font.family: "JetBrainsMono Nerd Font"
         font.pixelSize: 14
