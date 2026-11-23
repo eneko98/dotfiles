@@ -2,8 +2,9 @@
 //  - live: a player is playing (or paused with a title), shown as the reference
 //    does -- a small round button with the play/pause glyph;
 //  - stale: nothing is playing but the last track is remembered, shown as
-//    "glyph + title — artist" so the bar is not empty at boot. Clicking it opens
-//    the bubble, which offers to start Spotify again.
+//    "glyph + title — artist" for three seconds after the shell starts, then the
+//    pill collapses: the bar must not carry a song that finished days ago. A
+//    live player cancels that countdown.
 //
 // The last track is persisted in Config, so it survives a reboot.
 import Quickshell
@@ -35,15 +36,35 @@ Surface {
     readonly property bool live: player !== null && player.trackTitle !== ""
     readonly property bool stale: !root.live && Config.lastTitle !== ""
 
+    // The remembered track is a boot shortcut, not a label: three seconds and
+    // it is gone. Coming back to live (or losing the remembered one) resets it.
+    property bool staleExpired: false
+    readonly property bool shown: root.live || (root.stale && !root.staleExpired)
+
+    onStaleChanged: {
+        root.staleExpired = false;
+        if (root.stale)
+            staleTimer.restart();
+        else
+            staleTimer.stop();
+    }
+
+    Timer {
+        id: staleTimer
+        interval: 3000
+        onTriggered: root.staleExpired = true
+    }
+
     readonly property string staleLabel: Config.lastArtist === ""
         ? Config.lastTitle : Config.lastTitle + " — " + Config.lastArtist
 
     level: 1
     lifted: hover.hovered
-    width: root.live ? 38 : root.stale ? staleRow.implicitWidth + 24 : 0
+    width: root.live ? 38 : root.stale && !root.staleExpired
+        ? staleRow.implicitWidth + 24 : 0
     height: 30
-    opacity: (root.live || root.stale) ? 1 : 0
-    visible: root.live || root.stale
+    opacity: root.shown ? 1 : 0
+    visible: root.shown
 
     Behavior on width {
         NumberAnimation {
