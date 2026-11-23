@@ -160,10 +160,15 @@ Popup {
             property real acc: 0
 
             onWheel: function (event) {
+                // Either axis: a two-finger swipe can be horizontal and then
+                // only pixelDelta.x is set.
                 const dy = event.pixelDelta.y !== 0
                     ? event.pixelDelta.y : event.angleDelta.y / 120 * 40;
+                const dx = event.pixelDelta.x !== 0
+                    ? event.pixelDelta.x : event.angleDelta.x / 120 * 40;
+                const d = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
 
-                wheelArea.acc += dy;
+                wheelArea.acc += d;
                 if (Math.abs(wheelArea.acc) < 40)
                     return;
 
