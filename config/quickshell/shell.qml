@@ -582,6 +582,11 @@ ShellRoot {
         onClicked: root.openDashboard()
     }
 
+    VinylWidget {
+        forceHidden: Scenes.active === "cine"
+        onClicked: root.openMedia()
+    }
+
 
     // The notification server, toasts and history. mako's service is disabled
     // while this owns org.freedesktop.Notifications.

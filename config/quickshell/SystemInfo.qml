@@ -116,7 +116,7 @@ Singleton {
         command: ["hyprctl", "version"]
         stdout: StdioCollector {
             onStreamFinished: {
-                const m = text().match(/Tag:\s*(\S+)/);
+                const m = text.match(/Tag:\s*(\S+)/);
                 if (m !== null)
                     root.wm = "Hyprland " + m[1].replace(/^v/, "");
             }
