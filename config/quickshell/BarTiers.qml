@@ -366,8 +366,24 @@ PanelWindow {
         }
         readonly property real targetWidth: Island.mode === "osd" ? osdTarget
             : Island.mode === "notification" ? notifTarget
+            : Island.mode === "media" ? mediaTarget
             : Island.mode === "activity" ? activityTarget
             : clockRow.implicitWidth + 24
+
+        // Media arrival: "artist — title", from the player the arbiter stored.
+        // Capped, so a 90-character YouTube title cannot take the whole bar.
+        readonly property string mediaLabel: {
+            if (Island.mediaPlayer === null)
+                return "";
+            const title = Island.mediaPlayer.trackTitle || "";
+            const artist = Island.mediaPlayer.trackArtist || "";
+            return artist !== "" ? artist + " — " + title : title;
+        }
+        readonly property real mediaLabelWidth: Math.min(320,
+            mediaLabelMetrics.width)
+
+        readonly property real mediaTarget: Math.min(460,
+            mediaRow.implicitWidth + 24)
 
         readonly property real osdTarget: Island.osdKind === "dnd"
             ? dndOsdRow.implicitWidth + 24
@@ -579,6 +595,13 @@ PanelWindow {
         }
 
         TextMetrics {
+            id: mediaLabelMetrics
+            font.family: "Adwaita Sans"
+            font.pixelSize: 12
+            text: island.mediaLabel
+        }
+
+        TextMetrics {
             id: activityLabelMetrics
             font.family: "Adwaita Sans"
             font.pixelSize: 12
@@ -658,6 +681,47 @@ PanelWindow {
                         glyph: "󰂛"
                         size: 12
                         tone: "attention"
+                    }
+                }
+
+                // The media arrival: play/pause first (it is the one control),
+                // then "artist — title". The MouseArea sits after the island's
+                // own, so it wins the click and the rest still opens Today.
+                Row {
+                    id: mediaRow
+                    visible: Island.mode === "media"
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    Item {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 20
+                        height: 24
+
+                        Glyph {
+                            anchors.centerIn: parent
+                            glyph: Island.mediaPlaying ? "󰏤" : "󰐊"
+                            size: 14
+                            tone: mediaPlayArea.containsMouse ? "hover" : "normal"
+                        }
+
+                        MouseArea {
+                            id: mediaPlayArea
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Island.toggleMedia()
+                        }
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: island.mediaLabelWidth
+                        text: island.mediaLabel
+                        elide: Text.ElideRight
+                        color: Theme.fg0
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 12
                     }
                 }
 

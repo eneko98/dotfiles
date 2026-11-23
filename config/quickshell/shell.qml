@@ -825,6 +825,12 @@ ShellRoot {
                 root.openToday();
         }
 
+        // The island's media arrival, for testing without a pointer and for a
+        // future media keybind: toggles the player the arbiter remembered.
+        function toggleMedia(): void {
+            Island.toggleMedia();
+        }
+
         function toggleSystem(section: string): void {
             if (systemPanel.visible && (section === "" || section === undefined)) {
                 systemPanel.close();

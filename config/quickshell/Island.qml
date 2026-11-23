@@ -4,11 +4,11 @@
 // other in this engine) and notification arrivals from the server; the
 // arbiter owns the state, the timers and the decision.
 //
-// Modes, flattened to what the island renders: "osd" (transient), 
-// "notification" (transient), "normal" (the clock row: media and idle live
-// there). A transient returns to normal when its timer ends; the OSD does
-// not appear at all while the System panel is up -- the panel shows that
-// control in full.
+// Modes, flattened to what the island renders: "osd" (transient),
+// "notification" (transient), "media" (transient: a track or video started),
+// "activity" (a long process with progress) and "normal" (the clock row). A
+// transient returns to normal when its timer ends; the OSD does not appear at
+// all while the System panel is up -- the panel shows that control in full.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -33,6 +33,16 @@ Singleton {
     // user or the countdown takes it off the island (it stays in history).
     signal read(int id)
     signal dismissed(int id)
+
+    // --- Media arrival ---
+    // A track or video starting (or changing) expands the island for a few
+    // seconds with its title and a play/pause. It is an EVENT, not a state: the
+    // media pill is the persistent indicator, and the bubble has the full card.
+    property var mediaPlayer: null
+    property bool mediaShown: false
+
+    readonly property bool mediaPlaying: mediaPlayer !== null
+        && mediaPlayer.isPlaying
 
     // Demo override for tests and captures (the `bar demo` IPC later).
     property string demoMode: ""
@@ -59,6 +69,8 @@ Singleton {
             return "osd";
         if (current !== null)
             return "notification";
+        if (mediaShown && mediaPlayer !== null)
+            return "media";
         if (activityId !== "")
             return "activity";
         return "normal";
@@ -106,6 +118,31 @@ Singleton {
         island.osdValue = value;
         island.osdMuted = muted;
         osdTimer.restart();
+    }
+
+    // --- Media arrival lifecycle. The pill calls it on a title change or on
+    // play; hovering the island holds it so there is time to hit the button.
+    function showMedia(player) {
+        if (player === null)
+            return;
+        island.mediaPlayer = player;
+        island.mediaShown = true;
+        mediaTimer.restart();
+    }
+
+    function hideMedia() {
+        mediaTimer.stop();
+        island.mediaShown = false;
+    }
+
+    function toggleMedia() {
+        if (island.mediaPlayer !== null) {
+            island.mediaPlayer.togglePlaying();
+            // A click from the IPC (or a keybind later) means "show me too".
+            island.mediaShown = true;
+        }
+        // A click means you are using it: give it the full countdown again.
+        mediaTimer.restart();
     }
 
     function showDndOsd(on) {
@@ -233,6 +270,14 @@ Singleton {
         onTriggered: island.osdKind = ""
     }
 
+    // The media arrival stays 5s, the longest of the transients: a title needs
+    // reading time.
+    Timer {
+        id: mediaTimer
+        interval: 5000
+        onTriggered: island.mediaShown = false
+    }
+
     // One second on screen counts as read.
     Timer {
         id: readTimer
@@ -257,6 +302,15 @@ Singleton {
     // touch the property when the animation is running; otherwise Qt warns
     // (and ignores) the setPaused call.
     function syncPause() {
+        // The media arrival is held under the pointer: it is the only place the
+        // play/pause lives, so it must not vanish while you aim at it.
+        if (island.mediaShown) {
+            if (island.hovered)
+                mediaTimer.stop();
+            else
+                mediaTimer.restart();
+        }
+
         if (!notifAnim.running)
             return;
         const wantPause = island.hovered || island.osdKind !== "";
