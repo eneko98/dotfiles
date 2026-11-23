@@ -38,6 +38,8 @@ Singleton {
     property real vinylY: -1
     property real fetchScale: 1
     property real vinylScale: 1
+    property bool fetchEnabled: true
+    property bool vinylEnabled: true
 
     // The last track seen playing: Spotify is not running at boot, and this is
     // what the media pill shows until a real player appears.
@@ -74,6 +76,8 @@ Singleton {
             property real vinylY: root.vinylY
             property real fetchScale: root.fetchScale
             property real vinylScale: root.vinylScale
+            property bool fetchEnabled: root.fetchEnabled
+            property bool vinylEnabled: root.vinylEnabled
         }
     }
 
@@ -107,6 +111,8 @@ Singleton {
         root.vinylY = adapter.vinylY;
         root.fetchScale = adapter.fetchScale > 0 ? adapter.fetchScale : 1;
         root.vinylScale = adapter.vinylScale > 0 ? adapter.vinylScale : 1;
+        root.fetchEnabled = adapter.fetchEnabled;
+        root.vinylEnabled = adapter.vinylEnabled;
         root.loaded();
     }
 
@@ -160,6 +166,19 @@ Singleton {
         } else if (id === "vinyl") {
             root.vinylScale = v;
             adapter.vinylScale = v;
+        } else {
+            return;
+        }
+        stateFile.writeAdapter();
+    }
+
+    function saveWidgetEnabled(id, on) {
+        if (id === "fetch") {
+            root.fetchEnabled = on;
+            adapter.fetchEnabled = on;
+        } else if (id === "vinyl") {
+            root.vinylEnabled = on;
+            adapter.vinylEnabled = on;
         } else {
             return;
         }

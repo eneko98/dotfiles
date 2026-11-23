@@ -598,6 +598,16 @@ ShellRoot {
             const w = which === "vinyl" ? vinylWidget : fetchWidget;
             w.testResize(Number(dx), Number(dy));
         }
+
+        // The switches of the Widgets section, for the same reason: a click
+        // cannot be injected here.
+        function enable(which: string, on: string): void {
+            Config.saveWidgetEnabled(which, on === "true");
+        }
+
+        function master(on: string): void {
+            Config.saveDesktopWidgets(on === "true");
+        }
     }
 
 

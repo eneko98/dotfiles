@@ -38,6 +38,11 @@ PanelWindow {
     property bool defaultBottom: true
     property real defaultMargin: 24
     property bool forceHidden: false
+
+    // Per-widget switch from the control centre. Position and scale survive:
+    // turning a widget back on puts it exactly where it was.
+    readonly property bool enabled: widgetId === "fetch"
+        ? Config.fetchEnabled : Config.vinylEnabled
     property real cardW: 0
     property real cardH: 0
     default property alias content: contentRoot.data
@@ -65,7 +70,7 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     screen: Quickshell.screens[0]
-    visible: Config.desktopWidgets && !root.forceHidden
+    visible: Config.desktopWidgets && root.enabled && !root.forceHidden
 
     readonly property real screenW: Quickshell.screens[0].width
     readonly property real screenH: Quickshell.screens[0].height

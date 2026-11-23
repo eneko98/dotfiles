@@ -42,6 +42,7 @@ Popup {
         { id: "sound", glyph: "󰕾", label: "Audio" },
         { id: "notifications", glyph: "󰂚", label: "Notifications" },
         { id: "display", glyph: "󰃠", label: "Display" },
+        { id: "widgets", glyph: "\uf108", label: "Widgets" },
         { id: "session", glyph: "󰐥", label: "Session" }
     ]
 
@@ -271,6 +272,12 @@ Popup {
         showNightTile: true
     }
 
+    // The desktop widgets: master switch + one row each.
+    WidgetsSection {
+        width: parent.width
+        visible: root.current === "widgets"
+    }
+
     DashboardSection {
         visible: root.current === "dashboard"
     }
@@ -336,23 +343,6 @@ Popup {
         visible: root.current === "session"
         checked: Caffeine.active
         onCheckedChanged: Caffeine.active = checked
-    }
-
-    // The desktop widgets, as one switch: they are ambient, and turning them
-    // all off at once is the point (a desk without cards).
-    ToggleTile {
-        visible: root.current === "session"
-        tileWidth: parent.width
-        glyph: "󰋊"
-        title: "Desktop widgets"
-        subtitle: "Fetch · media"
-        expandable: false
-        checked: Config.desktopWidgets
-
-        onToggled: {
-            Config.saveDesktopWidgets(checked);
-            root.close();
-        }
     }
 
     // The processes page: pushed over the sections (the overlay layer of
