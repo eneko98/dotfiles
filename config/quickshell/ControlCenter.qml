@@ -22,6 +22,11 @@ Popup {
     property bool showTabs: true
 
     property string section: ""
+
+    // Geometry of the active tab, reported by it: the highlight is one rect
+    // behind the row that travels, as the reference's ListView highlight does.
+    property real highlightX: 0
+    property real highlightW: 0
     readonly property string current: root.section === "" ? "network" : root.section
 
     // The notification server, passed by the shell (it lives in the bar's
@@ -78,6 +83,32 @@ Popup {
         width: parent.width
         height: tabs.height
 
+        Rectangle {
+            id: highlight
+
+            x: root.highlightX
+            y: 0
+            width: root.highlightW
+            height: 30
+            radius: 15
+            color: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.9)
+
+            Behavior on x {
+                NumberAnimation {
+                    duration: Motion.fast
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
+            }
+            Behavior on width {
+                NumberAnimation {
+                    duration: Motion.fast
+                    easing.type: Easing.BezierSpline
+                    easing.bezierCurve: Motion.standard
+                }
+            }
+        }
+
         Row {
         id: tabs
 
@@ -94,6 +125,19 @@ Popup {
 
                 readonly property bool active: root.current === tab.modelData.id
 
+                // The highlight lives behind the row; the tab only owns the
+                // hover wash and tells the highlight where it is.
+                onActiveChanged: tab.report()
+                onXChanged: tab.report()
+                onWidthChanged: tab.report()
+
+                function report() {
+                    if (!tab.active)
+                        return;
+                    root.highlightX = tab.x;
+                    root.highlightW = tab.width;
+                }
+
                 height: 30
                 width: tabRow.implicitWidth + (tab.active ? 24 : 12)
                 pressScale: 1.0
@@ -109,8 +153,7 @@ Popup {
                 Rectangle {
                     anchors.fill: parent
                     radius: 15
-                    color: tab.active
-                        ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.9)
+                    color: tab.active ? "transparent"
                         : tab.hovered
                             ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.5)
                             : "transparent"
