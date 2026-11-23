@@ -222,6 +222,7 @@ hl.layer_rule({ match = { namespace = "notifications" }, blur = true })
 -- Quickshell surfaces animate themselves in QML; Hyprland layer animations on
 -- top would double them. Disable them for the shell's own namespaces. The lock
 -- is an ext-session-lock surface, not a layer, so it does not need a rule.
+hl.layer_rule({ match = { namespace = "quickshell-widgets" }, blur = true })
 hl.layer_rule({ match = { namespace = "quickshell-bar" },   no_anim = true })
 hl.layer_rule({ match = { namespace = "quickshell-stage" },  no_anim = true })
 hl.layer_rule({ match = { namespace = "quickshell-menu" },   no_anim = true })

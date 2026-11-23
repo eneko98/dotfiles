@@ -29,6 +29,14 @@ Singleton {
     property bool hud: false
 
 
+    // Desktop widgets: one switch for all of them, and one position each
+    // (-1 = never dragged: the widget computes its default corner).
+    property bool desktopWidgets: true
+    property real fetchX: -1
+    property real fetchY: -1
+    property real vinylX: -1
+    property real vinylY: -1
+
     // The last track seen playing: Spotify is not running at boot, and this is
     // what the media pill shows until a real player appears.
     property string lastTitle: ""
@@ -57,6 +65,11 @@ Singleton {
             property string lastTitle: root.lastTitle
             property string lastArtist: root.lastArtist
             property string lastArt: root.lastArt
+            property bool desktopWidgets: root.desktopWidgets
+            property real fetchX: root.fetchX
+            property real fetchY: root.fetchY
+            property real vinylX: root.vinylX
+            property real vinylY: root.vinylY
         }
     }
 
@@ -83,6 +96,11 @@ Singleton {
             root.lastArtist = adapter.lastArtist;
             root.lastArt = adapter.lastArt;
         }
+        root.desktopWidgets = adapter.desktopWidgets;
+        root.fetchX = adapter.fetchX;
+        root.fetchY = adapter.fetchY;
+        root.vinylX = adapter.vinylX;
+        root.vinylY = adapter.vinylY;
         root.loaded();
     }
 
@@ -109,6 +127,29 @@ Singleton {
         adapter.lastTitle = title;
         adapter.lastArtist = artist;
         adapter.lastArt = art;
+        stateFile.writeAdapter();
+    }
+
+    function saveWidgetPos(id, x, y) {
+        if (id === "fetch") {
+            root.fetchX = x;
+            root.fetchY = y;
+            adapter.fetchX = x;
+            adapter.fetchY = y;
+        } else if (id === "vinyl") {
+            root.vinylX = x;
+            root.vinylY = y;
+            adapter.vinylX = x;
+            adapter.vinylY = y;
+        } else {
+            return;
+        }
+        stateFile.writeAdapter();
+    }
+
+    function saveDesktopWidgets(on) {
+        root.desktopWidgets = on;
+        adapter.desktopWidgets = on;
         stateFile.writeAdapter();
     }
 

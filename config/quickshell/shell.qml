@@ -389,6 +389,11 @@ ShellRoot {
         target: Island
 
         function onActivityEnded(id, label, ok, ms) {
+            // An ALPM transaction changed the package count: the fetch card
+            // follows without recounting on a timer.
+            if (id === "pacman" || id === "paru")
+                SystemInfo.refreshPackages();
+
             if (id === "pacman" && Island.activities["paru"] !== undefined)
                 return;
             if (!ok || ms > 60000 || id === "timer") {
@@ -566,6 +571,17 @@ ShellRoot {
         id: overview
         panelName: "overview"
     }
+
+    // --- Desktop widgets ---------------------------------------------------
+    // Ambient cards on the wallpaper, one per kind. The position lives in
+    // Config (drag persists it); Cine hides them because a film does not want
+    // chrome on the wall. Each widget's click opens the panel that owns its
+    // subject, so the card is a shortcut, not a second control surface.
+    FetchWidget {
+        forceHidden: Scenes.active === "cine"
+        onClicked: root.openDashboard()
+    }
+
 
     // The notification server, toasts and history. mako's service is disabled
     // while this owns org.freedesktop.Notifications.
