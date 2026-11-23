@@ -1230,8 +1230,6 @@ PanelWindow {
                     { id: "sound", glyph: "󰕾" },
                     { id: "notifications", glyph: "󰂚" },
                     { id: "display", glyph: "󰃠" },
-                    { id: "resources", glyph: "󰓅" },
-                    { id: "dashboard", glyph: "󰄨" },
                     { id: "session", glyph: "" }
                 ]
 

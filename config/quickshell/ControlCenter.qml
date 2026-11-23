@@ -38,7 +38,6 @@ Popup {
         { id: "notifications", glyph: "󰂚", label: "Notifications" },
         { id: "display", glyph: "󰃠", label: "Display" },
         { id: "resources", glyph: "󰓅", label: "Resources" },
-        { id: "dashboard", glyph: "󰄨", label: "Dashboard" },
         { id: "session", glyph: "󰐥", label: "Session" }
     ]
 
