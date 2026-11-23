@@ -1303,6 +1303,7 @@ PanelWindow {
                     { id: "sound", glyph: "󰕾" },
                     { id: "notifications", glyph: "󰂚" },
                     { id: "display", glyph: "󰃠" },
+                    { id: "widgets", glyph: "" },
                     { id: "session", glyph: "" }
                 ]
 

@@ -70,7 +70,75 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
     screen: Quickshell.screens[0]
-    visible: Config.desktopWidgets && root.enabled && !root.forceHidden
+
+    // --- appear / disappear ---------------------------------------------
+    // A layer surface cannot fade: unmapping it is instant. So `mapped` holds
+    // the window while a short fade runs (a card that just vanishes reads as a
+    // glitch, not as a choice). Appearing: 8 px up into place with decel;
+    // disappearing: quick standard fade. Reduced motion sets it instantly.
+    readonly property bool shouldShow: Config.desktopWidgets
+        && root.enabled && !root.forceHidden
+    property bool mapped: false
+    property real fade: 0
+    readonly property real fadeY: 8 * (1 - root.fade)
+
+    visible: root.mapped
+
+    NumberAnimation {
+        id: fadeIn
+
+        target: root
+        property: "fade"
+        to: 1
+        duration: Motion.medium
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Motion.decel
+    }
+
+    NumberAnimation {
+        id: fadeOut
+
+        target: root
+        property: "fade"
+        to: 0
+        duration: Motion.fast
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Motion.standard
+        onFinished: root.mapped = false
+    }
+
+    onShouldShowChanged: {
+        if (root.shouldShow) {
+            fadeOut.stop();
+            root.mapped = true;
+            if (Motion.reduced) {
+                root.fade = 1;
+                return;
+            }
+            fadeIn.stop();
+            fadeIn.from = root.fade;
+            fadeIn.start();
+        } else {
+            fadeIn.stop();
+            if (!root.mapped)
+                return;
+            if (Motion.reduced) {
+                root.fade = 0;
+                root.mapped = false;
+                return;
+            }
+            fadeOut.stop();
+            fadeOut.from = root.fade;
+            fadeOut.start();
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.shouldShow) {
+            root.mapped = true;
+            root.fade = 1;
+        }
+    }
 
     readonly property real screenW: Quickshell.screens[0].width
     readonly property real screenH: Quickshell.screens[0].height
@@ -172,7 +240,8 @@ PanelWindow {
         id: card
 
         x: root.cardX - root.winL
-        y: root.cardY - root.winT
+        y: root.cardY - root.winT + root.fadeY
+        opacity: root.fade
         width: root.cardWpx
         height: root.cardHpx
 
@@ -197,6 +266,7 @@ PanelWindow {
         y: card.y
         width: card.width
         height: card.height
+        opacity: root.fade
 
         HoverHandler {
             id: hover
@@ -228,6 +298,7 @@ PanelWindow {
         y: card.y
         width: root.cardW
         height: root.cardH
+        opacity: root.fade
         transformOrigin: Item.TopLeft
         scale: root.scaleShown
     }
@@ -387,6 +458,9 @@ PanelWindow {
         hoverEnabled: true
         preventStealing: true
         cursorShape: Qt.SizeFDiagCursor
+        // No grabbing the corner of a card that is fading away.
+        enabled: root.fade > 0.9
+        opacity: root.fade
 
         // Pointer-to-corner offset at press, so the corner does not jump.
         property real offX: 0
