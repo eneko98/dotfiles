@@ -25,6 +25,19 @@ Popup {
         return fallback;
     }
 
+    // The stale card is a shortcut ("click to resume"), not a panel to sit on:
+    // with nothing playing three seconds after opening, it closes itself. If a
+    // player shows up in the meantime (Spotify finishing its start), the timer
+    // stops by itself because the condition goes false.
+    Timer {
+        interval: 3000
+        running: root.visible && root.player === null
+        onTriggered: {
+            if (root.player === null)
+                root.close();
+        }
+    }
+
     MediaCard {
         visible: root.player !== null
         width: parent.width
