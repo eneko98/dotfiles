@@ -449,7 +449,6 @@ ShellRoot {
         target: Config
 
         function onLoaded() {
-            Lyrics.enabled = Config.lyrics;
             if (Config.scene !== "" && Scenes.active !== Config.scene) {
                 Scenes.active = Config.scene;
                 root.applyScene(Config.scene, true);
@@ -893,22 +892,17 @@ ShellRoot {
         }
     }
 
-    // Lyrics: the System toggle lives here once the island uses it, and this
-    // is also how a line is checked without a screenshot.
+    // Lyrics: how a line is checked without a screenshot (the bubble and Today
+    // are the only places that paint them).
     IpcHandler {
         target: "lyrics"
 
         function state(): string {
             return "playing=" + Lyrics.playing
-                + " enabled=" + Lyrics.enabled
                 + " lines=" + Lyrics.lines.length
                 + " index=" + Lyrics.index
                 + " current='" + Lyrics.current + "'";
         }
 
-        function enabled(value: string): void {
-            Lyrics.enabled = value === "true";
-            Config.saveLyrics(Lyrics.enabled);
-        }
     }
 }

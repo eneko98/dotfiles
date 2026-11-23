@@ -32,7 +32,6 @@ Singleton {
         return fallback;
     }
 
-    property bool enabled: true
     property var lines: []
     property int index: -1
 
@@ -89,7 +88,7 @@ Singleton {
     function load() {
         root.lines = [];
         root.index = -1;
-        if (!root.enabled || root.player === null || root.player.trackTitle === "")
+        if (root.player === null || root.player.trackTitle === "")
             return;
 
         fetch.command = [
@@ -100,16 +99,6 @@ Singleton {
             String(root.player.length || 0)
         ];
         fetch.running = true;
-    }
-
-    onEnabledChanged: {
-        if (root.enabled) {
-            root.load();
-        } else {
-            // Clearing is the point of the switch: no line, no island wing.
-            root.lines = [];
-            root.index = -1;
-        }
     }
 
     // A player that was already on a track when the shell started is not a

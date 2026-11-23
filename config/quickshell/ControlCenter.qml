@@ -328,33 +328,14 @@ Popup {
         visible: root.current === "session"
     }
 
-    Grid {
+    // Lyrics has no switch: the lines are there when the lookup finds them
+    // (the bubble and Today show them). A setting hidden here that only changed
+    // what a panel shows was more confusing than useful.
+    CaffeineTile {
         width: parent.width
-        columns: 2
-        spacing: Tokens.space.s
         visible: root.current === "session"
-
-        CaffeineTile {
-            width: (parent.width - Tokens.space.s) / 2
-            checked: Caffeine.active
-            onCheckedChanged: Caffeine.active = checked
-        }
-
-        ToggleTile {
-            width: (parent.width - Tokens.space.s) / 2
-            expandable: false
-            checked: Lyrics.enabled
-            glyph: "\uf001"
-            title: "Lyrics"
-            subtitle: Lyrics.enabled
-                ? (Lyrics.hasLyrics ? Lyrics.lines.length + " lines" : "On")
-                : "Off"
-
-            onToggled: {
-                Lyrics.enabled = !Lyrics.enabled;
-                Config.saveLyrics(Lyrics.enabled);
-            }
-        }
+        checked: Caffeine.active
+        onCheckedChanged: Caffeine.active = checked
     }
 
     // The processes page: pushed over the sections (the overlay layer of

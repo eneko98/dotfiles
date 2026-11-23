@@ -28,8 +28,6 @@ Singleton {
     // false at boot, persisted through the same state file as scenes.
     property bool hud: false
 
-    // Lyrics in the island, on by default and off with one click in System.
-    property bool lyrics: true
 
     // The last track seen playing: Spotify is not running at boot, and this is
     // what the media pill shows until a real player appears.
@@ -56,7 +54,6 @@ Singleton {
             property string scene: root.scene
             property string sceneSaved: root.sceneSaved
             property bool hud: root.hud
-            property bool lyrics: root.lyrics
             property string lastTitle: root.lastTitle
             property string lastArtist: root.lastArtist
             property string lastArt: root.lastArt
@@ -78,7 +75,6 @@ Singleton {
         root.scene = adapter.scene;
         root.sceneSaved = adapter.sceneSaved;
         root.hud = adapter.hud;
-        root.lyrics = adapter.lyrics;
         // The last track too: without it the pill had nothing to show at boot
         // and the media bubble opened as an empty panel (the file had the data,
         // the running shell did not).
@@ -113,12 +109,6 @@ Singleton {
         adapter.lastTitle = title;
         adapter.lastArtist = artist;
         adapter.lastArt = art;
-        stateFile.writeAdapter();
-    }
-
-    function saveLyrics(on) {
-        root.lyrics = on;
-        adapter.lyrics = on;
         stateFile.writeAdapter();
     }
 
