@@ -8,6 +8,7 @@
 //
 // The last track is persisted in Config, so it survives a reboot.
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Mpris
 import QtQuick
 
@@ -83,9 +84,56 @@ Surface {
     onPlayerChanged: root.persist()
 
     function persist() {
-        if (root.player !== null && root.player.trackTitle !== "")
-            Config.saveLastTrack(root.player.trackTitle, root.player.trackArtist,
-                                 root.player.trackArtUrl);
+        if (root.player === null || root.player.trackTitle === "")
+            return;
+
+        const url = root.player.trackArtUrl;
+        if (url === "" || artCopy.running) {
+            // Nothing to keep (or a copy already in flight): the 3 s retry
+            // below will pass again with whatever the metadata has then.
+            Config.saveLastTrack(root.player.trackTitle,
+                root.player.trackArtist, url);
+            return;
+        }
+
+        // Remember OUR copy, not the source: Spotify's CDN links expire
+        // (measured: the saved one was dead days later) and Firefox's MPRIS
+        // art is a pid-named file that dies with the browser. Either way the
+        // sleeve at rest fell back to the glyph. One durable file per track.
+        artCopy.title = root.player.trackTitle;
+        artCopy.artist = root.player.trackArtist;
+        artCopy.url = url;
+        artCopy.running = true;
+    }
+
+    Process {
+        id: artCopy
+
+        property string url: ""
+        property string title: ""
+        property string artist: ""
+
+        // file:// becomes a cat, http(s) a curl; both land in the same file.
+        // The URL is quoted for the shell; art URLs carry no quotes.
+        command: ["sh", "-c",
+            'mkdir -p "$HOME/.local/state/dotfiles/media" && '
+            + (url.startsWith("http")
+                ? 'curl -fsSL --max-time 8 "' + url + '"'
+                : 'cat "' + url.replace(/^file:\/\//, "") + '"')
+            + ' > "$HOME/.local/state/dotfiles/media/last-art.img"']
+
+        stdout: StdioCollector { }
+
+        onExited: function (code, status) {
+            if (code === 0)
+                Config.saveLastTrack(artCopy.title, artCopy.artist,
+                    "file://" + Quickshell.env("HOME")
+                    + "/.local/state/dotfiles/media/last-art.img");
+            else
+                // Keep the URL as the old code did: better a dead link at
+                // rest than no memory of the cover at all.
+                Config.saveLastTrack(artCopy.title, artCopy.artist, artCopy.url);
+        }
     }
 
     Timer {
