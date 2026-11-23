@@ -1241,7 +1241,11 @@ PanelWindow {
                     const sink = Pipewire.defaultAudioSink;
                     if (sink === null || sink.audio === undefined)
                         return "󰕾";
-                    if (sink.muted)
+
+                    // Muted lives on the node's audio object, not on the node:
+                    // `sink.muted` is undefined and the crossed icon never
+                    // appeared.
+                    if (sink.audio.muted)
                         return "󰖁";
 
                     const v = sink.audio.volume;
