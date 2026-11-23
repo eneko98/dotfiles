@@ -3,9 +3,11 @@
 // The bubble's media card is a control panel (seek, buttons, rows); this one is
 // a poster. The album art is the sleeve, and the record behind it slides out
 // and turns while the track plays, sliding back in when it pauses -- the state
-// is the object, not a glyph. Below, the title (dimmed while paused, like the
-// island) and one line of times. No buttons: clicking opens the bubble, which
-// owns the controls.
+// is the object, not a glyph. The card itself grows with the record, so an
+// idle card is compact and there is never a dark empty column waiting for a
+// disc that is not coming out.
+//
+// No buttons: clicking opens the bubble, which owns the controls.
 import QtQuick
 import Quickshell
 import Quickshell.Services.Mpris
@@ -15,7 +17,10 @@ Widget {
 
     widgetId: "vinyl"
     defaultRight: false
-    cardW: 360
+
+    // The card breathes with the record: idle it is the sleeve plus a peek,
+    // playing the sleeve plus most of the disc.
+    cardW: 40 + 200 + slide
     cardH: 316
 
     // Same pick as the pill: the first player actually playing, else the first
@@ -65,10 +70,18 @@ Widget {
         return m + ":" + (s < 10 ? "0" : "") + s;
     }
 
-    // The record: behind the sleeve, sliding out while it plays. Resting it
-    // peeks 36 px -- "there is a record here" -- and playing it owns 120.
-    // A plain property (not readonly): the slide is what the Behavior animates.
-    property real slide: (live && player.isPlaying) ? 120 : 36
+    // The record: behind the sleeve, sliding out while it plays. A plain
+    // property: the slide is what the Behavior animates, and it also drives
+    // the card's width through cardW.
+    property real slide: (live && player.isPlaying) ? 112 : 32
+
+    Behavior on slide {
+        NumberAnimation {
+            duration: Motion.medium
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Motion.standard
+        }
+    }
 
     Vinyl {
         x: 20 + root.slide
@@ -81,6 +94,8 @@ Widget {
     // The sleeve: the album art, square and cropped, with a fallback glyph
     // when there is no art at all.
     Item {
+        id: sleeve
+
         x: 20
         y: 20
         width: 200
@@ -116,11 +131,12 @@ Widget {
         }
     }
 
-    // The text block, left-aligned with the sleeve.
+    // The text block follows the card's live width, so the times line up with
+    // the sleeve at rest and reach further out with the record.
     Column {
         x: 20
         y: 236
-        width: 320
+        width: root.cardW - 40
         spacing: 4
 
         Text {
@@ -150,7 +166,7 @@ Widget {
     Row {
         x: 20
         y: 288
-        width: 320
+        width: root.cardW - 40
         height: 12
         spacing: 10
 
@@ -163,7 +179,7 @@ Widget {
         }
 
         Item {
-            width: parent.width - 34 - 44 - 20
+            width: parent.width - 34 - 34 - 20
             height: 3
             anchors.verticalCenter: parent.verticalCenter
 
@@ -188,15 +204,6 @@ Widget {
             color: Theme.fg2
             font.family: "JetBrainsMono Nerd Font"
             font.pixelSize: 10
-        }
-    }
-
-    // The record slides out over the same beat as the island's morphs.
-    Behavior on slide {
-        NumberAnimation {
-            duration: Motion.medium
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: Motion.standard
         }
     }
 }
