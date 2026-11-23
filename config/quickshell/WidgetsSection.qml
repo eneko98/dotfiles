@@ -20,15 +20,13 @@ Item {
             id: "fetch",
             glyph: "\uf2db",
             title: "Fetch",
-            subtitle: "System · live",
-            on: Config.fetchEnabled
+            subtitle: "System · live"
         },
         {
             id: "vinyl",
             glyph: "\uf001",
             title: "Vinyl",
-            subtitle: "Now playing",
-            on: Config.vinylEnabled
+            subtitle: "Now playing"
         }
     ]
 
@@ -47,24 +45,33 @@ Item {
             title: "Desktop widgets"
             subtitle: "All of them"
             checked: Config.desktopWidgets
-            onToggled: Config.saveDesktopWidgets(checked)
+            onToggled: Config.toggleDesktopWidgets()
         }
 
+        // An index model, not the array: the delegates are created once and
+        // their bindings re-read the entry (a var-array model is replaced on
+        // every change, which rebuilds every delegate).
         Repeater {
-            model: root.entries
+            model: root.entries.length
 
             delegate: ToggleTile {
-                required property var modelData
+                id: tile
+
+                required property int index
+
+                readonly property var entry: root.entries[index]
 
                 width: column.width
                 tileWidth: column.width
                 expandable: false
-                glyph: modelData.glyph
-                title: modelData.title
-                subtitle: modelData.subtitle
-                checked: modelData.on
+                glyph: tile.entry.glyph
+                title: tile.entry.title
+                subtitle: tile.entry.subtitle
+                checked: Config.widgetEnabled(tile.entry.id)
 
-                onToggled: Config.saveWidgetEnabled(modelData.id, checked)
+                // Invert the SOURCE, not `checked`: at this moment `checked`
+                // still has the old value (ToggleTile only emits toggled()).
+                onToggled: Config.toggleWidget(tile.entry.id)
             }
         }
     }

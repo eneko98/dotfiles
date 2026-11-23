@@ -608,6 +608,17 @@ ShellRoot {
         function master(on: string): void {
             Config.saveDesktopWidgets(on === "true");
         }
+
+        // The exact function a click on a tile runs (source inversion, no
+        // stale `checked`), so the menu's switch can be verified without a
+        // pointer.
+        function toggle(which: string): void {
+            Config.toggleWidget(which);
+        }
+
+        function toggleMaster(): void {
+            Config.toggleDesktopWidgets();
+        }
     }
 
 

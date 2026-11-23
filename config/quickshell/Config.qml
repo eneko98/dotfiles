@@ -185,6 +185,25 @@ Singleton {
         stateFile.writeAdapter();
     }
 
+    // The tile only emits `toggled()`; the inversion belongs to the source,
+    // never to the tile's `checked` (which still holds the old value at that
+    // moment -- the bug that made every switch of the Widgets section inert).
+    function widgetEnabled(id) {
+        return id === "fetch" ? root.fetchEnabled
+            : id === "vinyl" ? root.vinylEnabled : false;
+    }
+
+    function toggleWidget(id) {
+        if (id === "fetch")
+            root.saveWidgetEnabled(id, !root.fetchEnabled);
+        else if (id === "vinyl")
+            root.saveWidgetEnabled(id, !root.vinylEnabled);
+    }
+
+    function toggleDesktopWidgets() {
+        root.saveDesktopWidgets(!root.desktopWidgets);
+    }
+
     function saveDesktopWidgets(on) {
         root.desktopWidgets = on;
         adapter.desktopWidgets = on;
