@@ -79,6 +79,14 @@ Singleton {
         root.sceneSaved = adapter.sceneSaved;
         root.hud = adapter.hud;
         root.lyrics = adapter.lyrics;
+        // The last track too: without it the pill had nothing to show at boot
+        // and the media bubble opened as an empty panel (the file had the data,
+        // the running shell did not).
+        if (adapter.lastTitle !== "") {
+            root.lastTitle = adapter.lastTitle;
+            root.lastArtist = adapter.lastArtist;
+            root.lastArt = adapter.lastArt;
+        }
         root.loaded();
     }
 

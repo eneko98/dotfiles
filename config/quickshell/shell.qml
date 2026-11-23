@@ -130,6 +130,12 @@ ShellRoot {
     }
 
     function openMedia() {
+        // Nothing playing and nothing remembered: an empty panel reads as a
+        // bug. The pill only appears with something to show, but the IPC and a
+        // keybind can ask without that check.
+        if (mediaPanel.player === null && Config.lastTitle === "")
+            return;
+
         root.openBubble(mediaPanel, barLoader.item
             ? barLoader.item.mediaPill : null);
     }
@@ -468,6 +474,7 @@ ShellRoot {
     PwObjectTracker {
         objects: [Pipewire.defaultAudioSink]
     }
+
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var sinkAudio: sink ? sink.audio : null
