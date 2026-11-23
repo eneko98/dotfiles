@@ -5,13 +5,16 @@
 // arbiter owns the state, the timers and the decision.
 //
 // Modes, flattened to what the island renders: "osd" (transient),
-// "notification" (transient), "media" (transient: a track or video started),
-// "activity" (a long process with progress) and "normal" (the clock row). A
-// transient returns to normal when its timer ends; the OSD does not appear at
-// all while the System panel is up -- the panel shows that control in full.
+// "notification" (transient), "activity" (a long process with progress),
+// "media" (the background state while something is playing) and "normal" (the
+// clock row, when nothing is). A transient takes the island and gives it back
+// to whatever was underneath (media, activity or the clock) when it ends; the
+// OSD does not appear at all while the System panel is up -- the panel shows
+// that control in full.
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Services.Mpris
 
 Singleton {
     id: island
@@ -34,12 +37,31 @@ Singleton {
     signal read(int id)
     signal dismissed(int id)
 
-    // --- Media arrival ---
-    // A track or video starting (or changing) expands the island for a few
-    // seconds with its title and a play/pause. It is an EVENT, not a state: the
-    // media pill is the persistent indicator, and the bubble has the full card.
-    property var mediaPlayer: null
-    property bool mediaShown: false
+    // --- Media ---
+    // What is playing is the island's BACKGROUND state: it stays while there is
+    // a track, and the transients (OSD, a notification, an activity such as a
+    // pacman transaction) take the island and give it back when they end.
+    //
+    // The player is derived here instead of pushed by the pill: a selection
+    // kept in a property needed a producer, a timer and a way to notice the
+    // player disappearing. Same pick as the pill (first playing, else the first
+    // with a title) and a title is required, because playerctld registers as an
+    // MPRIS player with nothing behind it.
+    readonly property var mediaPlayer: {
+        const players = Mpris.players.values;
+        let fallback = null;
+
+        for (let i = 0; i < players.length; ++i) {
+            if (players[i].trackTitle === "")
+                continue;
+            if (players[i].isPlaying)
+                return players[i];
+            if (fallback === null)
+                fallback = players[i];
+        }
+
+        return fallback;
+    }
 
     readonly property bool mediaPlaying: mediaPlayer !== null
         && mediaPlayer.isPlaying
@@ -69,10 +91,10 @@ Singleton {
             return "osd";
         if (current !== null)
             return "notification";
-        if (mediaShown && mediaPlayer !== null)
-            return "media";
         if (activityId !== "")
             return "activity";
+        if (mediaPlayer !== null)
+            return "media";
         return "normal";
     }
 
@@ -120,29 +142,9 @@ Singleton {
         osdTimer.restart();
     }
 
-    // --- Media arrival lifecycle. The pill calls it on a title change or on
-    // play; hovering the island holds it so there is time to hit the button.
-    function showMedia(player) {
-        if (player === null)
-            return;
-        island.mediaPlayer = player;
-        island.mediaShown = true;
-        mediaTimer.restart();
-    }
-
-    function hideMedia() {
-        mediaTimer.stop();
-        island.mediaShown = false;
-    }
-
     function toggleMedia() {
-        if (island.mediaPlayer !== null) {
+        if (island.mediaPlayer !== null)
             island.mediaPlayer.togglePlaying();
-            // A click from the IPC (or a keybind later) means "show me too".
-            island.mediaShown = true;
-        }
-        // A click means you are using it: give it the full countdown again.
-        mediaTimer.restart();
     }
 
     function showDndOsd(on) {
@@ -270,14 +272,6 @@ Singleton {
         onTriggered: island.osdKind = ""
     }
 
-    // The media arrival stays 4s: it is information now (no button), and the
-    // pill keeps the state, so it does not need to linger.
-    Timer {
-        id: mediaTimer
-        interval: 4000
-        onTriggered: island.mediaShown = false
-    }
-
     // One second on screen counts as read.
     Timer {
         id: readTimer
@@ -302,15 +296,6 @@ Singleton {
     // touch the property when the animation is running; otherwise Qt warns
     // (and ignores) the setPaused call.
     function syncPause() {
-        // The media arrival is held under the pointer: it is the only place the
-        // play/pause lives, so it must not vanish while you aim at it.
-        if (island.mediaShown) {
-            if (island.hovered)
-                mediaTimer.stop();
-            else
-                mediaTimer.restart();
-        }
-
         if (!notifAnim.running)
             return;
         const wantPause = island.hovered || island.osdKind !== "";

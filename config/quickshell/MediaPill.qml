@@ -53,25 +53,6 @@ Surface {
         }
     }
 
-    // A new track (or a video starting in the browser) expands the island for
-    // a few seconds with its title: the pill is the persistent indicator, the
-    // island is the event. The target is a var, so Connections retargets when
-    // the selected player changes.
-    Connections {
-        target: root.player
-        ignoreUnknownSignals: true
-
-        function onTrackTitleChanged() {
-            if (root.live)
-                Island.showMedia(root.player);
-        }
-
-        function onIsPlayingChanged() {
-            if (root.live && root.player.isPlaying)
-                Island.showMedia(root.player);
-        }
-    }
-
     // Persist the live track whenever it changes, and once more shortly after
     // (metadata arrives after the player does).
     onLiveChanged: root.persist()

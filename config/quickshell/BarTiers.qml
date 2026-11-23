@@ -382,7 +382,7 @@ PanelWindow {
             const artist = Island.mediaPlayer.trackArtist || "";
             return artist !== "" ? artist + " — " + title : title;
         }
-        readonly property real mediaLabelWidth: Math.min(300,
+        readonly property real mediaLabelWidth: Math.min(280,
             mediaLabelMetrics.width)
 
         readonly property real mediaTarget: Math.min(460,
@@ -694,7 +694,7 @@ PanelWindow {
                     id: mediaRow
                     visible: Island.mode === "media"
                     anchors.centerIn: parent
-                    spacing: 8
+                    spacing: 10
 
                     Avatar {
                         anchors.verticalCenter: parent.verticalCenter
@@ -711,9 +711,23 @@ PanelWindow {
                         width: island.mediaLabelWidth
                         text: island.mediaLabel
                         elide: Text.ElideRight
-                        color: Theme.fg0
+                        // Paused is still the state (the island keeps it), but
+                        // it steps back: fg1 instead of fg0, no second glyph.
+                        color: Island.mediaPlaying ? Theme.fg0 : Theme.fg1
                         font.family: "Adwaita Sans"
                         font.pixelSize: 12
+                    }
+
+                    // The clock rides along: media is a persistent state, not a
+                    // four-second flash, and losing the time for a whole video
+                    // is worse than a slightly wider island.
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: Qt.formatDateTime(clock.date, "hh:mm")
+                        color: Theme.fg1
+                        font.family: "Adwaita Sans"
+                        font.pixelSize: 11
+                        font.features: ({ "tnum": 1 })
                     }
                 }
 
