@@ -8,8 +8,10 @@
 // of them, and `islandHidden` / `pillHidden` come back the same way -- the
 // shared-element rule lives with the panels, the pills just obey.
 import Quickshell
+import Quickshell.Bluetooth
 import Quickshell.Hyprland
 import Quickshell.Io
+import Quickshell.Networking
 import Quickshell.Wayland
 import QtQuick
 import QtQuick.Effects
@@ -1200,7 +1202,7 @@ PanelWindow {
             Row {
                 id: modules
                 anchors.verticalCenter: parent.verticalCenter
-                spacing: 12
+                spacing: 4
 
                 // Tray icons lead the pill: the applications' own icons sit
                 // to the left of the system controls. The slot collapses to
@@ -1219,20 +1221,35 @@ PanelWindow {
                     }
                 }
 
-                ResourcesAlert {
-                    onActivated: function (section) { bar.systemRequested(section); }
-                }
+                // The control centre's sections, one icon each: the same row as
+                // the reference bar, and each icon opens its section. The
+                // connectivity ones dim when their radio is off.
+                readonly property var sections: [
+                    { id: "network", glyph: "󰖩" },
+                    { id: "bluetooth", glyph: "󰂯" },
+                    { id: "sound", glyph: "󰕾" },
+                    { id: "notifications", glyph: "󰂚" },
+                    { id: "display", glyph: "󰃠" },
+                    { id: "resources", glyph: "󰓅" },
+                    { id: "dashboard", glyph: "󰄨" },
+                    { id: "session", glyph: "" }
+                ]
 
-                Volume {
-                    onActivated: function (section) { bar.systemRequested(section); }
-                }
+                Repeater {
+                    model: modules.sections
 
-                Wifi {
-                    onActivated: function (section) { bar.systemRequested(section); }
-                }
+                    delegate: SectionButton {
+                        required property var modelData
 
-                Bluetooth {
-                    onActivated: function (section) { bar.systemRequested(section); }
+                        glyph: modelData.glyph
+                        current: modelData.id === "network" ? Networking.wifiEnabled
+                            : modelData.id === "bluetooth"
+                                ? (Bluetooth.defaultAdapter
+                                    ? Bluetooth.defaultAdapter.enabled : false)
+                            : true
+
+                        onClicked: bar.systemRequested(modelData.id)
+                    }
                 }
 
                 Battery {
