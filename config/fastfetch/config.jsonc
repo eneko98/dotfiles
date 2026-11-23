@@ -1,0 +1,72 @@
+// fastfetch, in the palette's own colours.
+//
+// No hex value appears here: the colours are ANSI *names*, and our ANSI 16 are
+// generated from the wallpaper's palette (scripts/gen-theme.py -> kitty's
+// theme.conf). "yellow" is the accent slot and "cyan" the neon, so switching
+// wallpaper recolours the fetch without touching this file.
+//
+// The logo is the Arch mark tinted with the same two colours by gen-theme.py;
+// install.sh links the generated PNG to ~/.config/fastfetch/logo.png. It is
+// drawn with kitty's graphics protocol, hence "kitty": a real image instead of
+// ASCII art. Running fastfetch outside kitty (ssh, tmux) needs the fallback:
+//   fastfetch --logo-type small --config ~/.config/fastfetch/config.jsonc
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "kitty",
+        "source": "$HOME/.config/fastfetch/logo.png",
+        "width": 15,
+        "padding": {
+            "right": 4
+        }
+    },
+    "display": {
+        "separator": "  ",
+        // A key longer than the column collides with its value instead of
+        // pushing it, so the window manager is "WM" -- the one label that does
+        // not fit in eight characters.
+        "key": {
+            "width": 10
+        },
+        "color": {
+            "keys": "cyan"
+        },
+        // Percentages are text, not traffic lights: green and yellow stay in the
+        // foreground and only red (the palette's "something is wrong") changes
+        // the colour.
+        "percent": {
+            "color": {
+                "green": "default",
+                "yellow": "default",
+                "red": "red"
+            }
+        }
+    },
+    "modules": [
+        {
+            "type": "title",
+            "color": {
+                "user": "yellow",
+                "host": "cyan",
+                "colon": "bright_black"
+            }
+        },
+        "os",
+        "kernel",
+        "uptime",
+        "packages",
+        "shell",
+        {
+            "key": "WM",
+            "type": "wm"
+        },
+        "cpu",
+        "gpu",
+        "memory",
+        {
+            "type": "disk",
+            "folders": "/"
+        },
+        "colors"
+    ]
+}

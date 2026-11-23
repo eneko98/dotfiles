@@ -285,3 +285,9 @@ cava
 # Vega 8 (VCN 1.0) lists H.264, HEVC and VP9 profile 0/2 and no AV1. The HUD
 # itself reads /proc and /sys with no extra packages.
 libva-utils
+
+# Fetch del terminal
+# El logo no es un asset del repo: se tiñe desde /usr/share/pixmaps (paquete
+# filesystem) con la paleta activa y se regenera al cambiar de wallpaper. La
+# config usa nombres ANSI, así que sigue al tema sin ficheros generados.
+fastfetch

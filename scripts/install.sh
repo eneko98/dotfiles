@@ -101,6 +101,14 @@ else
 		link_one "$state_theme/$rel" "$dst_dir/$rel"
 	done
 
+	# The fetch logo is generated too, but fastfetch reads it by path from its
+	# own config, so it gets a different name in ~/.config/fastfetch/. Without
+	# the Arch mark there is nothing to tint: fastfetch then falls back to its
+	# built-in logo, so no broken link is created.
+	if [[ -f "$state_theme/fetch-logo.png" ]]; then
+		link_one "$state_theme/fetch-logo.png" "$dst_dir/fastfetch/logo.png"
+	fi
+
 	# The icon theme reaches GTK/fuzzel through the portal, so gsettings has to
 	# carry the generated value too; the GTK and Qt files already have it.
 	if [[ -f "$state_theme/icon-theme" ]] && command -v gsettings >/dev/null 2>&1; then
