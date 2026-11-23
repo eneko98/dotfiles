@@ -31,6 +31,12 @@ Singleton {
     // Lyrics in the island, on by default and off with one click in System.
     property bool lyrics: true
 
+    // The last track seen playing: Spotify is not running at boot, and this is
+    // what the media pill shows until a real player appears.
+    property string lastTitle: ""
+    property string lastArtist: ""
+    property string lastArt: ""
+
     readonly property string stateDir: Quickshell.env("XDG_STATE_HOME")
         || (Quickshell.env("HOME") + "/.local/state")
 
@@ -51,6 +57,9 @@ Singleton {
             property string sceneSaved: root.sceneSaved
             property bool hud: root.hud
             property bool lyrics: root.lyrics
+            property string lastTitle: root.lastTitle
+            property string lastArtist: root.lastArtist
+            property string lastArt: root.lastArt
         }
     }
 
@@ -79,6 +88,24 @@ Singleton {
         stateFile.writeAdapter();
         if (!on)
             Perf.clear();
+    }
+
+    // Called by the media pill whenever the live track changes; the adapter
+    // writes the file on its own.
+    function saveLastTrack(title, artist, art) {
+        if (title === "") 
+            return;
+        if (title === root.lastTitle && artist === root.lastArtist
+            && art === root.lastArt)
+            return;
+
+        root.lastTitle = title;
+        root.lastArtist = artist;
+        root.lastArt = art;
+        adapter.lastTitle = title;
+        adapter.lastArtist = artist;
+        adapter.lastArt = art;
+        stateFile.writeAdapter();
     }
 
     function saveLyrics(on) {
