@@ -270,11 +270,11 @@ Singleton {
         onTriggered: island.osdKind = ""
     }
 
-    // The media arrival stays 5s, the longest of the transients: a title needs
-    // reading time.
+    // The media arrival stays 4s: it is information now (no button), and the
+    // pill keeps the state, so it does not need to linger.
     Timer {
         id: mediaTimer
-        interval: 5000
+        interval: 4000
         onTriggered: island.mediaShown = false
     }
 

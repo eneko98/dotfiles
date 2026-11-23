@@ -280,7 +280,10 @@ PanelWindow {
         anchors.leftMargin: Tokens.space.s
         anchors.top: island.top
 
-        visible: Island.mode === "normal"
+        // Also while the media arrival is up: the pill hangs off the island's
+        // right edge and moves with it, so it is never in the way (it is for
+        // notifications/OSD/activity, which are much wider).
+        visible: Island.mode === "normal" || Island.mode === "media"
         opacity: bar.islandHidden || bar.weatherHidden ? 0 : 1
         onClicked: bar.weatherRequested()
     }
@@ -379,7 +382,7 @@ PanelWindow {
             const artist = Island.mediaPlayer.trackArtist || "";
             return artist !== "" ? artist + " — " + title : title;
         }
-        readonly property real mediaLabelWidth: Math.min(320,
+        readonly property real mediaLabelWidth: Math.min(300,
             mediaLabelMetrics.width)
 
         readonly property real mediaTarget: Math.min(460,
@@ -684,34 +687,23 @@ PanelWindow {
                     }
                 }
 
-                // The media arrival: play/pause first (it is the one control),
-                // then "artist — title". The MouseArea sits after the island's
-                // own, so it wins the click and the rest still opens Today.
+                // The media arrival: the artwork and "artist — title". No
+                // play/pause here: the pill already has it and two identical
+                // buttons four pixels apart read as a bug.
                 Row {
                     id: mediaRow
                     visible: Island.mode === "media"
                     anchors.centerIn: parent
                     spacing: 8
 
-                    Item {
+                    Avatar {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 20
-                        height: 24
-
-                        Glyph {
-                            anchors.centerIn: parent
-                            glyph: Island.mediaPlaying ? "󰏤" : "󰐊"
-                            size: 14
-                            tone: mediaPlayArea.containsMouse ? "hover" : "normal"
-                        }
-
-                        MouseArea {
-                            id: mediaPlayArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Island.toggleMedia()
-                        }
+                        visible: source !== ""
+                        source: Island.mediaPlayer !== null
+                            ? Island.mediaPlayer.trackArtUrl : ""
+                        size: 20
+                        // A 16:9 video thumbnail cropped, not squashed.
+                        cover: true
                     }
 
                     Text {
