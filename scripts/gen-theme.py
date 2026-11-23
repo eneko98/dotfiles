@@ -86,6 +86,21 @@ ICON_RANGES = [
 ]
 
 
+def arch_mark() -> str:
+    """The Arch logo without the trademark sign.
+
+    The shipped SVG is one silhouette path plus two tiny paths that draw the (TM)
+    in the bottom-right corner. At the size of a fetch logo that sign is a
+    two-pixel speck next to a 250 px mark and reads as dirt, so it is dropped.
+
+    The filter only removes paths whose data starts in that corner (`m23..`,
+    `m24..`): if Arch ever redraws the file, the artwork is kept as it is (with
+    the sign wherever it landed) instead of the logo losing a piece.
+    """
+    return re.sub(r'\s*<path\s+d="m2[0-9]{2}[^"]*"\s*/>', "",
+                  ARCH_LOGO.read_text())
+
+
 def fetch_logo(roles: dict[str, str], dest: Path) -> None:
     """Write the Arch mark tinted with the palette, as a transparent PNG.
 
@@ -97,9 +112,11 @@ def fetch_logo(roles: dict[str, str], dest: Path) -> None:
     """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = Path(tmpdir)
+        svg = tmp / "arch.svg"
         base, gradient = tmp / "base.png", tmp / "gradient.png"
 
-        subprocess.run(["magick", "-background", "none", str(ARCH_LOGO),
+        svg.write_text(arch_mark())
+        subprocess.run(["magick", "-background", "none", str(svg),
                         "-resize", "256x256", "-depth", "8", str(base)],
                        check=True)
         subprocess.run(["magick", "-size", "256x256", "-depth", "8",
