@@ -78,15 +78,6 @@ Popup {
         width: parent.width
         height: tabs.height
 
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.NoButton
-
-            onWheel: function (event) {
-                root.step(event.angleDelta.y > 0 ? -1 : 1);
-            }
-        }
-
         Row {
         id: tabs
 
@@ -153,6 +144,32 @@ Popup {
                     ? "" : tab.modelData.id
             }
         }
+        }
+
+        // On TOP of the row: a Pressable consumes wheel events (its own
+        // MouseArea handles them), so behind it the two-finger scroll never
+        // arrived. No buttons, so the clicks still reach the tabs.
+        MouseArea {
+            id: wheelArea
+
+            anchors.fill: parent
+            acceptedButtons: Qt.NoButton
+
+            // A touchpad sends many small pixel deltas per gesture, a mouse one
+            // 120 per notch: accumulate both and step once per notch.
+            property real acc: 0
+
+            onWheel: function (event) {
+                const dy = event.pixelDelta.y !== 0
+                    ? event.pixelDelta.y : event.angleDelta.y / 120 * 40;
+
+                wheelArea.acc += dy;
+                if (Math.abs(wheelArea.acc) < 40)
+                    return;
+
+                root.step(wheelArea.acc < 0 ? 1 : -1);
+                wheelArea.acc = 0;
+            }
         }
     }
 
