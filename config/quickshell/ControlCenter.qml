@@ -3,9 +3,9 @@
 // one section below, instead of the old column of accordions.
 //
 // The sections themselves are unchanged components (NetworkSection,
-// BluetoothSection, SoundSection, DisplaySection, ResourcesSection, the tiles
-// and the session row): this file only decides which one is on screen and keeps
-// the network/bluetooth scanners alive exactly while their section is open.
+// BluetoothSection, SoundSection, NotificationsSection, DisplaySection, the
+// tiles and the session row): this file only decides which one is on screen and
+// keeps the network/bluetooth scanners alive exactly while its section is open.
 import Quickshell
 import Quickshell.Networking
 import QtQuick
@@ -42,7 +42,6 @@ Popup {
         { id: "sound", glyph: "󰕾", label: "Audio" },
         { id: "notifications", glyph: "󰂚", label: "Notifications" },
         { id: "display", glyph: "󰃠", label: "Display" },
-        { id: "resources", glyph: "󰓅", label: "Resources" },
         { id: "session", glyph: "󰐥", label: "Session" }
     ]
 
@@ -272,15 +271,51 @@ Popup {
         showNightTile: true
     }
 
-    ResourcesSection {
-        width: parent.width
-        visible: root.current === "resources"
-
-        onProcessesRequested: root.showProcesses = true
-    }
-
     DashboardSection {
         visible: root.current === "dashboard"
+    }
+
+    // The processes page used to hang off the Resources section; Resources is
+    // gone (the dashboard has the same numbers with rings), so its one useful
+    // door lives here.
+    Pressable {
+        width: parent.width
+        height: 34
+        visible: root.current === "session"
+        onClicked: root.showProcesses = true
+
+        Row {
+            anchors.left: parent.left
+            anchors.leftMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            spacing: 8
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "󰓅"
+                color: Theme.fg1
+                font.family: "JetBrainsMono Nerd Font"
+                font.pixelSize: 14
+            }
+
+            Text {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Processes"
+                color: Theme.fg0
+                font.family: "Adwaita Sans"
+                font.pixelSize: 12
+            }
+        }
+
+        Text {
+            anchors.right: parent.right
+            anchors.rightMargin: 2
+            anchors.verticalCenter: parent.verticalCenter
+            text: "›"
+            color: Theme.fg2
+            font.family: "Adwaita Sans"
+            font.pixelSize: 13
+        }
     }
 
     SessionRow {
