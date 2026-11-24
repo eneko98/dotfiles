@@ -24,7 +24,13 @@ Lessons baked in, from the first hand-made palette:
   * the terminal's 16 ANSI colours are not extracted. A terminal needs hues that
     stay distinguishable (git, ls, yazi), and most photos carry one or two
     families, so only the three semantic slots (yellow/accent, cyan/neon,
-    red/alarm) follow the palette; the rest are fixed hues checked for contrast.
+    red/alarm) follow the palette; the rest are fixed hues checked for contrast;
+  * the neon is always a *second* hue. With one chroma family it used to fall
+    back to a fixed teal, which made eight unrelated wallpapers share one cyan;
+    now it is a rotation of the accent, and a hard separation keeps it away from
+    the accent, from the alarm red and from the fixed ANSI green/blue (the neon
+    *is* ANSI cyan: a cyan that looks green or blue breaks the terminal's
+    colours, measured on four wallpapers that landed 1-4 degrees off).
 """
 
 from __future__ import annotations
@@ -43,6 +49,18 @@ OUT = STATE / "palette.lua"
 # The alarm is not derived from the image: it has to read as "something is
 # wrong" in every theme. Its hue is fixed; only its lightness is checked.
 ALARM_HUE = 10 / 360
+
+# The neon's two rules, both about the second colour being a *second* colour:
+# when the photo has one hue family, or when the extracted one sits on top of
+# the accent, the neon is rotated away by this much instead of being copied.
+NEON_ROTATION = 0.18      # ~65 degrees: a consonant neighbour, not a twin
+NEON_SEPARATION = 0.11    # ~40 degrees: below this, one colour is a failure
+
+# The ANSI table keeps these hues fixed; the neon becomes ANSI *cyan*, so a
+# rotation that lands on the fixed green (or blue) would make `ls` read as one
+# colour. Rotations are scored against them.
+ANSI_GREEN_HUE = 100 / 360
+ANSI_BLUE_HUE = 205 / 360
 
 
 def to_hex(r: float, g: float, b: float) -> str:
@@ -82,6 +100,45 @@ def mix(a: str, b: str, t: float) -> str:
     ra, ga, ba = rgb(a)
     rb, gb, bb = rgb(b)
     return to_hex(*(x + (y - x) * t for x, y in ((ra, rb), (ga, gb), (ba, bb))))
+
+
+def rotate_from(accent_h: float) -> float:
+    """The neon of a one-hue photo: rotate the accent both ways and keep the
+    side that stays furthest from the alarm and from the fixed ANSI hues."""
+    best_h, best_score = None, -1.0
+    for delta in (NEON_ROTATION, -NEON_ROTATION):
+        h = (accent_h + delta) % 1.0
+        score = min(hue_distance(h, ALARM_HUE),
+                    hue_distance(h, ANSI_GREEN_HUE),
+                    hue_distance(h, ANSI_BLUE_HUE))
+        if score > best_score:
+            best_h, best_score = h, score
+    return best_h
+
+
+def separate_neon(neon_h: float, accent_h: float) -> float:
+    """Move the neon the smallest step that satisfies all four distances.
+
+    It has to stay away from the accent (or the theme has one colour pretending
+    to be two), from the alarm (or "alive" reads as "broken") and from the two
+    fixed ANSI hues it would otherwise duplicate: the neon *is* ANSI cyan, and
+    a cyan that is green or blue makes `ls` read as one colour. Measured on the
+    wallpapers: four extracted blues sat 1-4 degrees from the fixed ANSI blue.
+    """
+    def acceptable(h: float) -> bool:
+        return (hue_distance(h, accent_h) >= NEON_SEPARATION
+                and hue_distance(h, ALARM_HUE) >= 0.055
+                and hue_distance(h, ANSI_GREEN_HUE) >= 0.10
+                and hue_distance(h, ANSI_BLUE_HUE) >= 0.10)
+
+    if acceptable(neon_h):
+        return neon_h
+    for step in range(1, 21):
+        for h in ((neon_h + step / 100) % 1.0,
+                  (neon_h - step / 100) % 1.0):
+            if acceptable(h):
+                return h
+    return neon_h
 
 
 def raise_to(h: float, s: float, bg: str, target: float, start: float, cap: float) -> str:
@@ -196,15 +253,22 @@ def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], list[st
     accent = raise_to(accent_h, accent_s, bg0, 8.0, 0.38, 0.72)
 
     # The neon is the second family: at least 60 degrees away in hue, so the two
-    # accents cannot be mistaken for each other. With one family, the default
-    # teal is the honest fallback.
+    # accents cannot be mistaken for each other. One family only: the neon is a
+    # *rotation of the accent's own hue* instead of a fixed teal -- the old
+    # fallback made eight unrelated photos share the same cyan, which is what
+    # made every theme look alike.
     second = [c for c in candidates if hue_distance(c["h"], accent_h) >= 1 / 6]
     if second:
         best2 = max(second, key=lambda c: c["s"] * (c["lum"] ** 0.5) * (0.3 + c["weight"]))
         neon_h, neon_s = best2["h"], min(max(best2["s"], 0.25), 0.45)
     else:
-        neon_h, neon_s = 176 / 360, 0.30
-        notes.append("one chroma family: neon falls back to the default teal")
+        neon_h, neon_s = rotate_from(accent_h), 0.32
+        notes.append("one chroma family: neon rotated from the accent")
+
+    # Separation is a rule, not a property of the source: Shibuya's accent was
+    # cyan and the fallback teal sat 4 degrees away, so the theme had one colour
+    # pretending to be two.
+    neon_h = separate_neon(neon_h, accent_h)
 
     neon = raise_to(neon_h, neon_s, bg0, 7.0, 0.38, 0.75)
     alarm = raise_to(ALARM_HUE, 0.62, bg0, 4.2, 0.38, 0.62)
