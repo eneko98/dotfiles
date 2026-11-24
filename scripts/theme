@@ -1,0 +1,128 @@
+#!/bin/bash
+# theme — the one entry point of the color system.
+#
+# The pipeline used to be two independent writers (extract-palette.py wrote
+# palette.lua; gen-theme.py wrote the copies) plus a manual instruction that
+# ran them in the wrong order. Measured on this machine: palette.lua ended up
+# 17 s newer than its copies -- a half-applied theme. Now extract-palette.py
+# is pure (it prints), gen-theme.py is the only writer (copies first,
+# palette.lua last, atomically), and everything goes through here:
+#
+#   theme apply IMG      derive from IMG, regenerate, refresh what reloads live
+#   theme reset         back to the committed default palette
+#   theme preview IMG   the palette on stdout, no writes
+#   theme check         palette vs copies (hash per copy), exit 1 if stale
+#   theme refresh       only the live-refresh pass (debugging)
+#
+# Two SUPER+W in a row queue on the lock instead of racing each other.
+set -u
+
+repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/dotfiles"
+runtime="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+palette="$state_dir/palette.lua"
+
+usage() {
+	sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'
+	exit "${1:-0}"
+}
+
+# What picks a new theme up without a restart. Quickshell watches its
+# Theme.qml link by itself; the rest is explicit. Apps that read their theme
+# at startup are NOT here -- the report after an apply says which are running.
+refresh() {
+	systemctl --user restart polkit-gnome.service >/dev/null 2>&1 || true
+	hyprctl reload >/dev/null 2>&1 || true
+	pkill -USR1 -x kitty 2>/dev/null || true
+
+	# The icon variant follows the accent; gen-theme.py wrote its name.
+	local icon
+	icon="$(cat "$state_dir/theme/icon-theme" 2>/dev/null)" || true
+	if [[ -n "$icon" ]] && command -v gsettings >/dev/null 2>&1; then
+		gsettings set org.gnome.desktop.interface icon-theme \
+			"$icon" >/dev/null 2>&1 || true
+	fi
+
+	# The greeter's system copy (QML + generated theme). Only if set up.
+	if [[ -d /etc/greetd ]]; then
+		"$repo/config/hypr/scripts/wallpaper" sync-greeter \
+			>/dev/null 2>&1 || true
+	fi
+}
+
+# Which running processes still carry the previous theme and need a restart
+# to show the new one: Firefox (userChrome.css is read once), and anything
+# with libadwaita loaded (it ignores the user stylesheet).
+report_stale() {
+	local found=() comm
+	pgrep -x firefox >/dev/null 2>&1 && found+=("firefox")
+	for pid in $(pgrep -u "$(id -un)" 2>/dev/null); do
+		if grep -qs libadwaita "/proc/$pid/maps" 2>/dev/null; then
+			comm="$(cat "/proc/$pid/comm" 2>/dev/null)" || continue
+			[[ " ${found[*]:-} " != *" $comm "* ]] && found+=("$comm")
+		fi
+	done
+	if ((${#found[@]})); then
+		printf 'note    restart for the new theme: %s\n' "${found[*]}"
+	else
+		printf 'note    no open process keeps the old theme\n'
+	fi
+}
+
+apply() {
+	local img="$1"
+	[[ -f "$img" ]] || { echo "error: $img is not a file" >&2; exit 2; }
+
+	# One writer at a time; the second caller waits here.
+	exec 9>"$runtime/dotfiles-theme.lock"
+	flock 9
+
+	local tmp
+	tmp="$(mktemp "$state_dir/palette.XXXXXX.lua")"
+	trap 'rm -f "$tmp"' EXIT
+
+	"$repo/scripts/extract-palette.py" "$img" >"$tmp"
+	"$repo/scripts/gen-theme.py" --from "$tmp"
+	rm -f "$tmp"; trap - EXIT
+
+	refresh
+	printf 'live    quickshell (watcher), kitty (USR1), hyprctl, polkit, icons'
+	printf ', greeter sync\n'
+	report_stale
+	"$repo/scripts/gen-theme.py" --audit
+}
+
+case "${1:-}" in
+apply)
+	[[ -n "${2:-}" ]] || usage 2
+	apply "$2"
+	;;
+reset)
+	exec 9>"$runtime/dotfiles-theme.lock"
+	flock 9
+	if [[ -f "$palette" ]]; then
+		rm "$palette"
+		echo "removed $palette"
+	fi
+	"$repo/scripts/gen-theme.py"	# from the committed theme.lua
+	refresh
+	report_stale
+	"$repo/scripts/gen-theme.py" --audit
+	;;
+preview)
+	[[ -n "${2:-}" ]] || usage 2
+	"$repo/scripts/extract-palette.py" "$2"
+	;;
+check)
+	exec "$repo/scripts/gen-theme.py" --audit
+	;;
+refresh)
+	refresh
+	;;
+-h | --help | "")
+	usage
+	;;
+*)
+	usage 2
+	;;
+esac

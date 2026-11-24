@@ -99,18 +99,12 @@ set)
 	printf '%s\n' "$path" >"$state_file"
 	blur "$path"
 
-	# The palette follows the wallpaper: re-derive it, rewrite the generated
-	# copies and refresh what reloads live (Hyprland, kitty, and Quickshell --
-	# which watches its Theme.qml link). Apps that read their theme at startup
-	# (GTK, Qt, Firefox, yazi, fuzzel, hyprlock) pick it up when they next start.
-	if [ -x "$repo/scripts/extract-palette.py" ]; then
-		"$repo/scripts/extract-palette.py" "$path" >"$state_dir/retheme.log" 2>&1 || true
-		"$repo/scripts/gen-theme.py" >/dev/null 2>&1 || true
-		set_icon_theme
-		install_greeter
-		systemctl --user restart polkit-gnome.service >/dev/null 2>&1 || true
-		hyprctl reload >/dev/null 2>&1 || true
-		pkill -USR1 -x kitty 2>/dev/null || true
+	# The palette follows the wallpaper, through the one entry point: theme
+	# apply derives it, regenerates every copy (palette.lua last, atomically)
+	# and refreshes what reloads live. The old inline extract+gen was the
+	# half-application hole this closes.
+	if [ -x "$repo/scripts/theme" ]; then
+		"$repo/scripts/theme" apply "$path" >"$state_dir/retheme.log" 2>&1 || true
 	fi
 	;;
 sync-greeter)

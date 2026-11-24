@@ -41,6 +41,8 @@ so it lives in the tables below where it can be read and argued with.
 from __future__ import annotations
 
 import colorsys
+import hashlib
+import json
 import os
 import re
 import subprocess
@@ -933,32 +935,160 @@ def firefox_palette(roles: dict[str, str], _ansi: dict[str, str]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def palette_hash(roles: dict[str, str], ansi: dict[str, str]) -> str:
+    """A digest of the palette the copies were generated from. Stamped into
+    every copy so `theme check` can tell a stale copy from a fresh one without
+    regenerating anything."""
+    blob = json.dumps({"roles": roles, "ansi": ansi}, sort_keys=True)
+    return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+def stamp(content: str, path: Path, digest: str) -> str:
+    """The hash line, in the comment syntax of each format. Qt's INI treats
+    `#` as data and GTK discards a whole stylesheet on a parse error, so the
+    syntax per file is not a detail."""
+    if path.name.endswith(".css"):
+        line = f"/* theme-hash: {digest} */"
+    elif path.name.endswith(".qml"):
+        # QML comments are //; a `#` line is a syntax error that would take
+        # the whole bar down.
+        line = f"// theme-hash: {digest}"
+    elif "qt6ct" in path.parts:
+        line = f"; theme-hash: {digest}"
+    else:
+        line = f"# theme-hash: {digest}"
+    return line + "\n" + content
+
+
+def read_stamp(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    for line in path.read_text().splitlines()[:5]:
+        m = re.search(r"theme-hash: ([0-9a-f]+)", line)
+        if m is not None:
+            return m.group(1)
+    return None
+
+
+def atomic_write(path: Path, content: str) -> None:
+    """Temp file in the same directory, then rename: a reader never sees a
+    half-written copy, and an interrupted run leaves the old one in place."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.parent / (path.name + ".new")
+    tmp.write_text(content)
+    os.replace(tmp, path)
+
+
+def audit() -> int:
+    """theme check: the copies' stamps against the active palette. Exit 1 with
+    the list when anything is stale."""
+    roles, ansi = parse_palette(PALETTE)
+    digest = palette_hash(roles, ansi)
+
+    stale = [p for p in COPY_PATHS if read_stamp(p) != digest]
+
+    logo = THEME_DIR / "fetch-logo.png"
+    meta = THEME_DIR / "fetch-logo.meta"
+    logo_ok = False
+    if logo.is_file() and meta.is_file():
+        parts = meta.read_text().split()
+        if len(parts) == 2 and parts[0] == digest:
+            logo_ok = parts[1] == hashlib.sha256(
+                logo.read_bytes()).hexdigest()
+    if not logo_ok:
+        stale.append(logo)
+
+    for p in stale:
+        print(f"stale: {p}")
+    print("up to date" if not stale else f"{len(stale)} stale copies")
+    return 1 if stale else 0
+
+
+# Every text copy, relative to the state theme dir. The contents come from the
+# functions below; the paths live here so `audit` can walk them without
+# generating anything.
+COPY_PATHS = tuple(
+    THEME_DIR / rel for rel in (
+        "kitty/theme.conf",
+        "zsh/theme.zsh",
+        "fuzzel/colors.ini",
+        "yazi/theme.toml",
+        "hypr/hyprlock-theme.conf",
+        "mako/theme",
+        "gtk-3.0/palette.css",
+        "gtk-4.0/palette.css",
+        "gtk-3.0/settings.ini",
+        "gtk-4.0/settings.ini",
+        "qt6ct/colors/theme.conf",
+        "qt6ct/qt6ct.conf",
+        "icon-theme",
+        "greeter/regreet.css",
+        "quickshell/Theme.qml",
+        "greeter/Theme.qml",
+        "firefox/chrome/palette.css",
+        "zathura/colors",
+    )
+)
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
-    roles, ansi = parse_palette(PALETTE)
+    if "--audit" in argv:
+        return audit()
+
+    # --from FILE: the palette to apply, as produced by extract-palette.py
+    # (pure since the v2). gen-theme is the ONLY writer: it regenerates every
+    # copy and palette.lua itself, palette.lua LAST, so an interrupted run
+    # can never leave the compositor on a palette the copies do not match.
+    source_file = None
+    if "--from" in argv:
+        i = argv.index("--from")
+        if i + 1 >= len(argv):
+            print("error: --from needs a file", file=sys.stderr)
+            return 2
+        source_file = Path(argv[i + 1]).expanduser()
+        if not source_file.is_file():
+            print(f"error: {source_file} is not a file", file=sys.stderr)
+            return 2
+        roles, ansi = parse_palette(source_file)
+    else:
+        roles, ansi = parse_palette(PALETTE)
+
     if len(roles) < 9:
-        print(f"error: only found {len(roles)} roles in {PALETTE}", file=sys.stderr)
+        print(f"error: only found {len(roles)} roles", file=sys.stderr)
         return 2
 
+    digest = palette_hash(roles, ansi)
+
+    # Test hook for the atomicity claim: crash after N copies. Used only by
+    # the verification of the color-system commit; never set in normal runs.
+    crash_after = os.environ.get("DOTFILES_THEME_CRASH_AFTER")
+    crash_after = int(crash_after) if crash_after else None
+    written = 0
+
+    contents = {
+        "kitty/theme.conf": kitty_conf(roles, ansi),
+        "zsh/theme.zsh": zsh_theme(roles),
+        "fuzzel/colors.ini": fuzzel_conf(roles, ansi),
+        "yazi/theme.toml": yazi_conf(roles, ansi),
+        "hypr/hyprlock-theme.conf": hyprlock_theme(roles, ansi),
+        "mako/theme": mako_theme(roles, ansi),
+        "gtk-3.0/palette.css": css_palette(roles, ansi, "config/gtk-3.0"),
+        "gtk-4.0/palette.css": css_palette(roles, ansi, "config/gtk-4.0"),
+        "gtk-3.0/settings.ini": gtk_settings(roles, 3),
+        "gtk-4.0/settings.ini": gtk_settings(roles, 4),
+        "qt6ct/colors/theme.conf": qt6ct_colors(roles, ansi),
+        "qt6ct/qt6ct.conf": qt6ct_conf(roles),
+        "icon-theme": icon_theme(roles) + "\n",
+        "greeter/regreet.css": regreet_css(roles, ansi),
+        "quickshell/Theme.qml": quickshell_theme(roles, ansi),
+        "greeter/Theme.qml": quickshell_theme(roles, ansi),
+        "firefox/chrome/palette.css": firefox_palette(roles, ansi),
+        "zathura/colors": zathura_colors(roles, ansi),
+    }
     outputs = {
-        THEME_DIR / "kitty/theme.conf": kitty_conf(roles, ansi),
-        THEME_DIR / "zsh/theme.zsh": zsh_theme(roles),
-        THEME_DIR / "fuzzel/colors.ini": fuzzel_conf(roles, ansi),
-        THEME_DIR / "yazi/theme.toml": yazi_conf(roles, ansi),
-        THEME_DIR / "hypr/hyprlock-theme.conf": hyprlock_theme(roles, ansi),
-        THEME_DIR / "mako/theme": mako_theme(roles, ansi),
-        THEME_DIR / "gtk-3.0/palette.css": css_palette(roles, ansi, "config/gtk-3.0"),
-        THEME_DIR / "gtk-4.0/palette.css": css_palette(roles, ansi, "config/gtk-4.0"),
-        THEME_DIR / "gtk-3.0/settings.ini": gtk_settings(roles, 3),
-        THEME_DIR / "gtk-4.0/settings.ini": gtk_settings(roles, 4),
-        THEME_DIR / "qt6ct/colors/theme.conf": qt6ct_colors(roles, ansi),
-        THEME_DIR / "qt6ct/qt6ct.conf": qt6ct_conf(roles),
-        THEME_DIR / "icon-theme": icon_theme(roles) + "\n",
-        THEME_DIR / "greeter/regreet.css": regreet_css(roles, ansi),
-        THEME_DIR / "quickshell/Theme.qml": quickshell_theme(roles, ansi),
-        THEME_DIR / "greeter/Theme.qml": quickshell_theme(roles, ansi),
-        THEME_DIR / "firefox/chrome/palette.css": firefox_palette(roles, ansi),
-        THEME_DIR / "zathura/colors": zathura_colors(roles, ansi),
+        THEME_DIR / rel: stamp(content, THEME_DIR / rel, digest)
+        for rel, content in contents.items()
     }
 
     stale: list[Path] = []
@@ -993,8 +1123,24 @@ def main(argv: list[str]) -> int:
             continue
         stale.append(path)
         if not check:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
+            atomic_write(path, content)
+            written += 1
+            if crash_after is not None and written >= crash_after:
+                raise RuntimeError(
+                    f"DOTFILES_THEME_CRASH_AFTER={crash_after}: stopping")
+
+    # The logo meta ties the PNG to the palette it was rendered from, so
+    # `--audit` can check it without re-rendering.
+    if have_logo and not check:
+        (THEME_DIR / "fetch-logo.meta").write_text(
+            digest + " " + hashlib.sha256(
+                logo.read_bytes()).hexdigest() + "\n")
+
+    # palette.lua LAST and only when a palette was handed over: without
+    # --from the active palette (state or committed) is already the truth.
+    if source_file is not None and not check:
+        atomic_write(STATE_PALETTE,
+            f"-- theme-hash: {digest}\n" + source_file.read_text())
 
     for path in stale:
         try:
