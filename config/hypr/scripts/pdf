@@ -1,0 +1,35 @@
+#!/bin/sh
+# pdf: read a PDF in zathura, fullscreen, and hand focus back when it closes.
+#
+# yazi runs this with `block = true`, so the explorer hides behind zathura and
+# redraws exactly as it was (list + preview) the moment zathura exits: `q` is
+# bound to quit in both modes, see config/zathura/zathurarc.
+#
+# zathura's own `--mode=fullscreen` only changes the *internal* mode; under a
+# tiling compositor it does not ask for a fullscreen window. Hyprland's Lua
+# dispatcher takes a window selector, so the window is addressed by pid -- no
+# reliance on which window happens to have focus while this runs.
+set -u
+
+if [ $# -lt 1 ]; then
+	echo "usage: pdf <file>" >&2
+	exit 2
+fi
+
+zathura "$1" &
+pid=$!
+
+# Wait for the window to exist (about three seconds, worst case), then make it
+# fullscreen. If it never shows up, leave it as it is: never block yazi.
+i=0
+while [ "$i" -lt 60 ]; do
+	if hyprctl clients -j 2>/dev/null \
+		| jq -e --argjson p "$pid" 'any(.[]; .pid == $p)' >/dev/null 2>&1; then
+		hyprctl dispatch "hl.dsp.window.fullscreen({ mode = \"fullscreen\", window = \"pid:$pid\" })" >/dev/null 2>&1 || true
+		break
+	fi
+	i=$((i + 1))
+	sleep 0.05
+done
+
+wait "$pid"

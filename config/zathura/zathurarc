@@ -23,5 +23,10 @@ set statusbar-basename true
 set statusbar-home-tilde true
 set selection-clipboard clipboard
 
+# `q` quits in the normal mode by default, but fullscreen mode has its own,
+# smaller key map (Escape only goes back to normal). The reader is opened
+# fullscreen, so q has to work there too: one key back to yazi.
+map [fullscreen] q quit
+
 # The plain database is deprecated in this version.
 set database sqlite

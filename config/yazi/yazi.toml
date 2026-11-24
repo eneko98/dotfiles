@@ -15,8 +15,12 @@ image_quality = 90
 # pages, keyboard, fits a tiled window). Yazi's own PDF preview is a thumbnail
 # of the first page -- that is what it is for; reading happens here.
 [opener]
+# `block` is what makes the return exact: yazi steps aside while the reader
+# runs and redraws with its list and preview the moment it closes (q).
 zathura = [
-    { run = "zathura %s", orphan = true, desc = "Open in zathura" }
+    { run = "$HOME/.config/hypr/scripts/pdf %s", block = true,
+      desc = "Read fullscreen" },
+    { run = "zathura %s", orphan = true, desc = "Read beside the list" }
 ]
 
 [open]
