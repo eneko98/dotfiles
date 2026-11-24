@@ -10,3 +10,16 @@ max_width = 1200
 max_height = 900
 image_filter = "lanczos3"
 image_quality = 90
+
+# PDFs open in zathura, not the browser: it is the reader of this setup (dark
+# pages, keyboard, fits a tiled window). Yazi's own PDF preview is a thumbnail
+# of the first page -- that is what it is for; reading happens here.
+[opener]
+zathura = [
+    { run = "zathura %s", orphan = true, desc = "Open in zathura" }
+]
+
+[open]
+prepend_rules = [
+    { mime = "application/pdf", use = "zathura" }
+]

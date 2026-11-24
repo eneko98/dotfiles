@@ -38,6 +38,7 @@ generated=(
 	qt6ct/colors/theme.conf
 	qt6ct/qt6ct.conf
 	quickshell/Theme.qml
+	zathura/colors
 )
 
 dry_run=0

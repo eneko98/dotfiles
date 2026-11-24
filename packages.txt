@@ -291,3 +291,9 @@ libva-utils
 # filesystem) con la paleta activa y se regenera al cambiar de wallpaper. La
 # config usa nombres ANSI, así que sigue al tema sin ficheros generados.
 fastfetch
+
+# Lector de PDF. zathura es GTK4 (ya instalado) y tiny; el plugin usa poppler,
+# que ya estaba. Lo abre yazi con Enter (regla de opener) y tambien zathura
+# desde el launcher. Config propias: config/zathura (colores generados).
+zathura
+zathura-pdf-poppler
