@@ -111,7 +111,14 @@ reset)
 	;;
 preview)
 	[[ -n "${2:-}" ]] || usage 2
-	"$repo/scripts/extract-palette.py" "$2"
+	# The palette as it would be written, then the v2 report: derived roles,
+	# alphas per region and the contrast table. Nothing is written.
+	tmp="$(mktemp)"
+	trap 'rm -f "$tmp"' EXIT
+	"$repo/scripts/extract-palette.py" "$2" >"$tmp"
+	cat "$tmp"
+	"$repo/scripts/gen-theme.py" --derive "$tmp"
+	rm -f "$tmp"; trap - EXIT
 	;;
 check)
 	exec "$repo/scripts/gen-theme.py" --audit

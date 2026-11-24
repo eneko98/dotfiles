@@ -43,7 +43,7 @@ local theme = {
     fg2 = "#5f5f70", -- dim: inactive borders, rules 3.2:1 -- never body text
     gold = "#5eadcc", -- accent: active border, highlights      8.0:1
     teal = "#ab8bd2", -- neon: cursor, focus, links             7.1:1
-    red = "#c6482f", -- alarm: errors, failures                 4.2:1
+    red = "#dc6048", -- alarm: errors, failures                 5.6:1
 }
 
 -- The terminal's 16 ANSI colours. The accent and the neon follow the palette;

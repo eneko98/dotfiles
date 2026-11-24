@@ -246,8 +246,8 @@ ASSIGNMENT = re.compile(
 )
 
 
-def parse_palette(path: Path) -> tuple[dict[str, str], dict[str, str]]:
-    """Pull the roles and the ANSI table out of theme.lua.
+def parse_palette(path: Path) -> tuple[dict[str, str], dict[str, str], dict[str, float]]:
+    """Pull the roles, the ANSI table and the v2 stats out of theme.lua.
 
     Comments go first: theme.lua's prose quotes hex values (the raw extraction
     it started from), and a scanner that reads those would invent colours.
@@ -255,23 +255,39 @@ def parse_palette(path: Path) -> tuple[dict[str, str], dict[str, str]]:
     code = re.sub(r"--.*", "", path.read_text())
     roles: dict[str, str] = {}
     ansi: dict[str, str] = {}
-    section: dict[str, str] | None = None
+    stats: dict[str, float] = {}
+    section = "roles"
 
     for line in code.splitlines():
         if "local theme" in line:
-            section = roles
+            section = "roles"
             continue
         if "theme.ansi" in line:
-            section = ansi
+            section = "ansi"
             continue
+        if "theme.stats" in line:
+            section = "stats"
+            continue
+
+        if section == "stats":
+            num = re.match(r"\s*([a-z_]+)\s*=\s*([0-9.]+)", line)
+            if num is not None:
+                stats[num.group(1)] = float(num.group(2))
+            continue
+
         match = ASSIGNMENT.match(line)
-        if match is None or section is None:
+        if match is None or section == "roles" and False:
+            continue
+        if section not in ("roles", "ansi"):
             continue
         name, literal, reference = match.group(1), match.group(2), match.group(3)
         # ansi entries may be aliases (`cyan = theme.teal`), which is how the
         # table stays honest about yellow/gold being one hue
-        section[name] = literal if literal else roles[reference]
-    return roles, ansi
+        if section == "roles":
+            roles[name] = literal
+        else:
+            ansi[name] = literal if literal else roles[reference]
+    return roles, ansi, stats
 
 
 def kitty_conf(roles: dict[str, str], ansi: dict[str, str]) -> str:
@@ -894,7 +910,8 @@ window button.destructive-action:focus-visible {{
 """
 
 
-def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str]) -> str:
+def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str],
+                      derived: dict) -> str:
     # QML reads neither Lua nor INI, so the bar gets a singleton with the
     # palette as properties. `pragma Singleton` makes it one object shared by
     # every file in the shell; the bar then writes Theme.gold, never a hex.
@@ -920,6 +937,33 @@ def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str]) -> str:
             continue
         lines.append(f'    readonly property color {name}: "{roles[name]}"')
     lines.append("}")
+
+    # The v2 roles: tinted surfaces, state containers, the hover tint and the
+    # alphas per region. Nothing reads the colors yet in the greeter (and the
+    # bar starts reading them in C3); shipping them early means every reload
+    # from now on carries the whole system.
+    lines.append("")
+    lines.append("    // v2: tinted surfaces (L 0.19/0.21/0.23, the wallpaper's")
+    lines.append("    // family hue, a fraction of its chroma).")
+    for name in ("s1", "s2", "s3"):
+        lines.append(f'    readonly property color {name}: "{derived[name]}"')
+    lines.append("")
+    lines.append("    // v2: state containers -- the hue of their role, dark and")
+    lines.append("    // muted, with a matching text on top.")
+    for name in ("accentContainer", "onAccentContainer",
+                 "neonContainer", "onNeonContainer"):
+        lines.append(f'    readonly property color {name}: "{derived[name]}"')
+    lines.append("")
+    lines.append("    // v2: hover is a 6% wash of the accent, transitory.")
+    lines.append(f'    readonly property color hoverTint: "{derived["hoverTint"]}"')
+    lines.append("")
+    lines.append("    // v2: how opaque each region's glass must be to hold the")
+    lines.append("    // text floors over this wallpaper (0.66..0.96).")
+    for name in ("alphaBar", "alphaPanel", "alphaDesk"):
+        lines.append(f"    readonly property real {name}:"
+                     f" {derived[name]:.2f}")
+
+    lines.append("}")
     return "\n".join(lines) + "\n"
 
 
@@ -933,6 +977,111 @@ def firefox_palette(roles: dict[str, str], _ansi: dict[str, str]) -> str:
         lines.append(f"  --{name}: {roles[name]};")
     lines.append("}")
     return "\n".join(lines) + "\n"
+
+
+# --- OKLab/OKLCH, pure Python (Björn Ottosson's reference matrices) --------
+# The v2 derives its tinted surfaces and state containers in OKLCH: lightness
+# is what contrast depends on, so the design fixes L per surface and buys the
+# colour with chroma, which is free in contrast (documented in
+# tema-colores-v2.md §1.2).
+
+def _linear(c: float) -> float:
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _gamma(c: float) -> float:
+    return 12.92 * c if c <= 0.0031308 else 1.055 * (c ** (1 / 2.4)) - 0.055
+
+
+def oklch_of(hex6: str) -> tuple[float, float, float]:
+    h = hex6.lstrip("#")
+    r, g, b = (_linear(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4))
+    l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b
+    m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b
+    s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b
+    l_, m_, s_ = (max(v, 1e-9) ** (1 / 3) for v in (l, m, s))
+    L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_
+    A = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_
+    B = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+    import math
+    # H in TURNS: atan2 gives radians, and a hue in radians mod 1.0 is noise
+    # (measured: the default's blue family came out warm).
+    return L, (A * A + B * B) ** 0.5, math.atan2(B, A) / (2 * math.pi) % 1.0
+
+
+def hex_of_oklch(L: float, C: float, H: float) -> str:
+    """OKLCH -> sRGB hex, chroma reduced to the gamut at fixed L and H."""
+    import math
+    while C > 0.0:
+        # H arrives in TURNS (oklch_of's convention); trig wants radians.
+        a, b = C * math.cos(H * 2 * math.pi), C * math.sin(H * 2 * math.pi)
+        l_ = L + 0.3963377774 * a + 0.2158037573 * b
+        m_ = L - 0.1055613458 * a - 0.0638541728 * b
+        s_ = L - 0.0894841775 * a - 1.2914855480 * b
+        r = +4.0767416621 * l_ ** 3 - 3.3077115913 * m_ ** 3 + 0.2309699292 * s_ ** 3
+        g = -1.2684380046 * l_ ** 3 + 2.6097574011 * m_ ** 3 - 0.3413193965 * s_ ** 3
+        bch = -0.0041960863 * l_ ** 3 - 0.7034186147 * m_ ** 3 + 1.7076147010 * s_ ** 3
+        if all(-0.001 <= v <= 1.001 for v in (r, g, bch)):
+            out = "".join(
+                f"{round(min(1, max(0, _gamma(v))) * 255):02x}"
+                for v in (r, g, bch))
+            return "#" + out
+        C -= 0.002
+    return "#000000"
+
+
+def wcag_lum(hex6: str) -> float:
+    h = hex6.lstrip("#")
+    r, g, b = (_linear(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def contrast(a: str, b: str) -> float:
+    la, lb = wcag_lum(a), wcag_lum(b)
+    hi, lo = max(la, lb), min(la, lb)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+def blend(fg: str, bg: str, alpha: float) -> str:
+    """fg over bg at alpha, in sRGB (how the compositor paints the pill)."""
+    f, g = fg.lstrip("#"), bg.lstrip("#")
+    out = "".join(
+        f"{round(int(f[i:i + 2], 16) * alpha + int(g[i:i + 2], 16) * (1 - alpha)):02x}"
+        for i in (0, 2, 4))
+    return "#" + out
+
+
+def gray_for(lum: float) -> str:
+    """The gray whose WCAG luminance is `lum` (the region's blurred wall)."""
+    lo, hi = 0.0, 1.0
+    for _ in range(40):
+        mid = (lo + hi) / 2
+        if wcag_lum(gray_hex(mid)) < lum:
+            lo = mid
+        else:
+            hi = mid
+    return gray_hex((lo + hi) / 2)
+
+
+def gray_hex(v: float) -> str:
+    c = round(v * 255)
+    return f"#{c:02x}{c:02x}{c:02x}"
+
+
+def alpha_for(surface: str, region_lum: float,
+              text: dict[str, float]) -> float:
+    """The smallest alpha in [0.66, 0.96] that keeps every text floor over the
+    composite of `surface` and the region's blurred wallpaper. Returns the
+    alpha, or -1 when even opaque fails (a wallpaper brighter than the text
+    floor allows -- then the caller reports it)."""
+    wall = gray_for(min(1.0, max(0.0, region_lum)))
+    a = 0.66
+    while a <= 0.9601:
+        comp = blend(surface, wall, a)
+        if all(contrast(col, comp) >= floor for col, floor in text.items()):
+            return a
+        a += 0.01
+    return -1.0
 
 
 def palette_hash(roles: dict[str, str], ansi: dict[str, str]) -> str:
@@ -979,10 +1128,155 @@ def atomic_write(path: Path, content: str) -> None:
     os.replace(tmp, path)
 
 
+# --- the v2 derived roles (design doc: tema-colores-v2.md §3-§4) -----------
+# Nothing here is extracted from the wallpaper twice: everything comes from
+# the palette plus the stats the extractor wrote into it (family chroma and
+# the region luminances). R8: no runtime recalculation -- these run at
+# `theme apply` time only.
+
+DEFAULT_STATS = {
+    # Measured from images/wallpapers/default.png (the committed default's
+    # own wallpaper) with the same code as the extractor's region_stats:
+    # bar 0.0025, panel 0.0111, desk 0.0195, and the OKLCH chroma of the
+    # committed bg1 as the family's.
+    "region_bar": 0.0025,
+    "region_panel": 0.0111,
+    "region_desk": 0.0195,
+    "family_chroma": 0.0146,
+}
+
+
+def derive_v2(roles: dict[str, str], stats: dict[str, float]) -> dict:
+    notes: list[str] = []
+
+    # §3.1 tinted surfaces. The hue is the base family's; the chroma is a
+    # fraction of the family's own chroma, clamped, and capped near the alarm
+    # red so a reddish surface cannot rob the alarm.
+    _, c_fam, h_base = oklch_of(roles["bg1"])
+    hue = h_base
+    chroma = min(max(0.6 * stats.get("family_chroma", c_fam), 0.012), 0.045)
+    if min(abs(hue - 10 / 360), 1 - abs(hue - 10 / 360)) < 30 / 360:
+        chroma = min(chroma, 0.020)
+        notes.append("surface chroma capped near the alarm red")
+
+    l1, l2, l3 = 0.19, 0.21, 0.23
+    s1 = hex_of_oklch(l1, chroma, hue)
+    s2 = hex_of_oklch(l2, chroma, hue)
+    s3 = hex_of_oklch(l3, chroma, hue)
+
+    # Floor: fg1 >= 4.5:1 over s3. Plan B: darken all three in steps.
+    floor_l = oklch_of(roles["bg1"])[0]
+    while contrast(roles["fg1"], s3) < 4.5 and l1 - 0.01 >= floor_l:
+        l1, l2, l3 = l1 - 0.01, l2 - 0.01, l3 - 0.01
+        s1 = hex_of_oklch(l1, chroma, hue)
+        s2 = hex_of_oklch(l2, chroma, hue)
+        s3 = hex_of_oklch(l3, chroma, hue)
+    if l1 < 0.19:
+        notes.append(f"surface L lowered to {l1:.2f} for the fg1 floor")
+
+    # §3.2 state containers, with their own floors and plan B.
+    def container(role: str, tag: str) -> tuple[str, str]:
+        L, C, H = oklch_of(roles[role])
+        lc, cc = 0.30, 0.55 * C
+        while True:
+            box = hex_of_oklch(lc, cc, H)
+            on = hex_of_oklch(0.93, min(0.03, 0.3 * C), H)
+            if (contrast(on, box) >= 7.0 and contrast(roles[role], box) >= 4.5) \
+                    or lc <= 0.24:
+                if contrast(roles[role], box) < 4.5:
+                    notes.append(f"{tag} container could not reach 4.5:1")
+                return box, on
+            lc -= 0.02
+
+    accent_box, accent_on = container("gold", "accent")
+    neon_box, neon_on = container("teal", "neon")
+
+    # hoverTint: the accent at 6% -- hover is transitory, not a state.
+    hover = "#" + "0f" + roles["gold"].lstrip("#")
+
+    # §4 alphas per region: the smallest alpha that holds the text floors
+    # over the composite with the region's blurred wallpaper.
+    text = {roles["fg0"]: 7.0, roles["fg1"]: 4.5, roles["red"]: 4.5}
+    alphas = {}
+    for region in ("bar", "panel", "desk"):
+        a = alpha_for(s1, stats.get(f"region_{region}", 0.0), text)
+        if a < 0:
+            a = 0.96
+            notes.append(f"{region}: even opaque misses a floor; pinned 0.96")
+        alphas[region] = a
+
+    return {
+        "s1": s1, "s2": s2, "s3": s3,
+        "accentContainer": accent_box, "onAccentContainer": accent_on,
+        "neonContainer": neon_box, "onNeonContainer": neon_on,
+        "hoverTint": hover,
+        "alphaBar": alphas["bar"], "alphaPanel": alphas["panel"],
+        "alphaDesk": alphas["desk"],
+        "_notes": notes,
+        "_chroma": chroma,
+    }
+
+
+def report_v2(roles: dict[str, str], stats: dict[str, float],
+             derived: dict) -> None:
+    """The preview report: every derived role, the alphas and the whole
+    contrast table with its floors. This is how a palette is judged before
+    applying it (`theme preview IMG`)."""
+    line = "-" * 58
+    print(line)
+    print("palette   " + "  ".join(f"{k} {v}" for k, v in roles.items()
+                                   if k in ("bg0", "gold", "teal", "red")))
+    print(line)
+    print(f"surfaces  chroma {derived['_chroma']:.3f}   "
+          f"s1 {derived['s1']}  s2 {derived['s2']}  s3 {derived['s3']}")
+    print("contain   accent " + derived["accentContainer"] + " / "
+          + derived["onAccentContainer"]
+          + "   neon " + derived["neonContainer"] + " / "
+          + derived["onNeonContainer"])
+    print("hover     " + derived["hoverTint"])
+
+    for region in ("bar", "panel", "desk"):
+        a = derived[f"alpha{region.capitalize()}"]
+        comp = blend(derived["s1"], gray_for(stats.get(f"region_{region}", 0.0)), a)
+        print(f"alpha     {region:<6} {a:.2f}   "
+              f"fg1 {contrast(roles['fg1'], comp):.2f} (>=4.5)   "
+              f"fg0 {contrast(roles['fg0'], comp):.2f} (>=7)")
+
+    print(line)
+    checks = [
+        ("fg0 on s1 (>=7)", contrast(roles["fg0"], derived["s1"])),
+        ("fg1 on s3 (>=4.5)", contrast(roles["fg1"], derived["s3"])),
+        ("red on s1 (>=4.5)", contrast(roles["red"], derived["s1"])),
+        ("red on s3 (>=4.5)", contrast(roles["red"], derived["s3"])),
+        ("accent on accentContainer (>=4.5)",
+         contrast(roles["gold"], derived["accentContainer"])),
+        ("onAccentContainer (>=7)",
+         contrast(derived["onAccentContainer"], derived["accentContainer"])),
+        ("neon on neonContainer (>=4.5)",
+         contrast(roles["teal"], derived["neonContainer"])),
+        ("onNeonContainer (>=7)",
+         contrast(derived["onNeonContainer"], derived["neonContainer"])),
+        ("fg1 on s1+hover (>=4.5)",
+         contrast(roles["fg1"],
+                  blend(roles["gold"], derived["s1"], 6 / 255))),
+    ]
+    worst = 99.0
+    for label, value in checks:
+        floor = float(re.search(r">=([0-9.]+)", label).group(1))
+        worst = min(worst, value / floor)
+        print(f"{'ok ' if value >= floor else 'FAIL'}     {label:<40} {value:.2f}")
+    if derived["_notes"]:
+        print("notes     " + "; ".join(derived["_notes"]))
+    print(line)
+    print(f"worst margin over its floor: {worst:.2f}x"
+          + ("" if worst >= 1.0 else "  <-- BELOW FLOOR"))
+    print(line)
+
+
 def audit() -> int:
     """theme check: the copies' stamps against the active palette. Exit 1 with
     the list when anything is stale."""
-    roles, ansi = parse_palette(PALETTE)
+    roles, ansi, _ = parse_palette(PALETTE)
     digest = palette_hash(roles, ansi)
 
     stale = [p for p in COPY_PATHS if read_stamp(p) != digest]
@@ -1035,6 +1329,16 @@ def main(argv: list[str]) -> int:
     check = "--check" in argv
     if "--audit" in argv:
         return audit()
+    if "--derive" in argv:
+        i = argv.index("--derive")
+        if i + 1 >= len(argv):
+            print("error: --derive needs a file", file=sys.stderr)
+            return 2
+        src = Path(argv[i + 1]).expanduser()
+        roles, ansi, stats = parse_palette(src)
+        report_v2(roles, {**DEFAULT_STATS, **stats},
+                  derive_v2(roles, {**DEFAULT_STATS, **stats}))
+        return 0
 
     # --from FILE: the palette to apply, as produced by extract-palette.py
     # (pure since the v2). gen-theme is the ONLY writer: it regenerates every
@@ -1050,15 +1354,20 @@ def main(argv: list[str]) -> int:
         if not source_file.is_file():
             print(f"error: {source_file} is not a file", file=sys.stderr)
             return 2
-        roles, ansi = parse_palette(source_file)
+        roles, ansi, stats = parse_palette(source_file)
     else:
-        roles, ansi = parse_palette(PALETTE)
+        roles, ansi, stats = parse_palette(PALETTE)
 
     if len(roles) < 9:
         print(f"error: only found {len(roles)} roles", file=sys.stderr)
         return 2
 
     digest = palette_hash(roles, ansi)
+
+    # The v2 derived roles: tinted surfaces, state containers, hover tint and
+    # the alphas per region. C2 ships them in the copies without using them
+    # visually yet -- the surfaces that read them come in C3/C4.
+    derived = derive_v2(roles, {**DEFAULT_STATS, **stats})
 
     # Test hook for the atomicity claim: crash after N copies. Used only by
     # the verification of the color-system commit; never set in normal runs.
@@ -1081,8 +1390,8 @@ def main(argv: list[str]) -> int:
         "qt6ct/qt6ct.conf": qt6ct_conf(roles),
         "icon-theme": icon_theme(roles) + "\n",
         "greeter/regreet.css": regreet_css(roles, ansi),
-        "quickshell/Theme.qml": quickshell_theme(roles, ansi),
-        "greeter/Theme.qml": quickshell_theme(roles, ansi),
+        "quickshell/Theme.qml": quickshell_theme(roles, ansi, derived),
+        "greeter/Theme.qml": quickshell_theme(roles, ansi, derived),
         "firefox/chrome/palette.css": firefox_palette(roles, ansi),
         "zathura/colors": zathura_colors(roles, ansi),
     }

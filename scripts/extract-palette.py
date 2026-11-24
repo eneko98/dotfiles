@@ -77,6 +77,23 @@ def rgb(hex6: str) -> tuple[int, int, int]:
     return int(hex6[1:3], 16), int(hex6[3:5], 16), int(hex6[5:7], 16)
 
 
+def oklch(hex6: str) -> tuple[float, float, float]:
+    """(L, C, H) in OKLab terms -- used for the family chroma only."""
+    h = hex6.lstrip("#")
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    lin = tuple(c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+                for c in (r, g, b))
+    l = 0.4122214708 * lin[0] + 0.5363325363 * lin[1] + 0.0514459929 * lin[2]
+    m = 0.2119034982 * lin[0] + 0.6806995451 * lin[1] + 0.1073969566 * lin[2]
+    s = 0.0883024619 * lin[0] + 0.2817188376 * lin[1] + 0.6299787005 * lin[2]
+    l_, m_, s_ = (max(v, 1e-9) ** (1 / 3) for v in (l, m, s))
+    L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_
+    A = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_
+    B = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+    import math
+    return L, (A * A + B * B) ** 0.5, math.degrees(math.atan2(B, A)) % 360
+
+
 def hsl(h: float, s: float, l: float) -> str:
     return to_hex(*colorsys.hls_to_rgb(h % 1.0, l, s))
 
@@ -168,6 +185,52 @@ def hue_distance(a: float, b: float) -> float:
     return min(d, 1.0 - d)
 
 
+def region_stats(path: Path, family_hex: str) -> dict[str, float]:
+    """How bright the wallpaper is where each kind of surface floats.
+
+    The wallpaper AS DISPLAYED: hyprpaper fills the monitor, so the image is
+    squashed to 16:9 (96x54 with a bang). A box downscale approximates the
+    compositor's blur; the statistic is the 90th percentile of the WCAG
+    luminance -- not the mean, because a bright neon right under a pill is
+    what breaks contrast, and p90 catches it.
+
+    family_chroma is the OKLCH chroma of the dominant family cluster, before
+    the base is darkened: the v2 surfaces tint themselves with a fraction of
+    it (gen-theme), so it travels in the palette.
+    """
+    out = subprocess.run(
+        ["magick", str(path), "-resize", "96x54!", "-depth", "8", "rgb:-"],
+        capture_output=True, check=True,
+    ).stdout
+
+    def pct(values: list[float], frac: float) -> float:
+        values = sorted(values)
+        return values[min(len(values) - 1, int(len(values) * frac))]
+
+    rows: list[list[float]] = []
+    for y in range(54):
+        row = []
+        for x in range(96):
+            base = (y * 96 + x) * 3
+            r, g, b = (out[base] / 255, out[base + 1] / 255, out[base + 2] / 255)
+            lin = tuple(
+                c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+                for c in (r, g, b))
+            row.append(0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2])
+        rows.append(row)
+
+    flat = [v for row in rows for v in row]
+    return {
+        # The bar strip: exclusiveZone 38 plus its shadow air.
+        "region_bar": pct([v for row in rows[:3] for v in row], 0.90),
+        # Panels hang from the top half of the screen.
+        "region_panel": pct([v for row in rows[:25] for v in row], 0.90),
+        # Widgets can be dragged anywhere.
+        "region_desk": pct(flat, 0.90),
+        "family_chroma": oklch(family_hex)[1],
+    }
+
+
 def clusters(path: Path) -> list[dict]:
     """A small weighted colour histogram: the image reduced to 24 colours."""
     result = subprocess.run(
@@ -206,8 +269,10 @@ def clusters(path: Path) -> list[dict]:
     return found
 
 
-def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], list[str]]:
+def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], str, list[str]]:
+    """Roles, ANSI and the dominant family's hex (for the v2 stats)."""
     notes: list[str] = []
+    family_hex = "#000000"
 
     # Accent candidates: bright enough to be visible, chromatic enough to be a
     # colour. Saturation x lightness x area, after the visibility filter. The
@@ -237,6 +302,7 @@ def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], list[st
     families = [c for c in colours if c["s"] >= 0.12 and c["weight"] >= 0.01]
     if families:
         base_source = max(families, key=lambda c: c["weight"])
+        family_hex = base_source["hex"]
         base_h = base_source["h"]
         base_s = min(max(min(base_source["s"], 0.50) * 0.50, 0.15), 0.28)
     else:
@@ -277,7 +343,11 @@ def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], list[st
     neon_h = separate_neon(neon_h, accent_h)
 
     neon = raise_to(neon_h, neon_s, bg0, 7.0, 0.38, 0.75)
-    alarm = raise_to(ALARM_HUE, 0.62, bg0, 4.2, 0.38, 0.62)
+    # The alarm floor went up (4.2 -> 5.6) with the color-system v2: red is
+    # also text on the v2's tinted SURFACES (a touch lighter than bg0), and
+    # 4.2:1 there was under the 4.5 text floor. Measured on the default
+    # palette: #dc6048, 5.6:1 on bg0, 5.1:1 on s1, 4.7:1 on s3.
+    alarm = raise_to(ALARM_HUE, 0.62, bg0, 5.6, 0.38, 0.66)
 
     roles = {
         "bg0": bg0,
@@ -315,7 +385,7 @@ def derive(colours: list[dict]) -> tuple[dict[str, str], dict[str, str], list[st
         "bright_cyan": lighten(neon, 0.10),
         "bright_white": lighten(fg0, 0.06),
     }
-    return roles, ansi, notes
+    return roles, ansi, family_hex, notes
 
 
 ROLE_COMMENTS = {
@@ -331,7 +401,8 @@ ROLE_COMMENTS = {
 }
 
 
-def render(roles: dict[str, str], ansi: dict[str, str], source: str) -> str:
+def render(roles: dict[str, str], ansi: dict[str, str],
+           stats: dict[str, float], source: str) -> str:
     lines = [
         f"-- Generated by scripts/extract-palette.py from {source}.",
         "-- This is the active palette. config/hypr/theme.lua loads it when it",
@@ -345,6 +416,13 @@ def render(roles: dict[str, str], ansi: dict[str, str], source: str) -> str:
     ]
     for name, value in roles.items():
         lines.append(f'    {name} = "{value}", -- {ROLE_COMMENTS[name]}')
+    lines += ["}", "",
+        "-- v2 stats, read by scripts/gen-theme.py (Hyprland ignores them):",
+        "-- the dominant family's OKLCH chroma and the 90th percentile of the",
+        "-- wallpaper's luminance where each kind of surface floats.",
+        "theme.stats = {"]
+    for name, value in stats.items():
+        lines.append(f"    {name} = {value:.6f},")
     lines += ["}", "", "theme.ansi = {"]
     for name, value in ansi.items():
         lines.append(f'    {name} = "{value}",')
@@ -394,8 +472,13 @@ def main() -> int:
         print(f"error: {path} is not a file", file=sys.stderr)
         return 1
 
-    roles, ansi, notes = derive(clusters(path))
-    print(render(roles, ansi, str(path)))
+    roles, ansi, family_hex, notes = derive(clusters(path))
+    try:
+        stats = region_stats(path, family_hex)
+    except Exception as exc:  # noqa: BLE001 - a stat failure must not stop the palette
+        print(f"-- region stats unavailable: {exc}", file=sys.stderr)
+        stats = {}
+    print(render(roles, ansi, stats, str(path)))
     return 0
 
 
