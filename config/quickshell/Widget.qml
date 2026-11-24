@@ -239,6 +239,10 @@ PanelWindow {
     Surface {
         id: card
 
+        // Widgets can be dragged anywhere: their glass follows the
+        // wallpaper's luminance over the WHOLE screen, not a strip.
+        region: "desk"
+
         x: root.cardX - root.winL
         y: root.cardY - root.winT + root.fadeY
         opacity: root.fade

@@ -18,11 +18,28 @@ Item {
     property int level: 1
     property bool lifted: false
     property real extra: 0.0
+    // v2: which part of the screen this floats over. The fill alpha follows
+    // the wallpaper's own luminance there (Theme.alphaBar/Panel/Desk), so the
+    // glass is never a fixed number: dark wallpapers show through, bright
+    // ones get more opacity.
+    property string region: "bar"
 
-    // Appearance: lifted raises colour/border one level.
+    // Stroke, highlight and shadow stay per-level (Tokens). The FILL is v2:
+    // a tinted surface (s1/s2/s3, the wallpaper's family) at the region's
+    // alpha, one step more opaque per level; hover lifts one step like
+    // before. Chroma is free in contrast, so the surfaces carry the family
+    // instead of reading as grey.
     readonly property var t: Tokens.level(level, lifted)
     // Shadow: stays at the base level so its blur never snaps.
     readonly property var shadowT: Tokens.level(level, false)
+
+    readonly property real regionAlpha: region === "bar" ? Theme.alphaBar
+        : region === "panel" ? Theme.alphaPanel : Theme.alphaDesk
+    readonly property real fillAlpha: Math.min(0.97,
+        root.regionAlpha + 0.04 * (root.level - 1) + (root.lifted ? 0.04 : 0))
+    readonly property real fillSolidAlpha: Math.min(0.98, root.fillAlpha + 0.12)
+    readonly property color fillBase: root.level >= 3 ? Theme.s3
+        : root.level === 2 ? Theme.s2 : Theme.s1
 
     // Exposed so callers (MorphPanel) can override the corner radius.
     property real radius: height / 2
@@ -38,8 +55,8 @@ Item {
         property real liftY: root.lifted ? -1 : 0
 
         color: {
-            const a = Tokens.blur ? root.t.fill : root.t.fillSolid;
-            return Qt.rgba(Theme.bg1.r, Theme.bg1.g, Theme.bg1.b,
+            const a = Tokens.blur ? root.fillAlpha : root.fillSolidAlpha;
+            return Qt.rgba(root.fillBase.r, root.fillBase.g, root.fillBase.b,
                            Math.min(1, a + root.extra));
         }
         border.width: 1

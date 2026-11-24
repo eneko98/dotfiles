@@ -729,6 +729,7 @@ Popup {
             }
 
             Surface {
+                region: "panel"
                 id: menuPanel
 
                 x: {

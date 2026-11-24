@@ -936,7 +936,6 @@ def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str],
             lines.append("    }")
             continue
         lines.append(f'    readonly property color {name}: "{roles[name]}"')
-    lines.append("}")
 
     # The v2 roles: tinted surfaces, state containers, the hover tint and the
     # alphas per region. Nothing reads the colors yet in the greeter (and the
@@ -950,9 +949,16 @@ def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str],
     lines.append("")
     lines.append("    // v2: state containers -- the hue of their role, dark and")
     lines.append("    // muted, with a matching text on top.")
-    for name in ("accentContainer", "onAccentContainer",
-                 "neonContainer", "onNeonContainer"):
-        lines.append(f'    readonly property color {name}: "{derived[name]}"')
+    # QML parses any identifier starting with `on` as a signal handler, so
+    # the Material-style `onAccentContainer` name is illegal here (measured:
+    # "Cannot assign a value to a signal"). The text roles are `textOnAccent`
+    # and `textOnNeon` instead.
+    for name in ("accentContainer", "textOnAccent",
+                 "neonContainer", "textOnNeon"):
+        src = {"accentContainer": "accentContainer", "textOnAccent":
+               "onAccentContainer", "neonContainer": "neonContainer",
+               "textOnNeon": "onNeonContainer"}[name]
+        lines.append(f'    readonly property color {name}: "{derived[src]}"')
     lines.append("")
     lines.append("    // v2: hover is a 6% wash of the accent, transitory.")
     lines.append(f'    readonly property color hoverTint: "{derived["hoverTint"]}"')

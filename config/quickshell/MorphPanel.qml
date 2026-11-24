@@ -137,6 +137,7 @@ Item {
     Surface {
         anchors.fill: parent
         visible: morph.fill
+        region: "panel"
         level: morph.tSize > 0.5 ? 3 : morph.fromLevel
         radius: morph.radiusNow
         extra: morph.extra

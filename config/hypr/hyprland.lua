@@ -232,7 +232,13 @@ hl.layer_rule({
     ignore_alpha = 0.5,
     no_anim = true,
 })
-hl.layer_rule({ match = { namespace = "quickshell-bar" },   no_anim = true })
+-- The bar and the stage get the v2 glass: blur behind their surfaces, only
+-- where the surface actually is (ignore_alpha under the minimum fill of
+-- 0.66). Cost measured with the island morphing in a loop before this was
+-- made permanent -- see the commit message.
+hl.layer_rule({ match = { namespace = "quickshell-bar" }, blur = true, ignore_alpha = 0.5, no_anim = true })
+hl.layer_rule({ match = { namespace = "quickshell-stage" }, blur = true, ignore_alpha = 0.5, no_anim = true })
+hl.layer_rule({ match = { namespace = "quickshell-menu" }, blur = true, ignore_alpha = 0.5, no_anim = true })
 hl.layer_rule({ match = { namespace = "quickshell-stage" },  no_anim = true })
 hl.layer_rule({ match = { namespace = "quickshell-menu" },   no_anim = true })
 

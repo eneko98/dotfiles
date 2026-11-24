@@ -54,6 +54,7 @@ PanelWindow {
         height: column.implicitHeight + Tokens.space.l * 2
 
         Surface {
+            region: "panel"
             anchors.fill: parent
             level: 2
             radius: Tokens.radius.panel

@@ -13,8 +13,12 @@
 // Hover raises one level instead of swapping a colour: that is what makes the
 // chrome read as physical rather than as buttons that light up.
 //
-// `blur` stays false until the cost is measured and the Hyprland layer rules
-// (quickshell-bar / quickshell-stage namespaces) are added on purpose.
+// `blur` is on since the color-system v2: the fills are per-region alphas and
+// need the compositor's blur behind them (the layer rules are in
+// hyprland.lua). The no-blur fallback stays as fillSolid for machines without
+// the rules. Trap found while wiring this: the property did not exist before
+// -- `Tokens.blur` read as undefined and every surface silently took the solid
+// path.
 pragma Singleton
 import QtQuick
 import Quickshell
@@ -27,6 +31,10 @@ Singleton {
     // The bar's reserved strip (BarTiers.exclusiveZone). The widgets clamp
     // below it, so a drag can never slide a card under the bar.
     readonly property int topInset: 38
+
+    // Whether the surfaces are glass (per-region alphas, blurred by the
+    // compositor) or solid fills.
+    readonly property bool blur: true
 
     readonly property var radius: ({ panel: 18, card: 12, control: 8 })
 

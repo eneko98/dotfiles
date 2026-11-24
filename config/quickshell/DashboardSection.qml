@@ -71,7 +71,9 @@ Item {
         // One step above the panel (bg1) and with its own hairline: without
         // this the four groups read as one surface split by lines, which is
         // exactly what the reference does not look like.
-        color: Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.55)
+        // v2: the card is the tinted surface itself, opaque -- a translucent
+        // card over the tinted panel let the terminal behind read through.
+        color: Theme.s2
         border.width: 1
         border.color: Qt.rgba(Theme.fg0.r, Theme.fg0.g, Theme.fg0.b, 0.07)
 
