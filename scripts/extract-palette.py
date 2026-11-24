@@ -454,7 +454,24 @@ def main() -> int:
                         help="kept for compatibility: printing is the default now")
     parser.add_argument("--reset", action="store_true",
                         help="remove the generated palette (back to the committed default)")
+    parser.add_argument("--stats", action="store_true",
+                        help="print only the region stats of a wallpaper (for"
+                             " theme reset: the committed palette over the"
+                             " wallpaper that is actually on screen)")
     args = parser.parse_args()
+
+    if args.stats:
+        # Only the luminance regions, with the committed bg1 standing in for
+        # the family: a reset keeps the committed palette, and its surfaces
+        # carry the committed family's chroma anyway.
+        path = Path(args.wallpaper).expanduser()
+        if not path.is_file():
+            print(f"error: {path} is not a file", file=sys.stderr)
+            return 1
+        for name, value in region_stats(path, "#0e0e15").items():
+            if name != "family_chroma":
+                print(f"{name} = {value:.6f}")
+        return 0
 
     if args.reset:
         if OUT.exists():

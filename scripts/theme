@@ -30,7 +30,29 @@ usage() {
 # What picks a new theme up without a restart. Quickshell watches its
 # Theme.qml link by itself; the rest is explicit. Apps that read their theme
 # at startup are NOT here -- the report after an apply says which are running.
+# The bar reloads only on CONTENT changes to its root config file -- imports
+# (Theme.qml included) are not watched at all, and an inode swap would leave
+# the watcher on a dead file. So shell.qml is a copy (install.sh) and this
+# rewrites the probe line in place: same inode, new content, one reload.
+# The digest means an apply that changes nothing reloads nothing.
+nudge_bar() {
+	local f="$HOME/.config/quickshell/shell.qml" d
+	[[ -f "$f" && ! -L "$f" ]] || return 0
+	# The digest of the generated Theme.qml, not palette.lua: a reset DELETES
+	# palette.lua, and an empty digest would skip the nudge and leave the bar
+	# on the old theme until a restart.
+	d="$(sha256sum "$state_dir/theme/quickshell/Theme.qml" 2>/dev/null | cut -c1-8)"
+	[[ -n "$d" ]] || return 0
+	local body
+	body="$(grep -v '^// theme-probe:' "$f")"
+	{
+		printf '%s\n' "$body"
+		printf '// theme-probe: %s\n' "$d"
+	} >"$f"
+}
+
 refresh() {
+	nudge_bar
 	systemctl --user restart polkit-gnome.service >/dev/null 2>&1 || true
 	hyprctl reload >/dev/null 2>&1 || true
 	pkill -USR1 -x kitty 2>/dev/null || true
@@ -104,7 +126,23 @@ reset)
 		rm "$palette"
 		echo "removed $palette"
 	fi
-	"$repo/scripts/gen-theme.py"	# from the committed theme.lua
+	# The committed palette carries no stats, but the glass must be solved
+	# against the wallpaper that is actually on screen, not the default one
+	# (measured: reset over a bright wallpaper left the pill at the default's
+	# dark-region alpha and the text under its floor).
+	local current statsf
+	current="$(cat "$state_dir/wallpaper" 2>/dev/null)"
+	statsf=""
+	if [[ -n "$current" && -f "$current" ]]; then
+		statsf="$(mktemp)"
+		"$repo/scripts/extract-palette.py" --stats "$current" >"$statsf"
+	fi
+	if [[ -n "$statsf" ]]; then
+		"$repo/scripts/gen-theme.py" --stats "$statsf"   # committed palette
+		rm -f "$statsf"
+	else
+		"$repo/scripts/gen-theme.py"   # committed palette, default stats
+	fi
 	refresh
 	report_stale
 	"$repo/scripts/gen-theme.py" --audit

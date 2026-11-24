@@ -1076,12 +1076,19 @@ def gray_hex(v: float) -> str:
 
 def alpha_for(surface: str, region_lum: float,
               text: dict[str, float]) -> float:
-    """The smallest alpha in [0.66, 0.96] that keeps every text floor over the
+    """The smallest alpha in [0.55, 0.96] that keeps every text floor over the
     composite of `surface` and the region's blurred wallpaper. Returns the
     alpha, or -1 when even opaque fails (a wallpaper brighter than the text
-    floor allows -- then the caller reports it)."""
+    floor allows -- then the caller reports it).
+
+    The design floor went down from 0.66 (v2.1): the whole point of the
+    region alphas is that the wallpaper shows through, and at 0.66 a dark
+    wallpaper was barely visible behind the pill -- the theme change was
+    imperceptible in the bar (measured on the user's own picks). 0.55 keeps
+    the blur alive (ignore_alpha is 0.5) and the floors are checked as
+    before: on dark walls they pass far below this floor."""
     wall = gray_for(min(1.0, max(0.0, region_lum)))
-    a = 0.66
+    a = 0.55
     while a <= 0.9601:
         comp = blend(surface, wall, a)
         if all(contrast(col, comp) >= floor for col, floor in text.items()):
@@ -1165,7 +1172,11 @@ def derive_v2(roles: dict[str, str], stats: dict[str, float]) -> dict:
         chroma = min(chroma, 0.020)
         notes.append("surface chroma capped near the alarm red")
 
-    l1, l2, l3 = 0.19, 0.21, 0.23
+    # s1 sits a touch higher (0.21) since v2.1: at L 0.19 the family's hue
+    # was imperceptible and the bar looked the same with every wallpaper. The
+    # binding floor is fg1 over s3 (unchanged, L 0.23), so this only buys
+    # visibility.
+    l1, l2, l3 = 0.21, 0.22, 0.23
     s1 = hex_of_oklch(l1, chroma, hue)
     s2 = hex_of_oklch(l2, chroma, hue)
     s3 = hex_of_oklch(l3, chroma, hue)
@@ -1360,6 +1371,17 @@ def main(argv: list[str]) -> int:
     # (pure since the v2). gen-theme is the ONLY writer: it regenerates every
     # copy and palette.lua itself, palette.lua LAST, so an interrupted run
     # can never leave the compositor on a palette the copies do not match.
+    # --stats FILE: region stats to use instead of the palette's own (theme
+    # reset: the committed palette carries none, and the glass must still be
+    # solved against the wallpaper that is actually on screen).
+    stats_file = None
+    if "--stats" in argv:
+        i = argv.index("--stats")
+        if i + 1 >= len(argv):
+            print("error: --stats needs a file", file=sys.stderr)
+            return 2
+        stats_file = argv[i + 1]
+
     source_file = None
     if "--from" in argv:
         i = argv.index("--from")
@@ -1377,6 +1399,12 @@ def main(argv: list[str]) -> int:
     if len(roles) < 9:
         print(f"error: only found {len(roles)} roles", file=sys.stderr)
         return 2
+
+    if stats_file is not None:
+        for line in Path(stats_file).read_text().splitlines():
+            m = re.match(r"\s*([a-z_]+)\s*=\s*([0-9.]+)", line)
+            if m is not None:
+                stats[m.group(1)] = float(m.group(2))
 
     digest = palette_hash(roles, ansi)
 
@@ -1448,7 +1476,17 @@ def main(argv: list[str]) -> int:
             continue
         stale.append(path)
         if not check:
-            atomic_write(path, content)
+            # The bar's Theme.qml is the ONE copy that must keep its inode:
+            # Quickshell's watcher follows the inode, and an atomic replace
+            # leaves it watching a dead file -- the bar silently stopped
+            # following theme changes since C0 (measured: apply + 15 s and
+            # not one Configuration Loaded; the reloads seen during testing
+            # were service restarts). Truncate-and-write on the same inode is
+            # what the pre-C0 system did and what the watcher needs.
+            if path.name == "Theme.qml":
+                path.write_text(content)
+            else:
+                atomic_write(path, content)
             written += 1
             if crash_after is not None and written >= crash_after:
                 raise RuntimeError(

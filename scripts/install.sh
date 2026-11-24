@@ -91,6 +91,14 @@ while IFS= read -r -d '' src; do
 	link_one "$src" "$dst_dir/$rel"
 done < <(find "$src_dir" -type f -not -path "$src_dir/firefox/*" -print0 | sort -z)
 
+# shell.qml is a COPY, not a symlink: Quickshell only live-reloads on content
+# changes to the ROOT config file, and writing through a symlink would dirty
+# the repository on every `theme apply`. scripts/theme keeps a probe line at
+# the end of the copy (the palette's digest); re-run install.sh after editing
+# config/quickshell/shell.qml.
+cp --remove-destination "$src_dir/quickshell/shell.qml" \
+	"$dst_dir/quickshell/shell.qml"
+
 # Regenerate the palette's copies from the active palette, then link them where
 # the programs look. A retheme writes the same files under the state dir; the
 # links survive it.
