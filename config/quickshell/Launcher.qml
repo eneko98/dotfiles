@@ -223,8 +223,9 @@ Popup {
             width: list.width
             height: 36
             radius: 6
-            color: row.index === root.selectedIndex ? Theme.bg2
-                : rowHover.containsMouse ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.5)
+            color: row.index === root.selectedIndex
+                ? Theme.accentContainer
+                : rowHover.containsMouse ? Theme.hoverTint
                 : "transparent"
 
             Rectangle {
@@ -260,7 +261,8 @@ Popup {
                 anchors.top: parent.top
                 anchors.topMargin: 6
                 text: row.modelData.name
-                color: Theme.fg0
+                color: row.index === root.selectedIndex
+                    ? Theme.textOnAccent : Theme.fg0
                 font.family: "Adwaita Sans"
                 font.pixelSize: 12
                 elide: Text.ElideRight

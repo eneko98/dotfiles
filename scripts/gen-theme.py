@@ -965,7 +965,7 @@ def quickshell_theme(roles: dict[str, str], _ansi: dict[str, str],
     lines.append("")
     lines.append("    // v2: how opaque each region's glass must be to hold the")
     lines.append("    // text floors over this wallpaper (0.66..0.96).")
-    for name in ("alphaBar", "alphaPanel", "alphaDesk"):
+    for name in ("alphaBar", "alphaPanel", "alphaDesk", "alphaNeon"):
         lines.append(f"    readonly property real {name}:"
                      f" {derived[name]:.2f}")
 
@@ -1211,13 +1211,23 @@ def derive_v2(roles: dict[str, str], stats: dict[str, float]) -> dict:
             notes.append(f"{region}: even opaque misses a floor; pinned 0.96")
         alphas[region] = a
 
+    # The neon container is a WHOLE surface (the media pill while playing), so
+    # it solves its own alpha against the bar region with its own floors: the
+    # neon glyph and its text, not the neutral text. At 0.8 over a bright wall
+    # the glyph drops to 2.79:1 (documented) -- this is why the doc asks for it.
+    neon_text = {roles["teal"]: 4.5, neon_on: 7.0}
+    a_neon = alpha_for(neon_box, stats.get("region_bar", 0.0), neon_text)
+    if a_neon < 0:
+        a_neon = 0.96
+        notes.append("neon container: even opaque misses a floor; pinned 0.96")
+
     return {
         "s1": s1, "s2": s2, "s3": s3,
         "accentContainer": accent_box, "onAccentContainer": accent_on,
         "neonContainer": neon_box, "onNeonContainer": neon_on,
         "hoverTint": hover,
         "alphaBar": alphas["bar"], "alphaPanel": alphas["panel"],
-        "alphaDesk": alphas["desk"],
+        "alphaDesk": alphas["desk"], "alphaNeon": a_neon,
         "_notes": notes,
         "_chroma": chroma,
     }

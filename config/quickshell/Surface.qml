@@ -23,6 +23,10 @@ Item {
     // glass is never a fixed number: dark wallpapers show through, bright
     // ones get more opacity.
     property string region: "bar"
+    // v2: a surface that IS a state (the media pill while playing) fills
+    // with the state's container instead of a neutral surface, at the alpha
+    // the generator solved for THAT container's own floors.
+    property string containerRole: ""
 
     // Stroke, highlight and shadow stay per-level (Tokens). The FILL is v2:
     // a tinted surface (s1/s2/s3, the wallpaper's family) at the region's
@@ -35,10 +39,14 @@ Item {
 
     readonly property real regionAlpha: region === "bar" ? Theme.alphaBar
         : region === "panel" ? Theme.alphaPanel : Theme.alphaDesk
-    readonly property real fillAlpha: Math.min(0.97,
-        root.regionAlpha + 0.04 * (root.level - 1) + (root.lifted ? 0.04 : 0))
+    readonly property real fillAlpha: root.containerRole !== ""
+        ? Theme.alphaNeon
+        : Math.min(0.97, root.regionAlpha + 0.04 * (root.level - 1)
+            + (root.lifted ? 0.04 : 0))
     readonly property real fillSolidAlpha: Math.min(0.98, root.fillAlpha + 0.12)
-    readonly property color fillBase: root.level >= 3 ? Theme.s3
+    readonly property color fillBase: root.containerRole !== ""
+        ? Theme[root.containerRole]
+        : root.level >= 3 ? Theme.s3
         : root.level === 2 ? Theme.s2 : Theme.s1
 
     // Exposed so callers (MorphPanel) can override the corner radius.

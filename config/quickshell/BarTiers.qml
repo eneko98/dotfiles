@@ -112,9 +112,10 @@ PanelWindow {
     }
 
     // --- Left pill: the workspaces -------------------------------------
-    // Numbers in a row; the active one carries an accent capsule (30x22)
-    // that slides with them (medium/standard). Empty cells show nothing;
-    // hover a bg2 circle; an urgent workspace shows a neon dot. The wheel
+    // Numbers in a row; the active one carries an accent-CONTAINER chip
+    // (30x22, opaque: its contrast does not depend on the wallpaper) that
+    // slides with them. Occupied cells read fg0, empty ones fg1; hover is a
+    // 6% wash of the accent; an urgent workspace shows a neon dot. The wheel
     // walks to the previous/next existing workspace.
     Surface {
         id: workspacesPill
@@ -153,7 +154,10 @@ PanelWindow {
             return null;
         }
 
-        // The accent capsule behind the active number: x follows it.
+        // The active chip: the accent's CONTAINER, not the accent itself
+        // (v2 R1 -- resting is neutral, the chip is a state; the full accent
+        // stays for one marker per surface). Opaque, so the number keeps its
+        // 11:1 whatever floats behind the pill.
         Rectangle {
             visible: workspacesPill.activeCell !== null
             x: workspacesPill.activeCell !== null
@@ -162,7 +166,7 @@ PanelWindow {
             width: 30
             height: 22
             radius: 11
-            color: Theme.gold
+            color: Theme.accentContainer
 
             Behavior on x {
                 NumberAnimation {
@@ -189,15 +193,14 @@ PanelWindow {
                     width: 22
                     height: 22
 
-                    // Hover: a bg2 circle (under the capsule z-wise it does
-                    // not matter: the active cell is covered by the capsule
-                    // anyway).
+                    // Hover: the accent's 6% wash (transitory, not a state).
                     Rectangle {
                         anchors.fill: parent
                         radius: 11
                         color: cell.modelData.focused
                             ? "transparent"
-                            : (cellHover.containsMouse ? Theme.bg2 : "transparent")
+                            : (cellHover.containsMouse
+                                ? Theme.hoverTint : "transparent")
 
                         Behavior on color {
                             ColorAnimation {
@@ -211,7 +214,11 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: cell.modelData.id
-                        color: cell.modelData.focused ? Theme.bg0 : Theme.fg1
+                        // Active: the container's text (11:1). Occupied reads
+                        // fg0, empty fg1 (v2 §3.3: fg2 was 2.96:1 for state).
+                        color: cell.modelData.focused ? Theme.textOnAccent
+                            : cell.modelData.toplevels.values.length > 0
+                                ? Theme.fg0 : Theme.fg1
                         font.family: "Adwaita Sans"
                         font.pixelSize: 12
                         font.bold: cell.modelData.focused

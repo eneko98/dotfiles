@@ -48,9 +48,12 @@ Pressable {
         id: body
         anchors.fill: parent
         radius: Tokens.radius.card
+        // v2: ON is the accent's CONTAINER (the hue, dark and muted) with
+        // text made for it -- the full accent stays in the glyph alone. OFF is
+        // the neutral card, opaque like the dashboard's.
         color: root.error || !root.checked
-               ? Qt.rgba(Theme.bg2.r, Theme.bg2.g, Theme.bg2.b, 0.60)
-               : Qt.rgba(Theme.gold.r, Theme.gold.g, Theme.gold.b, 0.18)
+               ? Theme.s2
+               : Theme.accentContainer
 
         // The hover wash, 4% fg0, on top of either base state.
         Rectangle {
@@ -97,7 +100,8 @@ Pressable {
 
                 Text {
                     text: root.title
-                    color: Theme.fg0
+                    color: root.checked && !root.error
+                        ? Theme.textOnAccent : Theme.fg0
                     font.family: "Adwaita Sans"
                     font.pixelSize: 11
                     font.weight: Font.DemiBold

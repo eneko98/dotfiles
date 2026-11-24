@@ -15,6 +15,11 @@ import QtQuick
 Surface {
     id: root
 
+    // v2 R1: the pill's colour IS the state. Playing: the neon's container
+    // (its own alpha, solved against the bar region) with the glyph in neon
+    // and text made for it. Paused/remembered: the neutral surface and fg1,
+    // like every resting thing in the bar.
+    containerRole: root.playing ? "neonContainer" : ""
     signal clicked()
 
     // The first player playing, else the first with a title (a paused track can
@@ -35,6 +40,7 @@ Surface {
     }
 
     readonly property bool live: player !== null && player.trackTitle !== ""
+    readonly property bool playing: live && player.isPlaying
     readonly property bool stale: !root.live && Config.lastTitle !== ""
 
     // The remembered track is a boot shortcut, not a label: three seconds and
